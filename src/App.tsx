@@ -1,6 +1,6 @@
 import './App.css'
-import { ACCESS_ROLE_LABELS, type AccessRoleId } from './accessRoles'
-import { DataHubPeoplePage } from './DataHubPeoplePage'
+import { ACCESS_ROLE_LABELS } from './accessRoles'
+import { DataStudioPeoplePage } from './DataStudioPeoplePage'
 import { useEffect, useRef, useMemo, useState } from 'react'
 import {
   ArrowLeft,
@@ -8,178 +8,67 @@ import {
   Bell,
   BookOpen,
   Building2,
-  Check,
+  Calendar,
+  CheckSquare,
   ChevronDown,
   ChevronRight,
   ChevronUp,
-  Circle,
   Clock,
+  Copy,
+  CreditCard,
   Database,
   DollarSign,
   Folder,
   GraduationCap,
   LayoutDashboard,
+  Lock,
+  Network,
   PanelLeft,
   PanelLeftClose,
   Pencil,
+  Plug,
+  Plus,
+  Settings2,
   Share2,
+  ShieldCheck,
   Star,
+  Tag,
+  Trash2,
+  Umbrella,
+  UserCog,
   Users,
   Waypoints,
 } from 'lucide-react'
 
-function formatDepartmentSummary(values: string[]): string {
-  const v = values.length ? values : ['All people']
-  if (v.includes('All people')) return 'All people'
-  if (v.length === 1) return v[0]
-  if (v.length === 2) return `${v[0]}, ${v[1]}`
-  return `${v.length} departments`
+
+export type PricingPlanId = 'starter' | 'pro' | 'enterprise'
+
+// ── Scope ────────────────────────────────────────────────────────────────────
+
+export type ScopeId =
+  | 'everyone'
+  | 'departments'
+  | 'direct-reports'
+  | 'project-teams'
+  | 'self'
+
+const SCOPE_OPTIONS: { id: ScopeId; label: string }[] = [
+  { id: 'everyone',       label: 'Everyone' },
+  { id: 'departments',    label: 'Department(s)' },
+  { id: 'direct-reports', label: 'Direct reports' },
+  { id: 'project-teams',  label: 'Project teams' },
+  { id: 'self',           label: 'Self' },
+]
+
+/** Higher rank = narrower scope. editScope rank must be ≥ viewScope rank. */
+const SCOPE_RANK: Record<ScopeId, number> = {
+  everyone: 0, departments: 1, 'direct-reports': 2, 'project-teams': 3, self: 4,
 }
-
-function ScopeDropdown({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[]
-  value: string
-  onChange: (opt: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
-
-  return (
-    <div ref={ref} className="scope-dd">
-      <button
-        type="button"
-        className="scope-dd__trigger"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="scope-dd__value">{value}</span>
-        <ChevronDown size={12} strokeWidth={2} className={`scope-dd__chevron${open ? ' scope-dd__chevron--open' : ''}`} />
-      </button>
-      {open && (
-        <ul className="scope-dd__menu" role="listbox">
-          {options.map((opt) => (
-            <li
-              key={opt}
-              role="option"
-              aria-selected={opt === value}
-              className={`scope-dd__item${opt === value ? ' scope-dd__item--active' : ''}`}
-              onMouseDown={(e) => { e.preventDefault(); onChange(opt); setOpen(false) }}
-            >
-              {opt === value && <Check size={12} strokeWidth={2.5} className="scope-dd__tick" />}
-              {opt}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-function ScopeMultiDropdown({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[]
-  value: string[]
-  onChange: (next: string[]) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
-
-  function toggleOpt(opt: string) {
-    if (opt === 'All people') {
-      onChange(['All people'])
-      return
-    }
-    const withoutAll = value.filter((x) => x !== 'All people')
-    const has = withoutAll.includes(opt)
-    let next = has ? withoutAll.filter((x) => x !== opt) : [...withoutAll, opt]
-    if (next.length === 0) next = ['All people']
-    onChange(next)
-  }
-
-  return (
-    <div ref={ref} className="scope-dd">
-      <button
-        type="button"
-        className="scope-dd__trigger"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label="Department scope"
-      >
-        <span className="scope-dd__value">{formatDepartmentSummary(value)}</span>
-        <ChevronDown size={12} strokeWidth={2} className={`scope-dd__chevron${open ? ' scope-dd__chevron--open' : ''}`} />
-      </button>
-      {open && (
-        <ul
-          className="scope-dd__menu scope-dd__menu--multi"
-          role="listbox"
-          aria-multiselectable="true"
-        >
-          {options.map((opt) => {
-            const isSelected =
-              opt === 'All people'
-                ? value.includes('All people')
-                : value.includes(opt) && !value.includes('All people')
-            return (
-              <li
-                key={opt}
-                role="option"
-                aria-selected={isSelected}
-                className={`scope-dd__item scope-dd__item--multi${isSelected ? ' scope-dd__item--multi-checked' : ''}`}
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  toggleOpt(opt)
-                }}
-              >
-                <input
-                  type="checkbox"
-                  className="scope-dd__checkbox"
-                  tabIndex={-1}
-                  readOnly
-                  checked={isSelected}
-                  aria-hidden
-                />
-                <span>{opt}</span>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-export type PricingPlanId = 'pro' | 'starter'
 
 const PLAN_OPTIONS: { id: PricingPlanId; label: string; hint: string }[] = [
-  { id: 'pro', label: 'Pro', hint: 'Full org & offices' },
-  { id: 'starter', label: 'Starter', hint: 'Core settings' },
+  { id: 'starter',    label: 'Starter',    hint: 'Core settings' },
+  { id: 'pro',        label: 'Pro',        hint: 'Full org & offices' },
+  { id: 'enterprise', label: 'Enterprise', hint: 'Advanced compliance & control' },
 ]
 
 function PlanDropdown({
@@ -216,7 +105,7 @@ function PlanDropdown({
         <span className="plan-dd__trigger-text">{current.label}</span>
         <ChevronDown
           size={14}
-          strokeWidth={2}
+          strokeWidth={1.5}
           className={`plan-dd__chevron${open ? ' plan-dd__chevron--open' : ''}`}
           aria-hidden
         />
@@ -247,29 +136,34 @@ function PlanDropdown({
 }
 
 const ORG_NAV = [
-  { id: 'billing', label: 'Plans & billing' },
-  { id: 'general', label: 'General' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'integrations', label: 'Integrations' },
-  { id: 'security', label: 'Security' },
-  { id: 'access', label: 'Access rights' },
-  { id: 'timeoff-org', label: 'Time off' },
-  { id: 'statuses', label: 'Statuses' },
+  { id: 'billing',       label: 'Plans & billing', Icon: CreditCard,  description: 'Manage your subscription, invoices, and payment details.'           },
+  { id: 'general',       label: 'General',          Icon: Settings2,   description: 'Set your plan, owner, and team name.'                               },
+  { id: 'notifications', label: 'Notifications',    Icon: Bell,        description: 'Control when and how your team gets notified.'                      },
+  { id: 'integrations',  label: 'Integrations',     Icon: Plug,        description: 'Connect third-party tools and manage API access.'                   },
+  { id: 'security',      label: 'Security',         Icon: ShieldCheck, description: 'Configure SSO, two-factor authentication, and access policies.'     },
 ] as const
 
-/** Org sidebar items available on Starter (rest are Pro-only in this preview). */
-const STARTER_ORG_NAV_IDS = new Set<string>([
-  'billing',
-  'general',
-  'notifications',
-  'access',
-  'timeoff-org',
-  'statuses',
-])
+/** Admin-section nav items (Pro / Enterprise only). */
+const ADMIN_NAV = [
+  { id: 'access',        label: 'Access rights',    Icon: UserCog,     description: 'Define what each role can view and edit across Float.'              },
+  { id: 'work-schedule', label: 'Work schedule',    Icon: Calendar,    description: 'Set working hours and days for your organisation.'                  },
+  { id: 'currencies',    label: 'Currencies',       Icon: DollarSign,  description: 'Add currencies and set exchange rates for billing.'                 },
+  { id: 'time-tracking', label: 'Time tracking',    Icon: Clock,       description: 'Configure how time is logged across projects.'                      },
+  { id: 'guests',        label: 'Guests',           Icon: Users,       description: 'Manage guest access and external collaborators.'                    },
+  { id: 'timeoff-org',   label: 'Time off',         Icon: Umbrella,    description: 'Set time-off types, policies, and approval workflows.'              },
+  { id: 'projects',      label: 'Projects',         Icon: Folder,      description: 'Manage default project settings and templates.'                     },
+  { id: 'statuses',      label: 'Statuses',         Icon: CheckSquare, description: 'Customise status options for people and projects.'                  },
+  { id: 'tags',          label: 'Tags',             Icon: Tag,         description: 'Create and manage tags for people and projects.'                    },
+  { id: 'departments',   label: 'Departments',      Icon: Network,     description: 'Organise your team into departments.'                               },
+  { id: 'lock-logged',   label: 'Lock logged time', Icon: Lock,        description: 'Prevent edits to logged time after a set period.'                  },
+] as const
 
-function orgNavForPlan(plan: PricingPlanId) {
-  if (plan === 'pro') return [...ORG_NAV]
-  return ORG_NAV.filter((item) => STARTER_ORG_NAV_IDS.has(item.id))
+/** Admin items shown on Starter (subset of ADMIN_NAV). */
+const STARTER_ADMIN_IDS = new Set<string>(['access', 'timeoff-org', 'statuses'])
+
+function adminNavForPlan(plan: PricingPlanId) {
+  if (plan !== 'starter') return [...ADMIN_NAV]
+  return ADMIN_NAV.filter((item) => STARTER_ADMIN_IDS.has(item.id))
 }
 
 type OfficeSectionId = (typeof OFFICE_SUBITEMS)[number]['id']
@@ -301,166 +195,287 @@ const OFFICES = [
 interface ConfigPerm {
   id: string
   label: string
+  description?: string     // subtitle shown below the label
   enabled: boolean
-  featured?: boolean       // shown in the top Defaults section
-  group?: string           // category for progressive disclosure
-  scope?: string
-  scopeOptions?: string[]
-  /** Single-select scope (projects, clients, etc.) */
-  activeOption?: string
-  /** Multi-select departments when `multiScope` is true */
-  activeOptions?: string[]
-  /** PEOPLE_OPTIONS: allow multiple departments; uses `activeOptions` */
-  multiScope?: boolean
+  group?: string           // which collapsible group this belongs to
+  /** If set, this perm is auto-granted when the named parent perm is enabled */
+  grantedBy?: string
+  /** Who this role can see data for. Only on people-action perms. */
+  viewScope?: ScopeId
+  /** Who this role can act on. Rank must be ≥ viewScope rank (same or narrower). */
+  editScope?: ScopeId
 }
 
 interface Role {
-  id: AccessRoleId
+  id: string          // AccessRoleId for built-ins; free string for custom roles
   label: string
   count: number
   description: string
   configPerms: ConfigPerm[]
   footerNote?: string
+  isCustom?: boolean  // true for roles added by the customer
 }
 
-const PEOPLE_OPTIONS = [
-  'All people',
-  'Design',
-  'Engineering',
-  'People ops',
-  'CS',
-  'Marketing',
-  'Leadership',
-]
+interface ScopeOverride { view?: ScopeId; edit?: ScopeId }
+
+/** Shared 28-permission template — each role gets its own copy with independent enabled flags */
+function makePerms(
+  enabledMap: Record<string, boolean>,
+  scopeMap: Record<string, ScopeOverride> = {},
+): ConfigPerm[] {
+  const on = (id: string) => enabledMap[id] ?? false
+  /** Spread scope fields onto people-action perms, defaulting to 'everyone'/'everyone' */
+  const sc = (id: string): { viewScope: ScopeId; editScope: ScopeId } => ({
+    viewScope: scopeMap[id]?.view ?? 'everyone',
+    editScope: scopeMap[id]?.edit ?? 'everyone',
+  })
+  return [
+    // ── Company ─────────────────────────────────────────────────────────────
+    { id: 'billing',                  group: 'Company',             label: 'Billing',                    description: 'View and manage billing, subscription, and plan changes',                                    enabled: on('billing') },
+    { id: 'security',                 group: 'Company',             label: 'Security',                   description: 'Manage SSO, 2FA, password policies, and security settings',                                 enabled: on('security') },
+    { id: 'integrations',             group: 'Company',             label: 'Integrations & API keys',    description: 'Manage third-party integrations and API keys',                                               enabled: on('integrations') },
+    { id: 'company-settings',         group: 'Company',             label: 'Company settings',           description: 'Edit company-wide preferences (work hours, regions, holidays, status types, time off types)', enabled: on('company-settings') },
+    // ── Data studio ──────────────────────────────────────────────────────────
+    { id: 'manage-offices',           group: 'Data studio',         label: 'Manage offices',             description: 'Create, edit, delete offices and manage office-level settings',                              enabled: on('manage-offices') },
+    { id: 'manage-departments',       group: 'Data studio',         label: 'Manage departments',         description: 'Create, edit, delete departments',                                                           enabled: on('manage-departments') },
+    { id: 'manage-roles',             group: 'Data studio',         label: 'Manage roles',               description: 'Create, edit, delete role placeholders',                                                     enabled: on('manage-roles') },
+    { id: 'manage-clients',           group: 'Data studio',         label: 'Manage clients',             description: 'Create, edit, delete clients',                                                               enabled: on('manage-clients') },
+    { id: 'manage-tags',              group: 'Data studio',         label: 'Manage tags',                description: 'Create, edit, delete project and people tags',                                               enabled: on('manage-tags') },
+    { id: 'import-export',            group: 'Data studio',         label: 'Import / Export data',       description: 'Import and export data via bulk operations',                                                 enabled: on('import-export') },
+    // ── Resource planning — scoped perms get view + edit scope ───────────────
+    { id: 'add-remove-people',        group: 'Resource planning',   label: 'Add & remove people',        description: 'Create new people records, deactivate or delete people',                                     enabled: on('add-remove-people'), ...sc('add-remove-people') },
+    { id: 'edit-people',              group: 'Resource planning',   label: 'Edit existing people',       description: "Granted because 'Add & remove people' is enabled",                                          enabled: on('edit-people'),        grantedBy: 'add-remove-people' },
+    { id: 'approve-time-off',         group: 'Resource planning',   label: 'Approve time off',           description: 'Approve or reject time off requests',                                                       enabled: on('approve-time-off'), ...sc('approve-time-off') },
+    { id: 'schedule-others',          group: 'Resource planning',   label: 'Schedule other people',      description: 'Create, edit, delete tasks and time off for other people',                                   enabled: on('schedule-others'), ...sc('schedule-others') },
+    { id: 'schedule-self',            group: 'Resource planning',   label: 'Schedule themselves',        description: "Granted because 'Schedule other people' is enabled",                                        enabled: on('schedule-self'),      grantedBy: 'schedule-others' },
+    { id: 'log-time-others',          group: 'Resource planning',   label: 'Log time for other people',  description: 'Create, edit, delete logged time entries for other people',                                  enabled: on('log-time-others'), ...sc('log-time-others') },
+    { id: 'log-time-self',            group: 'Resource planning',   label: 'Log time for themselves',    description: "Granted because 'Log time for other people' is enabled",                                    enabled: on('log-time-self'),      grantedBy: 'log-time-others' },
+    // ── Project management ───────────────────────────────────────────────────
+    { id: 'add-remove-projects',      group: 'Project management',  label: 'Add & remove projects',      description: 'Create new projects, delete or archive existing projects',                                   enabled: on('add-remove-projects') },
+    { id: 'edit-projects',            group: 'Project management',  label: 'Edit existing projects',     description: "Granted because 'Add & remove projects' is enabled",                                        enabled: on('edit-projects'),      grantedBy: 'add-remove-projects' },
+    { id: 'manage-draft-projects',    group: 'Project management',  label: 'Manage draft projects',      description: "Granted because 'Add & remove projects' is enabled",                                        enabled: on('manage-draft-projects'), grantedBy: 'add-remove-projects' },
+    { id: 'project-templates',        group: 'Project management',  label: 'Manage project templates',   description: 'Create, edit, delete project templates',                                                     enabled: on('project-templates') },
+    { id: 'project-budgets',          group: 'Project management',  label: 'Manage project budgets',     description: 'Set and modify project/phase budgets, manage project expenses',                              enabled: on('project-budgets') },
+    // ── Finance ──────────────────────────────────────────────────────────────
+    { id: 'view-cost-rates',          group: 'Finance',             label: 'View cost rates',            description: 'See cost rate data on people and projects',                                                  enabled: on('view-cost-rates') },
+    { id: 'view-bill-rates',          group: 'Finance',             label: 'View bill rates',            description: 'See bill rate data on people and projects',                                                  enabled: on('view-bill-rates') },
+    { id: 'manage-cost-rates',        group: 'Finance',             label: 'Manage cost rates',          description: 'Set and modify cost rates on people',                                                        enabled: on('manage-cost-rates') },
+    { id: 'manage-bill-rates',        group: 'Finance',             label: 'Manage bill rates',          description: 'Set and modify bill rates on people',                                                        enabled: on('manage-bill-rates') },
+    { id: 'manage-project-bill-rates',group: 'Finance',             label: 'Manage project bill rates',  description: 'Set and modify bill rate overrides at the project or phase level',                          enabled: on('manage-project-bill-rates') },
+    { id: 'manage-rate-cards',        group: 'Finance',             label: 'Manage rate cards',          description: 'Create, edit, delete rate cards',                                                            enabled: on('manage-rate-cards') },
+  ]
+}
 
 const ROLES: Role[] = [
   {
     id: 'admin',
     label: ACCESS_ROLE_LABELS.admin,
-    count: 4,
-    description: 'Can manage all People, Projects, and Team settings',
-    configPerms: [
-      { id: 'billing',      label: 'Billing: Can add seats, upgrade plan', enabled: true,  featured: true, scope: 'Everyone' },
-      { id: 'security',     label: 'Security',     enabled: true,  featured: true },
-      { id: 'integrations', label: 'Integrations', enabled: true,  featured: true },
-      { id: 'api-keys',     label: 'API Key(s)',   enabled: true,  featured: true },
-    ],
+    count: 2,
+    description: 'Full organisational control. Billing and Security are off by default — toggle them on to grant.',
+    configPerms: makePerms({
+      // Company — billing & security off by default
+      integrations: true, 'company-settings': true,
+      // Data studio — all on
+      'manage-offices': true, 'manage-departments': true, 'manage-roles': true,
+      'manage-clients': true, 'manage-tags': true, 'import-export': true,
+      // Resource planning — all on
+      'add-remove-people': true, 'edit-people': true, 'approve-time-off': true,
+      'schedule-others': true, 'schedule-self': true, 'log-time-others': true, 'log-time-self': true,
+      // Project management — all on
+      'add-remove-projects': true, 'edit-projects': true, 'manage-draft-projects': true,
+      'project-templates': true, 'project-budgets': true,
+      // Finance — all on
+      'view-cost-rates': true, 'view-bill-rates': true, 'manage-cost-rates': true,
+      'manage-bill-rates': true, 'manage-project-bill-rates': true, 'manage-rate-cards': true,
+    }, {
+      'add-remove-people': { view: 'everyone', edit: 'everyone' },
+      'approve-time-off':  { view: 'everyone', edit: 'everyone' },
+      'schedule-others':   { view: 'everyone', edit: 'everyone' },
+      'log-time-others':   { view: 'everyone', edit: 'everyone' },
+    }),
   },
   {
     id: 'project-manager',
     label: ACCESS_ROLE_LABELS['project-manager'],
-    count: 24,
-    description: 'Manage projects they own or are given access to',
-    footerNote: 'Cannot access settings pages',
-    configPerms: [
-      // featured defaults
-      { id: 'view-projects',        label: 'View projects',               enabled: true,  featured: true, group: 'Projects',   scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'edit-project-settings',label: 'Edit project settings',       enabled: true,  featured: true, group: 'Projects',   scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'view-schedule',        label: 'View Schedule',               enabled: true,  featured: true, group: 'Scheduling', scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'schedule-people',      label: 'Schedule people',             enabled: true,  featured: true, group: 'Scheduling', scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'view-projects-report', label: 'View Projects Report',        enabled: true,  featured: true, group: 'Reports',    scope: 'Projects they own/can view',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'view-budget',          label: 'View budget',                 enabled: true,  featured: true, group: 'Finance',    scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      // Projects group
-      { id: 'create-projects',      label: 'Create projects',             enabled: false, group: 'Projects',   scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'delete-projects',      label: 'Delete projects',             enabled: false, group: 'Projects',   scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'create-estimates',     label: 'Create and manage estimates', enabled: true,  group: 'Projects',   scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'view-bill-rates',      label: 'View bill rates',             enabled: true,  group: 'Finance',    scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'view-project-margin',  label: 'View project margin',         enabled: true,  group: 'Finance',    scope: 'Projects they own/can edit',         scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'view-client-rates',    label: 'View client rate cards',      enabled: true,  group: 'Finance',    scope: 'Clients on projects they own/can edit',scopeOptions: ['All clients','Specific clients'], activeOption: 'All clients' },
-      // Scheduling group
-      { id: 'schedule-roles',       label: 'Schedule roles',              enabled: true,  group: 'Scheduling', scope: 'All roles',                          scopeOptions: ['Selected roles'],           activeOption: 'Selected roles' },
-      { id: 'approve-time-off',     label: 'Approve time off for people', enabled: false, group: 'Scheduling', scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      // Reports group
-      { id: 'view-people-report',   label: 'View People Report',          enabled: false, group: 'Reports',    scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'view-logged-time',     label: 'View logged time',            enabled: true,  group: 'Reports',    scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      // Finance group
-      { id: 'view-cost-rates',      label: 'View cost rates',             enabled: false, group: 'Finance',    scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'view-finance-dashboard',label: 'View project finance dashboard',enabled: false, group: 'Finance', scope: 'Projects they own/can edit',        scopeOptions: ['All projects'],             activeOption: 'All projects' },
-      { id: 'view-ops-dashboard',   label: 'View people ops dashboard',   enabled: false, group: 'Finance',    scope: 'People on projects they own/can edit',scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-    ],
+    count: 4,
+    description: 'Plans and delivers projects, manages project teams and logs time for their team.',
+    configPerms: makePerms({
+      // Company — none
+      // Data studio — clients and tags only
+      'manage-clients': true, 'manage-tags': true,
+      // Resource planning — scheduling and time logging
+      'schedule-others': true, 'schedule-self': true,
+      'log-time-others': true, 'log-time-self': true,
+      // Project management — create/edit (draft only) + budgets
+      'add-remove-projects': true, 'edit-projects': true, 'manage-draft-projects': true,
+      'project-budgets': true,
+      // Finance — view bill rates only (no cost rates)
+      'view-bill-rates': true,
+    }, {
+      // Sees everyone on the schedule; can only act on their project teams
+      'add-remove-people': { view: 'everyone', edit: 'everyone' },
+      'approve-time-off':  { view: 'everyone', edit: 'project-teams' },
+      'schedule-others':   { view: 'everyone', edit: 'project-teams' },
+      'log-time-others':   { view: 'everyone', edit: 'project-teams' },
+    }),
   },
   {
     id: 'resource-planner',
     label: ACCESS_ROLE_LABELS['resource-planner'],
-    count: 12,
-    description: 'Schedule people within scope, can approve time off for people in scope',
-    footerNote: 'Cannot access settings pages',
-    configPerms: [
-      { id: 'view-schedule',    label: 'View Schedule',               enabled: true,  featured: true, group: 'Scheduling', scope: 'People in scope', scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'schedule-people',  label: 'Schedule people',             enabled: true,  featured: true, group: 'Scheduling', scope: 'People in scope', scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'approve-time-off', label: 'Approve time off for people', enabled: true,  featured: true, group: 'Scheduling', scope: 'People in scope', scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'schedule-roles',   label: 'Schedule roles',              enabled: true,  group: 'Scheduling', scope: 'All roles',    scopeOptions: ['Selected roles'],           activeOption: 'Selected roles' },
-      { id: 'view-logged-time', label: 'View logged time',            enabled: false, group: 'Reports',    scope: 'People in scope', scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'view-cost-rates',  label: 'View cost rates',             enabled: false, group: 'Finance',    scope: 'People in scope', scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-      { id: 'view-people-report',label: 'View People Report',         enabled: false, group: 'Reports',    scope: 'People in scope', scopeOptions: PEOPLE_OPTIONS, multiScope: true, activeOptions: ['All people'] },
-    ],
+    count: 2,
+    description: 'Manages people records and schedules — not project delivery.',
+    footerNote: 'Sees project margin % only — no cost rate or bill rate amounts.',
+    configPerms: makePerms({
+      // Company — none
+      // Data studio — departments, roles, tags
+      'manage-departments': true, 'manage-roles': true, 'manage-tags': true,
+      // Resource planning — all people + scheduling; no log time for others
+      'add-remove-people': true, 'edit-people': true, 'approve-time-off': true,
+      'schedule-others': true, 'schedule-self': true,
+      'log-time-self': true,
+      // Project management — none
+      // Finance — none (margin % is surfaced in reports, not a discrete permission)
+    }, {
+      'add-remove-people': { view: 'everyone', edit: 'everyone' },
+      'approve-time-off':  { view: 'everyone', edit: 'everyone' },
+      'schedule-others':   { view: 'everyone', edit: 'everyone' },
+      'log-time-others':   { view: 'everyone', edit: 'everyone' },
+    }),
   },
   {
     id: 'member',
     label: ACCESS_ROLE_LABELS.member,
-    count: 218,
-    description: 'Can view Schedule and optionally manage their own tasks and/or time off',
-    footerNote: 'Cannot access settings pages',
-    configPerms: [
-      { id: 'view-schedule',    label: 'View Schedule',    enabled: true,  featured: true, group: 'Schedule',  scope: 'Self', scopeOptions: ['All people'], activeOption: 'All people' },
-      { id: 'log-time',         label: 'Log time',         enabled: true,  featured: true, group: 'Schedule',  scope: 'Self' },
-      { id: 'manage-tasks',     label: 'Manage own tasks', enabled: true,  featured: true, group: 'Schedule',  scope: 'Self' },
-      { id: 'request-time-off', label: 'Request time off', enabled: true,  featured: true, group: 'Schedule',  scope: 'Self' },
-      { id: 'view-bill-rates',  label: 'View bill rates',  enabled: false, group: 'Finance' },
-      { id: 'view-cost-rates',  label: 'View cost rates',  enabled: false, group: 'Finance' },
-    ],
+    count: 6,
+    description: 'Individual contributor. Manages their own time only.',
+    configPerms: makePerms({
+      // Everything off except scheduling and logging for self
+      'schedule-self': true,
+      'log-time-self': true,
+    }, {
+      'add-remove-people': { view: 'self', edit: 'self' },
+      'approve-time-off':  { view: 'self', edit: 'self' },
+      'schedule-others':   { view: 'self', edit: 'self' },
+      'log-time-others':   { view: 'self', edit: 'self' },
+    }),
   },
 ]
 
-const GROUP_ORDER = ['Projects', 'Scheduling', 'Schedule', 'Reports', 'Finance']
+const GROUP_ORDER = ['Company', 'Data studio', 'Resource planning', 'Project management', 'Finance']
 
 type DraftPerms = Record<string, ConfigPerm[]>
 
-function permMultiScopeValues(perm: ConfigPerm): string[] {
-  if (perm.multiScope) {
-    return (
-      perm.activeOptions ??
-      (perm.activeOption != null ? [perm.activeOption] : ['All people'])
-    )
-  }
-  return []
+// ── ScopeChip — inline dropdown for view / edit scope ─────────────────────
+
+function ScopeChip({
+  dim,
+  value,
+  minRank = 0,
+  onChange,
+}: {
+  dim: 'View' | 'Edit'
+  value: ScopeId
+  /** Minimum rank allowed (inclusive). Edit scope can't be broader than view scope. */
+  minRank?: number
+  onChange: (v: ScopeId) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const options = SCOPE_OPTIONS.filter((o) => SCOPE_RANK[o.id] >= minRank)
+  const current = SCOPE_OPTIONS.find((o) => o.id === value)!
+
+  return (
+    <span ref={ref} className="scope-chip">
+      <span className="scope-chip__dim">{dim}</span>
+      <button
+        type="button"
+        className="scope-chip__btn"
+        onClick={(e) => { e.preventDefault(); setOpen((o) => !o) }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        {current.label}
+        <ChevronDown size={10} strokeWidth={2.5} className="scope-chip__chevron" aria-hidden />
+      </button>
+      {open && (
+        <ul className="scope-chip__menu" role="listbox">
+          {options.map((opt) => (
+            <li key={opt.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={opt.id === value}
+                className={`scope-chip__option${opt.id === value ? ' scope-chip__option--active' : ''}`}
+                onClick={() => { onChange(opt.id); setOpen(false) }}
+              >
+                {opt.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </span>
+  )
 }
+
+// ── PermRow — editable permission row ─────────────────────────────────────
 
 function PermRow({
   perm,
+  isAutoGranted,
   onToggle,
-  onSelectOption,
-  onSelectOptions,
+  onScopeChange,
 }: {
   perm: ConfigPerm
+  isAutoGranted: boolean
   onToggle: () => void
-  onSelectOption: (opt: string) => void
-  onSelectOptions?: (opts: string[]) => void
+  onScopeChange?: (dim: 'view' | 'edit', scope: ScopeId) => void
 }) {
-  const hasOptions = perm.scopeOptions && perm.scopeOptions.length > 0
+  const effectiveEnabled = isAutoGranted || perm.enabled
+  const showScope = effectiveEnabled && !isAutoGranted && perm.viewScope !== undefined
+
   return (
-    <tr className={`cfg-table__row${perm.enabled ? '' : ' cfg-table__row--off'}`}>
+    <tr className={`cfg-table__row${effectiveEnabled ? '' : ' cfg-table__row--off'}${isAutoGranted ? ' cfg-table__row--granted' : ''}`}>
       <td className="cfg-table__td">
-        <label className="cfg-perm-label">
-          <input type="checkbox" className="perm-toggle" checked={perm.enabled} onChange={onToggle} />
-          {perm.label}
+        <label className={`cfg-perm-label${isAutoGranted ? ' cfg-perm-label--granted' : ''}`}>
+          <input
+            type="checkbox"
+            className="perm-toggle"
+            checked={effectiveEnabled}
+            disabled={isAutoGranted}
+            onChange={isAutoGranted ? undefined : onToggle}
+          />
+          <span className="cfg-perm-label__text">
+            <span className="cfg-perm-label__name">{perm.label}</span>
+            {perm.description && (
+              <span className="cfg-perm-label__desc">{perm.description}</span>
+            )}
+            {showScope && (
+              <span className="perm-scope-row">
+                <ScopeChip
+                  dim="View"
+                  value={perm.viewScope!}
+                  onChange={(v) => onScopeChange?.('view', v)}
+                />
+                <ScopeChip
+                  dim="Edit"
+                  value={perm.editScope!}
+                  minRank={SCOPE_RANK[perm.viewScope!]}
+                  onChange={(v) => onScopeChange?.('edit', v)}
+                />
+              </span>
+            )}
+          </span>
         </label>
-      </td>
-      <td className="cfg-table__td cfg-table__td--scope">{perm.scope ?? ''}</td>
-      <td className="cfg-table__td cfg-table__td--options">
-        {hasOptions && perm.multiScope && perm.scopeOptions && onSelectOptions ? (
-          <ScopeMultiDropdown
-            options={perm.scopeOptions}
-            value={permMultiScopeValues(perm)}
-            onChange={onSelectOptions}
-          />
-        ) : hasOptions ? (
-          <ScopeDropdown
-            options={perm.scopeOptions!}
-            value={perm.activeOption ?? perm.scopeOptions![0]}
-            onChange={onSelectOption}
-          />
-        ) : null}
       </td>
     </tr>
   )
@@ -470,97 +485,122 @@ function PermGroup({
   label,
   perms,
   onToggle,
-  onSelectOption,
-  onSelectOptions,
+  onScopeChange,
 }: {
   label: string
   perms: ConfigPerm[]
   onToggle: (permId: string) => void
-  onSelectOption: (permId: string, opt: string) => void
-  onSelectOptions?: (permId: string, opts: string[]) => void
+  onScopeChange?: (permId: string, dim: 'view' | 'edit', scope: ScopeId) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const enabledCount = perms.filter((p) => p.enabled).length
+  const [open, setOpen] = useState(true)
+  const permMap = new Map(perms.map((p) => [p.id, p]))
+  const enabledCount = perms.filter((p) => {
+    if (p.grantedBy) return (permMap.get(p.grantedBy)?.enabled ?? false)
+    return p.enabled
+  }).length
 
   return (
     <>
       <tr className="cfg-group-row">
-        <td colSpan={3}>
-          <button
-            type="button"
-            className="cfg-group-toggle"
-            onClick={() => setOpen((v) => !v)}
-          >
+        <td>
+          <button type="button" className="cfg-group-toggle" onClick={() => setOpen((v) => !v)}>
             {open
-              ? <ChevronDown size={13} strokeWidth={2} className="cfg-group-chevron" />
-              : <ChevronRight size={13} strokeWidth={2} className="cfg-group-chevron" />
-            }
+              ? <ChevronDown size={13} strokeWidth={1.5} className="cfg-group-chevron" />
+              : <ChevronRight size={13} strokeWidth={1.5} className="cfg-group-chevron" />}
             <span className="cfg-group-label">{label}</span>
-            <span className="cfg-group-count">{enabledCount} of {perms.length} enabled</span>
+            <span className="cfg-group-count">{enabledCount} / {perms.length}</span>
           </button>
         </td>
       </tr>
-      {open && perms.map((perm) => (
-        <PermRow
-          key={perm.id}
-          perm={perm}
-          onToggle={() => onToggle(perm.id)}
-          onSelectOption={(opt) => onSelectOption(perm.id, opt)}
-          onSelectOptions={
-            onSelectOptions
-              ? (opts) => onSelectOptions(perm.id, opts)
-              : undefined
-          }
-        />
-      ))}
+      {open && perms.map((perm) => {
+        const isAutoGranted = !!perm.grantedBy && (permMap.get(perm.grantedBy)?.enabled ?? false)
+        return (
+          <PermRow
+            key={perm.id}
+            perm={perm}
+            isAutoGranted={isAutoGranted}
+            onToggle={() => onToggle(perm.id)}
+            onScopeChange={(dim, scope) => onScopeChange?.(perm.id, dim, scope)}
+          />
+        )
+      })}
     </>
   )
 }
 
-function ReadOnlyPermRow({ perm }: { perm: ConfigPerm }) {
-  const scopeVal = perm.multiScope
-    ? formatDepartmentSummary(perm.activeOptions ?? ['All people'])
-    : (perm.activeOption ?? perm.scope ?? '')
-  const scope = [perm.scope, scopeVal !== perm.scope ? scopeVal : null]
-    .filter(Boolean).join(' · ')
+/** Row used in the read-only (collapsed) view */
+function ReadOnlyPermRow({ perm, isAutoGranted }: { perm: ConfigPerm; isAutoGranted: boolean }) {
+  const effectiveEnabled = isAutoGranted || perm.enabled
+  const showScope = effectiveEnabled && perm.viewScope !== undefined
 
   return (
-    <tr className={`cfg-table__row${perm.enabled ? '' : ' cfg-table__row--off'}`}>
+    <tr className={`cfg-table__row${effectiveEnabled ? '' : ' cfg-table__row--off'}${isAutoGranted ? ' cfg-table__row--granted' : ''}`}>
       <td className="cfg-table__td ro-perm-cell">
-        <span className={`ro-perm-dot${perm.enabled ? ' ro-perm-dot--on' : ''}`} />
-        {perm.label}
+        <span className={`ro-perm-dot${effectiveEnabled ? ' ro-perm-dot--on' : ''}`} />
+        <span className="cfg-perm-label__text">
+          <span className="cfg-perm-label__name">{perm.label}</span>
+          {perm.description && (
+            <span className="cfg-perm-label__desc">{perm.description}</span>
+          )}
+          {showScope && (
+            <span className="perm-scope-row perm-scope-row--ro">
+              <span className="scope-pill">
+                <span className="scope-pill__dim">View</span>
+                <span className="scope-pill__val">
+                  {SCOPE_OPTIONS.find((o) => o.id === perm.viewScope)?.label}
+                </span>
+              </span>
+              <span className="scope-pill">
+                <span className="scope-pill__dim">Edit</span>
+                <span className="scope-pill__val">
+                  {SCOPE_OPTIONS.find((o) => o.id === perm.editScope)?.label}
+                </span>
+              </span>
+            </span>
+          )}
+        </span>
       </td>
-      <td className="cfg-table__td cfg-table__td--scope ro-scope">{scope}</td>
     </tr>
   )
 }
 
 function ReadOnlyPermGroup({ label, perms }: { label: string; perms: ConfigPerm[] }) {
   const [open, setOpen] = useState(false)
-  const enabledCount = perms.filter((p) => p.enabled).length
+  const permMap = new Map(perms.map((p) => [p.id, p]))
+  const enabledCount = perms.filter((p) => {
+    if (p.grantedBy) return (permMap.get(p.grantedBy)?.enabled ?? false)
+    return p.enabled
+  }).length
   return (
     <>
       <tr className="cfg-group-row">
-        <td colSpan={2}>
-          <button type="button" className="cfg-group-toggle" onClick={() => setOpen(v => !v)}>
+        <td>
+          <button type="button" className="cfg-group-toggle" onClick={() => setOpen((v) => !v)}>
             {open
-              ? <ChevronDown size={13} strokeWidth={2} className="cfg-group-chevron" />
-              : <ChevronRight size={13} strokeWidth={2} className="cfg-group-chevron" />}
+              ? <ChevronDown size={13} strokeWidth={1.5} className="cfg-group-chevron" />
+              : <ChevronRight size={13} strokeWidth={1.5} className="cfg-group-chevron" />}
             <span className="cfg-group-label">{label}</span>
-            <span className="cfg-group-count">{enabledCount} of {perms.length} enabled</span>
+            <span className="cfg-group-count">{enabledCount} / {perms.length}</span>
           </button>
         </td>
       </tr>
-      {open && perms.map((perm) => <ReadOnlyPermRow key={perm.id} perm={perm} />)}
+      {open && perms.map((perm) => {
+        const isAutoGranted = !!perm.grantedBy && (permMap.get(perm.grantedBy)?.enabled ?? false)
+        return <ReadOnlyPermRow key={perm.id} perm={perm} isAutoGranted={isAutoGranted} />
+      })}
     </>
   )
 }
 
 function AccessRightsPage({
   plan,
+  rbacEnforced,
+  onRbacEnforcedChange,
   onUpgradeToPro,
 }: {
   plan: PricingPlanId
+  rbacEnforced: boolean
+  onRbacEnforcedChange: (v: boolean) => void
   onUpgradeToPro: () => void
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -568,13 +608,14 @@ function AccessRightsPage({
   const [savedPerms, setSavedPerms] = useState<DraftPerms>({})
   const [draftPerms, setDraftPerms] = useState<DraftPerms>({})
   const [confirmSaveRoleId, setConfirmSaveRoleId] = useState<string | null>(null)
+  const [customRoles, setCustomRoles] = useState<Role[]>([])
 
   const pendingSaveRole = useMemo(
     () =>
       confirmSaveRoleId
-        ? ROLES.find((r) => r.id === confirmSaveRoleId)
+        ? [...ROLES, ...customRoles].find((r) => r.id === confirmSaveRoleId)
         : undefined,
-    [confirmSaveRoleId],
+    [confirmSaveRoleId, customRoles],
   )
 
   useEffect(() => {
@@ -622,29 +663,120 @@ function AccessRightsPage({
   }, [confirmSaveRoleId])
 
   function togglePerm(roleId: string, permId: string) {
+    setDraftPerms((prev) => {
+      const perms = prev[roleId]
+      const target = perms.find((p) => p.id === permId)
+      if (!target) return prev
+      const newEnabled = !target.enabled
+      return {
+        ...prev,
+        [roleId]: perms.map((p) => {
+          if (p.id === permId) return { ...p, enabled: newEnabled }
+          // cascade: auto-granted children follow their parent's enabled state
+          if (p.grantedBy === permId) return { ...p, enabled: newEnabled }
+          return p
+        }),
+      }
+    })
+  }
+
+  function setScopePerm(roleId: string, permId: string, dim: 'view' | 'edit', scope: ScopeId) {
     setDraftPerms((prev) => ({
       ...prev,
-      [roleId]: prev[roleId].map((p) => p.id === permId ? { ...p, enabled: !p.enabled } : p),
+      [roleId]: prev[roleId].map((p) => {
+        if (p.id !== permId) return p
+        if (dim === 'view') {
+          const newViewRank = SCOPE_RANK[scope]
+          const curEditRank = SCOPE_RANK[p.editScope ?? 'everyone']
+          // If edit is now broader than the new view, snap it to match view
+          const newEdit = curEditRank < newViewRank ? scope : p.editScope
+          return { ...p, viewScope: scope, editScope: newEdit }
+        }
+        return { ...p, editScope: scope }
+      }),
     }))
   }
 
-  function selectOption(roleId: string, permId: string, option: string) {
-    setDraftPerms((prev) => ({
-      ...prev,
-      [roleId]: prev[roleId].map((p) => p.id === permId ? { ...p, activeOption: option } : p),
-    }))
+  // ── Custom roles ────────────────────────────────────────────────────────────
+
+  const MAX_CUSTOM_ROLES = 12
+
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newRoleName, setNewRoleName] = useState('')
+  const [newRoleCloneId, setNewRoleCloneId] = useState<string>('')
+
+  const allRoles = useMemo(
+    () => (plan !== 'starter' ? [...ROLES, ...customRoles] : [...ROLES]),
+    [plan, customRoles],
+  )
+
+  function openAddModal() {
+    setNewRoleName('')
+    setNewRoleCloneId('')
+    setShowAddModal(true)
   }
 
-  function selectScopeOptions(roleId: string, permId: string, options: string[]) {
-    setDraftPerms((prev) => ({
-      ...prev,
-      [roleId]: prev[roleId].map((p) =>
-        p.id === permId ? { ...p, activeOptions: options } : p,
-      ),
-    }))
+  function closeAddModal() {
+    setShowAddModal(false)
+    setNewRoleName('')
+    setNewRoleCloneId('')
   }
 
-  const canEdit = plan === 'pro'
+  function addCustomRole() {
+    const name = newRoleName.trim()
+    if (!name) return
+    const id = `custom-${Date.now()}`
+    const basePerms = newRoleCloneId
+      ? (allRoles.find((r) => r.id === newRoleCloneId)?.configPerms ?? []).map((p) => ({ ...p }))
+      : []
+    const newRole: Role = {
+      id,
+      label: name,
+      count: 0,
+      description: '',
+      configPerms: basePerms,
+      isCustom: true,
+    }
+    setCustomRoles((prev) => [...prev, newRole])
+    setDraftPerms((prev) => ({ ...prev, [id]: basePerms.map((p) => ({ ...p })) }))
+    setEditingId(id)
+    closeAddModal()
+  }
+
+  function deleteCustomRole(roleId: string) {
+    setCustomRoles((prev) => prev.filter((r) => r.id !== roleId))
+    if (editingId === roleId) setEditingId(null)
+    if (viewingId === roleId) setViewingId(null)
+  }
+
+  function cloneRole(role: Role) {
+    if (customRoles.length >= MAX_CUSTOM_ROLES) return
+    const id = `custom-${Date.now()}`
+    const perms = (savedPerms[role.id] ?? role.configPerms).map((p) => ({ ...p }))
+    const cloned: Role = {
+      id,
+      label: `${role.label} (copy)`,
+      count: 0,
+      description: role.description,
+      configPerms: perms,
+      isCustom: true,
+    }
+    setCustomRoles((prev) => [...prev, cloned])
+    setDraftPerms((prev) => ({ ...prev, [id]: perms.map((p) => ({ ...p })) }))
+    setEditingId(id)
+  }
+
+  // close add-modal on Escape
+  useEffect(() => {
+    if (!showAddModal) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') closeAddModal()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showAddModal])
+
+  const canEdit = plan !== 'starter'
 
   return (
     <div className="access-rights">
@@ -688,8 +820,8 @@ function AccessRightsPage({
       {plan === 'starter' && (
         <div className="starter-upsell">
           <p className="starter-upsell__text">
-            Need to change who can do what? Role-based access control with full editing is
-            included on Pro — upgrade to adjust permissions for everyone assigned to a role.
+            On Pro you can edit role permissions and apply changes to everyone assigned to that
+            role — plus create up to 12 custom roles when our defaults don't fit your team.
           </p>
           <button
             type="button"
@@ -703,25 +835,55 @@ function AccessRightsPage({
       {canEdit && (
         <p className="access-rights__desc">
           Access roles: edit permissions here to update all users who are assigned the role,
-          assign access in data hub
+          assign access in data studio
         </p>
       )}
+
+      {plan === 'enterprise' && (
+        <div className={`rbac-enforce-card${rbacEnforced ? ' rbac-enforce-card--on' : ''}`}>
+          <div className="rbac-enforce-card__row">
+            <div className="rbac-enforce-card__text">
+              <p className="rbac-enforce-card__title">Enforce role-based access controls</p>
+              <p className="rbac-enforce-card__desc">
+                When on, per-user permission overrides are disabled across the organisation.
+                Access is determined solely by each person's assigned role.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={rbacEnforced}
+              className={`rbac-toggle${rbacEnforced ? ' rbac-toggle--on' : ''}`}
+              onClick={() => onRbacEnforcedChange(!rbacEnforced)}
+              aria-label={rbacEnforced ? 'Disable RBAC enforcement' : 'Enable RBAC enforcement'}
+            >
+              <span className="rbac-toggle__thumb" />
+            </button>
+          </div>
+          {rbacEnforced && (
+            <p className="rbac-enforce-card__warning">
+              Per-user additional permissions are currently disabled. Existing overrides are
+              preserved but not applied until enforcement is turned off.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="role-cards">
-        {ROLES.map((role) => {
+        {allRoles.map((role) => {
           const isEditing = canEdit && editingId === role.id
           const isViewing = !isEditing && viewingId === role.id
           const displayPerms = isEditing
             ? draftPerms[role.id]
             : (savedPerms[role.id] ?? role.configPerms)
 
-          const featured = displayPerms?.filter((p) => p.featured) ?? []
           const groups = GROUP_ORDER.map((g) => ({
             label: g,
-            perms: (displayPerms ?? []).filter((p) => !p.featured && p.group === g),
+            perms: (displayPerms ?? []).filter((p) => p.group === g),
           })).filter((g) => g.perms.length > 0)
 
           return (
-            <div key={role.id} className={`role-card${isEditing || isViewing ? ' role-card--expanded' : ''}`}>
+            <div key={role.id} className={`role-card${role.isCustom ? ' role-card--custom' : ''}${isEditing || isViewing ? ' role-card--expanded' : ''}`}>
               <div className="role-card__header">
                 <button
                   type="button"
@@ -735,19 +897,22 @@ function AccessRightsPage({
                 >
                   <ChevronRight
                     size={15}
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                     className={`role-card__expand-chevron${isViewing || isEditing ? ' role-card__expand-chevron--open' : ''}`}
                   />
                 </button>
                 <div className="role-card__body">
                   <div className="role-card__name-row">
                     <span className="role-card__name">{role.label}</span>
-                    <span className="role-card__count">· {role.count} users</span>
+                    {role.isCustom
+                      ? <span className="role-card__custom-badge">Custom</span>
+                      : <span className="role-card__count">· {role.count} users</span>
+                    }
                   </div>
-                  <p className="role-card__desc">{role.description}</p>
+                  <p className="role-card__desc">{role.description || <span className="role-card__desc--empty">No description</span>}</p>
                 </div>
-                {canEdit &&
-                  (isEditing ? (
+                {canEdit && (
+                  isEditing ? (
                     <div className="role-card__actions">
                       <button className="btn btn--ghost" type="button" onClick={cancelEdit}>
                         Cancel
@@ -755,24 +920,46 @@ function AccessRightsPage({
                       <button
                         className="btn btn--primary"
                         type="button"
-                        onClick={() => requestSave(role.id)}
+                        onClick={() => role.isCustom ? saveEdit(role.id) : requestSave(role.id)}
                       >
                         Save
                       </button>
                     </div>
                   ) : (
-                    <button
-                      className="btn btn--ghost role-card__edit"
-                      type="button"
-                      onClick={() => {
-                        setViewingId(null)
-                        startEdit(role)
-                      }}
-                    >
-                      <Pencil size={13} strokeWidth={2} />
-                      Edit
-                    </button>
-                  ))}
+                    <div className="role-card__actions role-card__actions--view">
+                      {!role.isCustom && (
+                        <button
+                          className="btn btn--ghost role-card__clone"
+                          type="button"
+                          disabled={customRoles.length >= MAX_CUSTOM_ROLES}
+                          title={customRoles.length >= MAX_CUSTOM_ROLES ? `${MAX_CUSTOM_ROLES} custom role limit reached` : `Clone ${role.label}`}
+                          onClick={() => cloneRole(role)}
+                        >
+                          <Copy size={13} strokeWidth={2} />
+                          Clone
+                        </button>
+                      )}
+                      <button
+                        className="btn btn--ghost role-card__edit"
+                        type="button"
+                        onClick={() => { setViewingId(null); startEdit(role) }}
+                      >
+                        <Pencil size={13} strokeWidth={2} />
+                        Edit
+                      </button>
+                      {role.isCustom && (
+                        <button
+                          className="btn btn--ghost role-card__delete"
+                          type="button"
+                          aria-label={`Delete ${role.label}`}
+                          onClick={() => deleteCustomRole(role.id)}
+                        >
+                          <Trash2 size={13} strokeWidth={2} />
+                        </button>
+                      )}
+                    </div>
+                  )
+                )}
               </div>
 
               {isViewing && (
@@ -781,21 +968,9 @@ function AccessRightsPage({
                     <thead>
                       <tr>
                         <th className="cfg-table__th">Permission</th>
-                        <th className="cfg-table__th">Scope</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {featured.length > 0 && (
-                        <tr className="cfg-section-row">
-                          <td colSpan={2} className="cfg-section-label">Defaults</td>
-                        </tr>
-                      )}
-                      {featured.map((perm) => <ReadOnlyPermRow key={perm.id} perm={perm} />)}
-                      {groups.length > 0 && (
-                        <tr className="cfg-section-row cfg-section-row--divider">
-                          <td colSpan={2} className="cfg-section-label">More permissions</td>
-                        </tr>
-                      )}
                       {groups.map((g) => (
                         <ReadOnlyPermGroup key={g.label} label={g.label} perms={g.perms} />
                       ))}
@@ -811,58 +986,110 @@ function AccessRightsPage({
                     <thead>
                       <tr>
                         <th className="cfg-table__th">Configurable permissions</th>
-                        <th className="cfg-table__th">Scope</th>
-                        <th className="cfg-table__th">Scope options</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Defaults section */}
-                      {featured.length > 0 && (
-                        <tr className="cfg-section-row">
-                          <td colSpan={3} className="cfg-section-label">Defaults</td>
-                        </tr>
-                      )}
-                      {featured.map((perm) => (
-                        <PermRow
-                          key={perm.id}
-                          perm={perm}
-                          onToggle={() => togglePerm(role.id, perm.id)}
-                          onSelectOption={(opt) => selectOption(role.id, perm.id, opt)}
-                          onSelectOptions={(opts) =>
-                            selectScopeOptions(role.id, perm.id, opts)
-                          }
-                        />
-                      ))}
-
-                      {/* Progressive disclosure groups */}
-                      {groups.length > 0 && (
-                        <tr className="cfg-section-row cfg-section-row--divider">
-                          <td colSpan={3} className="cfg-section-label">More permissions</td>
-                        </tr>
-                      )}
                       {groups.map((g) => (
                         <PermGroup
                           key={g.label}
                           label={g.label}
                           perms={g.perms}
                           onToggle={(permId) => togglePerm(role.id, permId)}
-                          onSelectOption={(permId, opt) => selectOption(role.id, permId, opt)}
-                          onSelectOptions={(permId, opts) =>
-                            selectScopeOptions(role.id, permId, opts)
-                          }
+                          onScopeChange={(permId, dim, scope) => setScopePerm(role.id, permId, dim, scope)}
                         />
                       ))}
                     </tbody>
                   </table>
-                  {role.footerNote && (
-                    <div className="cfg-table__footer">{role.footerNote}</div>
-                  )}
+                  {role.footerNote && <div className="cfg-table__footer">{role.footerNote}</div>}
                 </div>
               )}
             </div>
           )
         })}
       </div>
+
+      {/* ── Add custom role ─────────────────────────────────────────────────── */}
+      {canEdit && (
+        <div className="add-role-bar">
+          <button
+            type="button"
+            className="btn btn--ghost add-role-bar__btn"
+            onClick={openAddModal}
+            disabled={customRoles.length >= MAX_CUSTOM_ROLES}
+          >
+            <Plus size={15} strokeWidth={1.5} aria-hidden />
+            Add role
+          </button>
+          <span className="add-role-bar__limit">
+            {customRoles.length} / {MAX_CUSTOM_ROLES} custom roles
+          </span>
+        </div>
+      )}
+
+      {/* ── Add role modal ──────────────────────────────────────────────────── */}
+      {canEdit && showAddModal && (
+        <div
+          className="confirm-modal-backdrop"
+          role="presentation"
+          onClick={closeAddModal}
+        >
+          <div
+            className="confirm-modal add-role-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-role-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="add-role-title" className="confirm-modal__title">Add custom role</h2>
+
+            <div className="add-role-modal__field">
+              <label htmlFor="new-role-name" className="add-role-modal__label">Role name</label>
+              <input
+                id="new-role-name"
+                type="text"
+                className="add-role-modal__input"
+                placeholder="e.g. Finance viewer"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') addCustomRole() }}
+                autoFocus
+                maxLength={48}
+              />
+            </div>
+
+            <div className="add-role-modal__field">
+              <label htmlFor="new-role-clone" className="add-role-modal__label">
+                Start from <span className="add-role-modal__optional">(optional)</span>
+              </label>
+              <select
+                id="new-role-clone"
+                className="add-role-modal__select"
+                value={newRoleCloneId}
+                onChange={(e) => setNewRoleCloneId(e.target.value)}
+              >
+                <option value="">Blank role</option>
+                {allRoles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="confirm-modal__actions">
+              <button type="button" className="btn btn--ghost" onClick={closeAddModal}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={addCustomRole}
+                disabled={!newRoleName.trim()}
+              >
+                Create role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -878,7 +1105,7 @@ const RAIL_LOCATIONS = [
   'Sydney',
 ] as const
 
-export type DataHubNavId =
+export type DataStudioNavId =
   | 'offices'
   | 'people'
   | 'roles'
@@ -887,7 +1114,7 @@ export type DataHubNavId =
   | 'rate-cards'
   | 'activity'
 
-const DATA_HUB_PLACEHOLDER: Record<DataHubNavId, string> = {
+const DATA_STUDIO_PLACEHOLDER: Record<DataStudioNavId, string> = {
   offices: 'Offices',
   people: 'People',
   roles: 'Roles',
@@ -899,12 +1126,12 @@ const DATA_HUB_PLACEHOLDER: Record<DataHubNavId, string> = {
 
 function AppRail({
   onOpenSettings,
-  dataHubActive,
-  onDataHubActiveChange,
+  dataStudioActive,
+  onDataStudioActiveChange,
 }: {
   onOpenSettings: () => void
-  dataHubActive: DataHubNavId
-  onDataHubActiveChange: (id: DataHubNavId) => void
+  dataStudioActive: DataStudioNavId
+  onDataStudioActiveChange: (id: DataStudioNavId) => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
   const [globalOpen, setGlobalOpen] = useState(true)
@@ -913,7 +1140,7 @@ function AppRail({
   const logoMenuRef = useRef<HTMLDivElement>(null)
 
   const iconSize = 16
-  const iconStroke = 1.75
+  const iconStroke = 1.5
 
   useEffect(() => {
     if (!logoMenuOpen) return
@@ -966,7 +1193,7 @@ function AppRail({
                 strokeLinecap="round"
               />
             </svg>
-            <ChevronDown size={14} strokeWidth={2} className="app-rail__brand-chevron" aria-hidden />
+            <ChevronDown size={14} strokeWidth={1.5} className="app-rail__brand-chevron" aria-hidden />
           </button>
           {logoMenuOpen && (
             <div className="workspace-menu" role="menu" aria-label="Workspace">
@@ -989,7 +1216,7 @@ function AppRail({
                 <span className="workspace-menu__label">Switch workspace</span>
                 <span className="workspace-menu__right">
                   <span className="workspace-menu__hint">O then W</span>
-                  <ChevronRight size={16} strokeWidth={2} className="workspace-menu__chev" aria-hidden />
+                  <ChevronRight size={16} strokeWidth={1.5} className="workspace-menu__chev" aria-hidden />
                 </span>
               </button>
               <div className="workspace-menu__sep" role="separator" />
@@ -1011,7 +1238,7 @@ function AppRail({
         </div>
         <div className="app-rail__header-tools">
           <button type="button" className="app-rail__notif" aria-label="23 unread notifications">
-            <Bell size={16} strokeWidth={1.75} aria-hidden />
+            <Bell size={16} strokeWidth={1.5} aria-hidden />
             <span className="app-rail__notif-badge">23</span>
           </button>
           <button
@@ -1021,9 +1248,9 @@ function AppRail({
             aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
           >
             {collapsed ? (
-              <PanelLeft size={18} strokeWidth={1.75} aria-hidden />
+              <PanelLeft size={18} strokeWidth={1.5} aria-hidden />
             ) : (
-              <PanelLeftClose size={18} strokeWidth={1.75} aria-hidden />
+              <PanelLeftClose size={18} strokeWidth={1.5} aria-hidden />
             )}
           </button>
         </div>
@@ -1041,7 +1268,7 @@ function AppRail({
             <span className="app-rail__section-label">Global</span>
             <ChevronDown
               size={16}
-              strokeWidth={2}
+              strokeWidth={1.5}
               className={`app-rail__chev${globalOpen ? ' app-rail__chev--open' : ''}`}
               aria-hidden
             />
@@ -1065,7 +1292,7 @@ function AppRail({
             <button key={name} type="button" className="app-rail__location">
               <BookOpen size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
               <span className="app-rail__row-label">{name}</span>
-              <ChevronUp size={16} strokeWidth={2} className="app-rail__chev-loc" aria-hidden />
+              <ChevronUp size={16} strokeWidth={1.5} className="app-rail__chev-loc" aria-hidden />
             </button>
           ))}
         </div>
@@ -1093,10 +1320,10 @@ function AppRail({
             aria-expanded={gridOpen}
           >
             <Database size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-            <span className="app-rail__section-label">Data hub</span>
+            <span className="app-rail__section-label">Data studio</span>
             <ChevronDown
               size={16}
-              strokeWidth={2}
+              strokeWidth={1.5}
               className={`app-rail__chev${gridOpen ? ' app-rail__chev--open' : ''}`}
               aria-hidden
             />
@@ -1119,9 +1346,9 @@ function AppRail({
                   <button
                     key={id}
                     type="button"
-                    className={`app-rail__subrow${dataHubActive === id ? ' app-rail__subrow--active' : ''}`}
-                    onClick={() => onDataHubActiveChange(id)}
-                    aria-current={dataHubActive === id ? 'page' : undefined}
+                    className={`app-rail__subrow${dataStudioActive === id ? ' app-rail__subrow--active' : ''}`}
+                    onClick={() => onDataStudioActiveChange(id)}
+                    aria-current={dataStudioActive === id ? 'page' : undefined}
                   >
                     <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
                     <span className="app-rail__row-label">{label}</span>
@@ -1136,19 +1363,19 @@ function AppRail({
   )
 }
 
-function NavBullet({ active }: { active: boolean }) {
+function NavItemIcon({ Icon, active }: { Icon: React.ElementType; active: boolean }) {
   return (
-    <span className="nav-row__bullet" aria-hidden>
-      <Circle size={14} strokeWidth={1.5} className="nav-row__bullet-ring" />
-      {active ? <span className="nav-row__bullet-fill" /> : null}
+    <span className={`nav-row__icon${active ? ' nav-row__icon--active' : ''}`} aria-hidden>
+      <Icon size={16} strokeWidth={1.5} />
     </span>
   )
 }
 
 export default function App() {
-  const [dataHubNavId, setDataHubNavId] = useState<DataHubNavId>('people')
+  const [dataStudioNavId, setDataStudioNavId] = useState<DataStudioNavId>('people')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pricingPlan, setPricingPlan] = useState<PricingPlanId>('pro')
+  const [rbacEnforced, setRbacEnforced] = useState(false)
   const [activeOrgId, setActiveOrgId] = useState<string | null>('access')
   const [expandedOfficeId, setExpandedOfficeId] = useState<string | null>('beaverton')
   const [officesUpsellOpen, setOfficesUpsellOpen] = useState(false)
@@ -1158,7 +1385,8 @@ export default function App() {
     childId: 'policies',
   })
 
-  const orgNavItems = useMemo(() => orgNavForPlan(pricingPlan), [pricingPlan])
+  const orgNavItems = useMemo(() => [...ORG_NAV], [])
+  const adminNavItems = useMemo(() => adminNavForPlan(pricingPlan), [pricingPlan])
 
   const officeLabelById = useMemo(
     () => Object.fromEntries(OFFICES.map((o) => [o.id, o.label])),
@@ -1166,11 +1394,14 @@ export default function App() {
   )
 
   useEffect(() => {
-    const allowed = new Set<string>(orgNavItems.map((i) => i.id))
+    const allowed = new Set<string>([
+      ...orgNavItems.map((i) => i.id),
+      ...adminNavItems.map((i) => i.id),
+    ])
     if (activeOrgId != null && !allowed.has(activeOrgId)) {
       setActiveOrgId('access')
     }
-  }, [pricingPlan, orgNavItems, activeOrgId])
+  }, [pricingPlan, orgNavItems, adminNavItems, activeOrgId])
 
   /** Starter: office routes aren’t available — return to org nav if user was on an office view. */
   useEffect(() => {
@@ -1182,6 +1413,11 @@ export default function App() {
 
   useEffect(() => {
     if (pricingPlan !== 'starter') setOfficesUpsellOpen(false)
+  }, [pricingPlan])
+
+  // Reset RBAC enforcement when leaving Enterprise
+  useEffect(() => {
+    if (pricingPlan !== 'enterprise') setRbacEnforced(false)
   }, [pricingPlan])
 
   useEffect(() => {
@@ -1208,12 +1444,18 @@ export default function App() {
       ? 'Overview'
       : (OFFICE_SUBITEMS.find((s) => s.id === active.childId)?.label ?? 'Policies')
 
+  const allNavItems = [...ORG_NAV, ...ADMIN_NAV]
+
   const orgTitle = activeOrgId
-    ? (ORG_NAV.find((n) => n.id === activeOrgId)?.label ?? '')
+    ? (allNavItems.find((n) => n.id === activeOrgId)?.label ?? '')
+    : ''
+
+  const activeNavDescription = activeOrgId
+    ? (allNavItems.find((n) => n.id === activeOrgId)?.description ?? '')
     : ''
 
   const mainTitle = activeOrgId ? orgTitle : officeTitle
-  const mainContext = activeOrgId ? 'Company settings' : activeOfficeLabel
+  const mainContext = activeOrgId ? activeNavDescription : activeOfficeLabel
 
   const emptyPanelMessage = activeOrgId
     ? `${orgTitle} settings will appear here.`
@@ -1239,8 +1481,8 @@ export default function App() {
     <div className="app-shell">
       <AppRail
         onOpenSettings={() => setSettingsOpen(true)}
-        dataHubActive={dataHubNavId}
-        onDataHubActiveChange={setDataHubNavId}
+        dataStudioActive={dataStudioNavId}
+        onDataStudioActiveChange={setDataStudioNavId}
       />
       {officesUpsellOpen && (
         <div
@@ -1300,12 +1542,12 @@ export default function App() {
       )}
       {!settingsOpen && (
         <main className="main">
-          {dataHubNavId === 'people' ? (
-            <DataHubPeoplePage />
+          {dataStudioNavId === 'people' ? (
+            <DataStudioPeoplePage rbacEnforced={rbacEnforced} />
           ) : (
             <div className="shell-placeholder" role="status">
               <p className="shell-placeholder__text">
-                <strong>{DATA_HUB_PLACEHOLDER[dataHubNavId]}</strong> — this section will appear here.
+                <strong>{DATA_STUDIO_PLACEHOLDER[dataStudioNavId]}</strong> — this section will appear here.
                 Open the workspace menu (logo) and choose <strong>Settings</strong> for organization
                 options.
               </p>
@@ -1326,20 +1568,40 @@ export default function App() {
               onClick={() => setSettingsOpen(false)}
               aria-label="Back"
             >
-              <ArrowLeft size={22} strokeWidth={2} aria-hidden />
+              <ArrowLeft size={16} strokeWidth={1.5} aria-hidden />
             </button>
-            <div className="settings-fullpage__heading">
-              <h1 className="settings-fullpage__title">Settings</h1>
+            <span className="settings-fullpage__title">Company settings</span>
+            <div className="settings-fullpage__header-actions">
               <PlanDropdown value={pricingPlan} onChange={setPricingPlan} />
             </div>
           </header>
 
           <div className="settings-fullpage__split">
             <div className="settings-fullpage__nav" aria-label="Settings sections">
+              {/* Top-level nav — no section label, matches Figma */}
+              <nav className="sidebar__nav" aria-label="Settings navigation">
+                {orgNavItems.map((item) => {
+                  const isActive = activeOrgId === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`nav-row${isActive ? ' nav-row--active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      onClick={() => selectOrgItem(item.id)}
+                    >
+                      <NavItemIcon Icon={item.Icon} active={isActive} />
+                      <span className="nav-row__label">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </nav>
+
+              {/* Admin section */}
               <div>
-                <p className="sidebar__section-label">Organization</p>
-                <nav className="sidebar__nav" aria-label="Organization settings">
-                  {orgNavItems.map((item) => {
+                <p className="sidebar__section-label">Admin</p>
+                <nav className="sidebar__nav" aria-label="Admin settings">
+                  {adminNavItems.map((item) => {
                     const isActive = activeOrgId === item.id
                     return (
                       <button
@@ -1349,7 +1611,7 @@ export default function App() {
                         aria-current={isActive ? 'page' : undefined}
                         onClick={() => selectOrgItem(item.id)}
                       >
-                        <NavBullet active={isActive} />
+                        <NavItemIcon Icon={item.Icon} active={isActive} />
                         <span className="nav-row__label">{item.label}</span>
                       </button>
                     )
@@ -1393,7 +1655,7 @@ export default function App() {
                                 onClick={() => selectOfficeOverview(office.id)}
                                 aria-current={overviewActive ? 'page' : undefined}
                               >
-                                <NavBullet active={overviewActive} />
+                                <NavItemIcon Icon={Building2} active={overviewActive} />
                                 <span className="nav-row__label">{office.label}</span>
                               </button>
                               <button
@@ -1411,14 +1673,14 @@ export default function App() {
                                   <ChevronDown
                                     className="nav-row__chevron"
                                     size={18}
-                                    strokeWidth={2}
+                                    strokeWidth={1.5}
                                     aria-hidden
                                   />
                                 ) : (
                                   <ChevronRight
                                     className="nav-row__chevron"
                                     size={18}
-                                    strokeWidth={2}
+                                    strokeWidth={1.5}
                                     aria-hidden
                                   />
                                 )}
@@ -1451,7 +1713,7 @@ export default function App() {
                                         })
                                       }}
                                     >
-                                      <NavBullet active={isActive} />
+                                      <NavItemIcon Icon={ChevronRight} active={isActive} />
                                       <span className="nav-row__label">{item.label}</span>
                                     </button>
                                   )
@@ -1476,6 +1738,8 @@ export default function App() {
               {activeOrgId === 'access' ? (
                 <AccessRightsPage
                   plan={pricingPlan}
+                  rbacEnforced={rbacEnforced}
+                  onRbacEnforcedChange={setRbacEnforced}
                   onUpgradeToPro={() => setPricingPlan('pro')}
                 />
               ) : (

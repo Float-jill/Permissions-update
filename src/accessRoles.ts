@@ -1,6 +1,6 @@
 /**
  * Canonical access role ids and labels — single source of truth for
- * Settings → Access rights and Data hub → People (access role).
+ * Settings → Access rights and Data studio → People (access role).
  */
 export type AccessRoleId =
   | 'admin'

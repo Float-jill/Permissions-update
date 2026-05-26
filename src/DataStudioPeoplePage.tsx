@@ -6,17 +6,30 @@ import {
   Plus,
   RefreshCw,
   X,
-  Zap,
 } from 'lucide-react'
 import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRoles'
 
+/**
+ * Per-user additive permission overrides (V1: additive only — these can only
+ * grant permissions beyond what the assigned role already provides, never remove them).
+ */
 const AVAILABLE_ADDITIONAL_PERMISSIONS = [
-  { id: 'view-financials', label: 'View financial data' },
-  { id: 'approve-timesheets', label: 'Approve timesheets' },
-  { id: 'export-reports', label: 'Export reports' },
-  { id: 'manage-billing', label: 'Manage billing' },
-  { id: 'view-salaries', label: 'View salaries' },
+  // People
+  { id: 'people.view_cost_rates',    label: 'View cost rates',              category: 'People' },
+  { id: 'people.view_bill_rates',    label: 'View bill rates',              category: 'People' },
+  { id: 'people.approve_time_off',   label: 'Approve time off',             category: 'People' },
+  { id: 'people.view_reports',       label: 'View people reports',          category: 'People' },
+  { id: 'people.log_time_view',      label: 'View logged time for others',  category: 'People' },
+  // Projects
+  { id: 'project.view_budgets',      label: 'View project budgets',         category: 'Projects' },
+  { id: 'project.view_profitability',label: 'View project profitability',   category: 'Projects' },
+  { id: 'project.edit_budgets',      label: 'Edit project budgets',         category: 'Projects' },
+  // Settings
+  { id: 'settings.manage_billing',   label: 'Manage billing',               category: 'Settings' },
+  { id: 'settings.manage_access',    label: 'Manage access rights',         category: 'Settings' },
 ]
+
+const ADDITIONAL_PERM_CATEGORIES = ['People', 'Projects', 'Settings'] as const
 
 const CATEGORY_TABS = [
   { id: 'employees', label: 'Employees' },
@@ -83,7 +96,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     accessRoleId: 'resource-planner',
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
-    additionalPermissions: ['approve-timesheets', 'export-reports'],
+    additionalPermissions: ['people.approve_time_off', 'project.view_profitability'],
   },
   {
     id: '2',
@@ -97,7 +110,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     accessRoleId: 'project-manager',
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
-    additionalPermissions: ['view-financials', 'view-salaries'],
+    additionalPermissions: ['people.view_cost_rates', 'people.view_bill_rates'],
   },
   {
     id: '3',
@@ -153,7 +166,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     accessRoleId: 'project-manager',
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
-    additionalPermissions: ['manage-billing'],
+    additionalPermissions: ['settings.manage_billing'],
   },
   {
     id: '7',
@@ -189,7 +202,7 @@ function nameInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || '?'
 }
 
-export function DataHubPeoplePage() {
+export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: boolean }) {
   const [category, setCategory] = useState<CategoryId>('employees')
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('active')
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
@@ -245,17 +258,17 @@ export function DataHubPeoplePage() {
           <div className="dh-people__title-row">
             <h1 className="dh-people__title">64 Employees</h1>
             <button type="button" className="dh-people__filter-btn">
-              <Filter size={16} strokeWidth={2} aria-hidden />
+              <Filter size={16} strokeWidth={1.5} aria-hidden />
               Filter
             </button>
           </div>
         </div>
         <div className="dh-people__top-actions">
           <button type="button" className="dh-people__icon-add" aria-label="Add employee">
-            <Plus size={22} strokeWidth={2} />
+            <Plus size={22} strokeWidth={1.5} />
           </button>
           <button type="button" className="dh-people__import">
-            <RefreshCw size={16} strokeWidth={2} aria-hidden />
+            <RefreshCw size={16} strokeWidth={1.5} aria-hidden />
             Import/Export
           </button>
         </div>
@@ -264,7 +277,7 @@ export function DataHubPeoplePage() {
       <div className="dh-people__tabs-wrap">
         <button type="button" className="dh-people__office-dd">
           All offices
-          <ChevronDown size={14} strokeWidth={2} aria-hidden />
+          <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
         </button>
         <div className="dh-people__tabs" role="tablist" aria-label="People categories">
           {CATEGORY_TABS.map((tab) => {
@@ -290,7 +303,7 @@ export function DataHubPeoplePage() {
 
       <div className="dh-people__subfilters">
         <button type="button" className="dh-people__subfilter-plus" aria-label="Add filter">
-          <Plus size={16} strokeWidth={2} />
+          <Plus size={16} strokeWidth={1.5} />
         </button>
         <div className="dh-people__status-chips" role="group" aria-label="Status">
           {STATUS_FILTERS.map((s) => (
@@ -319,7 +332,7 @@ export function DataHubPeoplePage() {
               <th className="dh-people__th" scope="col">
                 <button type="button" className="dh-people__th-btn">
                   Role
-                  <ChevronDown size={14} strokeWidth={2} aria-hidden />
+                  <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
               <th className="dh-people__th" scope="col">
@@ -328,13 +341,13 @@ export function DataHubPeoplePage() {
               <th className="dh-people__th" scope="col">
                 <button type="button" className="dh-people__th-btn">
                   Department
-                  <ChevronDown size={14} strokeWidth={2} aria-hidden />
+                  <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
               <th className="dh-people__th" scope="col">
                 <button type="button" className="dh-people__th-btn">
                   Delivery Team
-                  <ChevronDown size={14} strokeWidth={2} aria-hidden />
+                  <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
               <th className="dh-people__th" scope="col">
@@ -367,12 +380,13 @@ export function DataHubPeoplePage() {
                 <td className="dh-people__td dh-people__td--access">
                   <span className="dh-people__access-cell">
                     {accessRoleLabel(row.accessRoleId)}
-                    {row.additionalPermissions.length > 0 && (
-                      <Zap
-                        size={12}
-                        className="dh-people__bespoke-icon"
-                        aria-label="Has additional permissions"
-                      />
+                    {!rbacEnforced && row.additionalPermissions.length > 0 && (
+                      <span
+                        className="dh-people__addl-count"
+                        aria-label={`${row.additionalPermissions.length} additional permission${row.additionalPermissions.length === 1 ? '' : 's'}`}
+                      >
+                        +{row.additionalPermissions.length}
+                      </span>
                     )}
                   </span>
                 </td>
@@ -471,42 +485,64 @@ export function DataHubPeoplePage() {
                         </option>
                       ))}
                     </select>
-                    {selectedPerson.additionalPermissions.length > 0 && (
+                    {!rbacEnforced && selectedPerson.additionalPermissions.length > 0 && (
                       <span
                         className="person-panel__bespoke-badge"
                         title="This person has additional permissions beyond their role"
                       >
-                        <Zap size={13} aria-hidden />
-                        Additional permissions
+                        +{selectedPerson.additionalPermissions.length} additional permission{selectedPerson.additionalPermissions.length === 1 ? '' : 's'}
                       </span>
                     )}
                   </div>
                 </section>
 
                 <section className="person-panel__card" aria-labelledby="person-addl-perms-heading">
-                  <p id="person-addl-perms-heading" className="person-panel__card-label">
-                    Additional permissions
-                  </p>
-                  <ul className="person-panel__perm-list">
-                    {AVAILABLE_ADDITIONAL_PERMISSIONS.map((perm) => {
-                      const checked = selectedPerson.additionalPermissions.includes(perm.id)
+                  <div className="person-panel__card-label-row">
+                    <p id="person-addl-perms-heading" className="person-panel__card-label">
+                      Additional permissions
+                    </p>
+                    {!rbacEnforced && (
+                      <span className="person-panel__additive-note">Additive only — grants on top of role</span>
+                    )}
+                  </div>
+                  {rbacEnforced ? (
+                    <div className="person-panel__rbac-locked">
+                      <p className="person-panel__rbac-locked__msg">
+                        Per-user overrides are disabled. Role-based access controls are enforced
+                        for this organisation — change the setting in{' '}
+                        <strong>Settings → Access rights</strong>.
+                      </p>
+                    </div>
+                  ) : (
+                    ADDITIONAL_PERM_CATEGORIES.map((cat) => {
+                      const catPerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter((p) => p.category === cat)
                       return (
-                        <li key={perm.id} className="person-panel__perm-item">
-                          <label className="person-panel__perm-label">
-                            <input
-                              type="checkbox"
-                              className="person-panel__perm-checkbox"
-                              checked={checked}
-                              onChange={() =>
-                                toggleAdditionalPermission(selectedPerson.id, perm.id)
-                              }
-                            />
-                            {perm.label}
-                          </label>
-                        </li>
+                        <div key={cat} className="person-panel__perm-category">
+                          <p className="person-panel__perm-category-label">{cat}</p>
+                          <ul className="person-panel__perm-list">
+                            {catPerms.map((perm) => {
+                              const checked = selectedPerson.additionalPermissions.includes(perm.id)
+                              return (
+                                <li key={perm.id} className="person-panel__perm-item">
+                                  <label className="person-panel__perm-label">
+                                    <input
+                                      type="checkbox"
+                                      className="person-panel__perm-checkbox"
+                                      checked={checked}
+                                      onChange={() =>
+                                        toggleAdditionalPermission(selectedPerson.id, perm.id)
+                                      }
+                                    />
+                                    {perm.label}
+                                  </label>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        </div>
                       )
-                    })}
-                  </ul>
+                    })
+                  )}
                 </section>
 
                 <section className="person-panel__card person-panel__card--access" aria-labelledby="project-access-heading">
@@ -577,7 +613,7 @@ export function DataHubPeoplePage() {
             </div>
             <button type="button" className="person-panel__actions-link">
               Actions
-              <ChevronDown size={14} strokeWidth={2} aria-hidden />
+              <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
             </button>
           </footer>
         </aside>
