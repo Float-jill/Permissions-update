@@ -1317,29 +1317,6 @@ function AppRail({
         {officeMode === 'single' ? (
           <>
             {/* ── Single office nav ─────────────────────────────────────── */}
-            <div className="app-rail__block app-rail__block--so-offices">
-              {OFFICES.map((office) => {
-                const isActive = activeSingleOffice === office.id
-                return (
-                  <button
-                    key={office.id}
-                    type="button"
-                    className={`app-rail__so-office${isActive ? ' app-rail__so-office--active' : ''}`}
-                    onClick={() => setActiveSingleOffice(office.id)}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <Building2 size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-                    <span className="app-rail__row-label">{office.label}</span>
-                    {isActive
-                      ? <ChevronDown size={14} strokeWidth={1.5} className="app-rail__so-chev" aria-hidden />
-                      : <ChevronRight size={14} strokeWidth={1.5} className="app-rail__so-chev" aria-hidden />
-                    }
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="app-rail__so-divider" aria-hidden />
 
             {/* Main nav items — flat, no section header */}
             <div className="app-rail__block">
