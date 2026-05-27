@@ -1335,7 +1335,7 @@ function AppRail({
             </div>
 
             {/* Data studio */}
-            <div className="app-rail__block">
+            <div className="app-rail__block app-rail__block--so-ds">
               <button
                 type="button"
                 className="app-rail__section-head"
@@ -1673,6 +1673,12 @@ export default function App() {
       )}
       {!settingsOpen && (
         <main className="main">
+          {/* Preview controls — always visible in the main view */}
+          <div className="preview-bar">
+            <span className="preview-bar__label">Preview</span>
+            <OfficeModeControl value={officeMode} onChange={handleOfficeModeChange} />
+            <PlanDropdown value={pricingPlan} onChange={setPricingPlan} />
+          </div>
           {dataStudioNavId === 'people' ? (
             <DataStudioPeoplePage rbacEnforced={rbacEnforced} />
           ) : (

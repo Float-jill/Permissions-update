@@ -522,6 +522,10 @@
 
 /* ── Single-office rail ─────────────────────────────────────────────────── */
 
+.app-rail__block--so-ds {
+  margin-top: 24px;
+}
+
 .app-rail__block--so-offices {
   display: flex;
   flex-direction: column;
@@ -626,6 +630,27 @@
   letter-spacing: -0.4px;
   line-height: 1.2;
   color: var(--text-primary);
+}
+
+/* ── Preview controls bar (shown in main app view) ─────────────────────── */
+.preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-panel);
+  background: var(--bg-main);
+}
+
+.preview-bar__label {
+  margin-right: auto;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 /* Office mode segmented control (Single office / Multi-office) */
