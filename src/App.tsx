@@ -70,7 +70,7 @@ const SCOPE_RANK: Record<ScopeId, number> = {
 
 const PLAN_OPTIONS: { id: PricingPlanId; label: string; hint: string }[] = [
   { id: 'starter',    label: 'Starter',              hint: 'Core settings' },
-  { id: 'pro',        label: 'Pro',                  hint: 'Full org & offices' },
+  { id: 'pro',        label: 'Pro/Enterprise',        hint: 'Full org & offices' },
   { id: 'enterprise', label: 'Enterprise (future)',  hint: 'Advanced compliance & control' },
 ]
 
