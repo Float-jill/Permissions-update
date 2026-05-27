@@ -1494,7 +1494,7 @@ export default function App() {
   const [dataStudioNavId, setDataStudioNavId] = useState<DataStudioNavId>('people')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pricingPlan, setPricingPlan] = useState<PricingPlanId>('pro')
-  const [officeMode, setOfficeMode] = useState<OfficeModeId>('multi')
+  const [officeMode, setOfficeMode] = useState<OfficeModeId>('single')
   const [rbacEnforced, setRbacEnforced] = useState(false)
   const [activeOrgId, setActiveOrgId] = useState<string | null>('access')
   const [expandedOfficeId, setExpandedOfficeId] = useState<string | null>('beaverton')
