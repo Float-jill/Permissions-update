@@ -69,9 +69,9 @@ const SCOPE_RANK: Record<ScopeId, number> = {
 }
 
 const PLAN_OPTIONS: { id: PricingPlanId; label: string; hint: string }[] = [
-  { id: 'starter',    label: 'Starter',    hint: 'Core settings' },
-  { id: 'pro',        label: 'Pro',        hint: 'Full org & offices' },
-  { id: 'enterprise', label: 'Enterprise', hint: 'Advanced compliance & control' },
+  { id: 'starter',    label: 'Starter',              hint: 'Core settings' },
+  { id: 'pro',        label: 'Pro',                  hint: 'Full org & offices' },
+  { id: 'enterprise', label: 'Enterprise (future)',  hint: 'Advanced compliance & control' },
 ]
 
 function PlanDropdown({
@@ -159,8 +159,7 @@ function OfficeModeControl({
         className={`office-mode-ctrl__btn${value === 'multi' ? ' office-mode-ctrl__btn--active' : ''}`}
         onClick={() => onChange('multi')}
       >
-        Multi-office
-        <ChevronDown size={11} strokeWidth={2} aria-hidden />
+        Multi-office <span className="office-mode-ctrl__future">(future)</span>
       </button>
     </div>
   )

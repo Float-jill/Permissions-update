@@ -705,6 +705,13 @@
   outline-offset: 1px;
 }
 
+.office-mode-ctrl__future {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.55;
+  letter-spacing: 0;
+}
+
 /* Plan preview switcher (Pro vs Starter) */
 .plan-dd {
   position: relative;
