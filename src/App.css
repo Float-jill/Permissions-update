@@ -1,18 +1,18 @@
 :root {
-  /* Figma Left-Nav token map — bg/surface/surface-secondary, bg/fill/fill etc. */
-  --bg-app:              #f3f2f5;   /* bg/fill/fill */
-  --bg-sidebar:          #f8f7f9;   /* bg/surface/surface-secondary */
-  --bg-main:             #ffffff;   /* bg/surface/surface */
-  --bg-rail:             #f8f7f9;   /* bg/surface/surface-secondary */
-  --border-sidebar:      #dce2eb;   /* border/border */
-  --border-panel:        #dce2eb;   /* border/border */
-  --nav-active:          #e1e4eb;   /* radix/flay/flay-4 */
-  --nav-hover:           #ebedf0;   /* radix/flay/flay-3 */
-  --text-primary:        #0b0c10;   /* text/text-primary */
-  --text-secondary:      #344765;   /* text/text-secondary */
-  --text-muted:          #617798;   /* text/text-subdued */
-  --focus-ring:          #2e5fe8;   /* logo/brandmark / bg/fill/fill-primary */
-  --accent-blue:         #254cba;   /* radix/flue/flue-10 */
+  /* Figma Left-Nav token map — dark mode */
+  --bg-app:              #0f1115;
+  --bg-sidebar:          #1f2229;
+  --bg-main:             #1a1d23;
+  --bg-rail:             #1f2229;
+  --border-sidebar:      #2d3138;
+  --border-panel:        #2d3138;
+  --nav-active:          #2d3138;
+  --nav-hover:           #2a2e36;
+  --text-primary:        #fafbfd;
+  --text-secondary:      #b8c2d4;
+  --text-muted:          #8a96ad;
+  --focus-ring:          #3668f0;
+  --accent-blue:         #6e8cf0;
   --text-on-primary:     #ffffff;
   --radius-pill:         8px;
   --radius-panel:        8px;
@@ -20,11 +20,11 @@
   --rail-width:          236px;
   --rail-width-collapsed: 56px;
   /* Dropdown surface */
-  --dropdown-bg:         #ffffff;
-  --dropdown-border:     #dce2eb;
-  --dropdown-shadow:     0 0 1px rgba(95, 106, 126, 0.15), 0 18px 28px rgba(9, 30, 66, 0.15);
+  --dropdown-bg:         #2d3138;
+  --dropdown-border:     #3a3f48;
+  --dropdown-shadow:     0 0 0 1px rgba(0, 0, 0, 0.35), 0 18px 28px rgba(0, 0, 0, 0.45);
   /* Icon token */
-  --icon-default:        #242c39;   /* icon/icon */
+  --icon-default:        #b8c2d4;
 }
 
 .app-shell {
@@ -2656,6 +2656,144 @@
   cursor: pointer;
 }
 
+/* ── Roles table (Access rights list view) ─────────────────────────────── */
+
+.roles-table-wrap {
+  border: 1px solid var(--border-panel);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.roles-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.roles-table__th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-panel);
+  white-space: nowrap;
+}
+
+.roles-table__row {
+  cursor: pointer;
+  border-top: 1px solid var(--border-panel);
+  transition: background 0.12s ease;
+}
+
+.roles-table__row:first-child {
+  border-top: none;
+}
+
+.roles-table__row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.roles-table__row:hover .roles-table__arrow {
+  opacity: 1;
+}
+
+.roles-table__row--expanded {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.roles-table__row--expanded .roles-table__arrow {
+  opacity: 1;
+}
+
+.roles-table__td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.roles-table__td--desc {
+  color: var(--text-secondary);
+}
+
+.roles-table__td--meta {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.roles-table__role-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #3668f0;
+  cursor: pointer;
+}
+
+.roles-table__type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-panel);
+  white-space: nowrap;
+}
+
+.roles-table__type-badge--custom {
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.roles-table__td--arrow {
+  width: 52px;
+  text-align: right;
+  padding-right: 20px;
+}
+
+.roles-table__arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-panel);
+  font-size: 16px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  user-select: none;
+}
+
+.roles-table__detail-row {
+  background: var(--bg-sidebar);
+}
+
+.roles-table__detail-cell {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-panel);
+}
+
+.roles-table__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.roles-table__detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ── end Access Rights ─────────────────────────────────────────────────── */
 
 .empty-panel__text {
@@ -2985,4 +3123,69 @@
 .person-panel__rbac-locked__msg strong {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* ── People scope picker ─────────────────────────────────────────────────── */
+
+.people-scope-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.people-scope-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-panel);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  line-height: 1;
+}
+
+.people-scope-opt:hover {
+  background: var(--nav-hover);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.people-scope-opt--active {
+  background: color-mix(in srgb, var(--accent-blue) 18%, transparent);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.people-scope-opt--active:hover {
+  background: color-mix(in srgb, var(--accent-blue) 24%, transparent);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.people-scope-opt__new {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #22c55e 20%, transparent);
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.people-scope-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin: 0;
+  padding-top: 2px;
 }

@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRoles'
+import { ROLES, GROUP_ORDER, ReadOnlyPermGroup } from './App'
 
 /**
  * Per-user additive permission overrides (V1: additive only — these can only
@@ -48,6 +49,46 @@ const STATUS_FILTERS = [
 type CategoryId = (typeof CATEGORY_TABS)[number]['id']
 type StatusFilterId = (typeof STATUS_FILTERS)[number]['id']
 
+// ── People scope ─────────────────────────────────────────────────────────────
+
+export type PeopleScope = 'everyone' | 'departments' | 'project-teams' | 'self'
+
+const PEOPLE_SCOPE_OPTIONS: {
+  id: PeopleScope
+  label: string
+  description: string
+  isNew?: boolean
+}[] = [
+  {
+    id: 'everyone',
+    label: 'Everyone',
+    description: 'Can see all people in the organisation.',
+  },
+  {
+    id: 'departments',
+    label: 'Departments',
+    description: 'Can see people in their own department(s) only.',
+  },
+  {
+    id: 'project-teams',
+    label: 'Project teams',
+    description: 'Can see only members of projects they have access to. Designed for Project Managers — lets them plan and schedule within their projects, with Resource Planners staffing from the full people pool.',
+    isNew: true,
+  },
+  {
+    id: 'self',
+    label: 'Self',
+    description: 'Can only see themselves.',
+  },
+]
+
+/** Return the sensible default scope for a given access role. */
+function defaultPeopleScope(roleId: AccessRoleId): PeopleScope {
+  if (roleId === 'project-manager') return 'project-teams'
+  if (roleId === 'member') return 'self'
+  return 'everyone'
+}
+
 export interface PeopleRow {
   id: string
   name: string
@@ -60,6 +101,8 @@ export interface PeopleRow {
   groups: string[]
   office: string
   email: string
+  /** Controls which people this user can see across Float. */
+  peopleScope: PeopleScope
   /** Projects this person can view — Access tab. */
   projectCanView: string[]
   /** Projects this person can edit — Access tab. */
@@ -94,6 +137,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'New York',
     email: 'jake.peralta@example.com',
     accessRoleId: 'resource-planner',
+    peopleScope: defaultPeopleScope('resource-planner'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: ['people.approve_time_off', 'project.view_profitability'],
@@ -108,6 +152,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'New York',
     email: 'amy.santiago@example.com',
     accessRoleId: 'project-manager',
+    peopleScope: defaultPeopleScope('project-manager'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: ['people.view_cost_rates', 'people.view_bill_rates'],
@@ -122,6 +167,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'Sydney',
     email: 'rosa.diaz@example.com',
     accessRoleId: 'admin',
+    peopleScope: defaultPeopleScope('admin'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: [],
@@ -136,6 +182,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'New York',
     email: 'terry.jeffords@example.com',
     accessRoleId: 'admin',
+    peopleScope: defaultPeopleScope('admin'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: [],
@@ -150,6 +197,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'Melbourne',
     email: 'charles.boyle@example.com',
     accessRoleId: 'resource-planner',
+    peopleScope: defaultPeopleScope('resource-planner'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: [],
@@ -164,6 +212,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'London',
     email: 'gina.linetti@example.com',
     accessRoleId: 'project-manager',
+    peopleScope: defaultPeopleScope('project-manager'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: ['settings.manage_billing'],
@@ -178,6 +227,7 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'New York',
     email: 'raymond.holt@example.com',
     accessRoleId: 'admin',
+    peopleScope: defaultPeopleScope('admin'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: [],
@@ -192,11 +242,79 @@ const SAMPLE_PEOPLE: PeopleRow[] = [
     office: 'Sydney',
     email: 'norm.scully@example.com',
     accessRoleId: 'member',
+    peopleScope: defaultPeopleScope('member'),
     projectCanView: DEFAULT_PROJECT_VIEW,
     projectCanEdit: DEFAULT_PROJECT_EDIT,
     additionalPermissions: [],
   },
 ]
+
+function PeopleScopeCard({
+  scope,
+  onScopeChange,
+}: {
+  scope: PeopleScope
+  onScopeChange: (s: PeopleScope) => void
+}) {
+  const active = PEOPLE_SCOPE_OPTIONS.find((o) => o.id === scope) ?? PEOPLE_SCOPE_OPTIONS[0]
+  return (
+    <section className="person-panel__card" aria-labelledby="people-scope-heading">
+      <p id="people-scope-heading" className="person-panel__card-label">
+        People scope
+      </p>
+      <div className="people-scope-picker" role="group" aria-label="People scope">
+        {PEOPLE_SCOPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            className={`people-scope-opt${scope === opt.id ? ' people-scope-opt--active' : ''}`}
+            onClick={() => onScopeChange(opt.id)}
+            aria-pressed={scope === opt.id}
+          >
+            {opt.label}
+            {opt.isNew && <span className="people-scope-opt__new">New</span>}
+          </button>
+        ))}
+      </div>
+      <p className="people-scope-desc">{active.description}</p>
+    </section>
+  )
+}
+
+function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
+  const role = ROLES.find((r) => r.id === accessRoleId)
+  if (!role) return null
+
+  const groups = GROUP_ORDER.map((g) => ({
+    label: g,
+    perms: role.configPerms.filter((p) => p.group === g),
+  })).filter((g) => g.perms.length > 0)
+
+  return (
+    <section aria-labelledby="role-perms-heading">
+      <p id="role-perms-heading" className="person-panel__card-label" style={{ marginBottom: 8 }}>
+        {accessRoleLabel(accessRoleId)} permissions
+      </p>
+      <div className="role-card__table-wrap">
+        <table className="cfg-table cfg-table--readonly">
+          <thead>
+            <tr>
+              <th className="cfg-table__th">Permission</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((g) => (
+              <ReadOnlyPermGroup key={g.label} label={g.label} perms={g.perms} />
+            ))}
+          </tbody>
+        </table>
+        {role.footerNote && (
+          <div className="cfg-table__footer">{role.footerNote}</div>
+        )}
+      </div>
+    </section>
+  )
+}
 
 function nameInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || '?'
@@ -215,6 +333,10 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
 
   function updatePersonRole(id: string, roleId: AccessRoleId) {
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, accessRoleId: roleId } : p)))
+  }
+
+  function updatePeopleScope(id: string, scope: PeopleScope) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, peopleScope: scope } : p)))
   }
 
   function toggleAdditionalPermission(id: string, permId: string) {
@@ -495,6 +617,13 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                     )}
                   </div>
                 </section>
+
+                <PeopleScopeCard
+                  scope={selectedPerson.peopleScope}
+                  onScopeChange={(s) => updatePeopleScope(selectedPerson.id, s)}
+                />
+
+                <RolePermissionsCard accessRoleId={selectedPerson.accessRoleId} />
 
                 <section className="person-panel__card" aria-labelledby="person-addl-perms-heading">
                   <div className="person-panel__card-label-row">
