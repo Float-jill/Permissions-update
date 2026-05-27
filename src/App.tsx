@@ -1673,12 +1673,6 @@ export default function App() {
       )}
       {!settingsOpen && (
         <main className="main">
-          {/* Preview controls — always visible in the main view */}
-          <div className="preview-bar">
-            <span className="preview-bar__label">Preview</span>
-            <OfficeModeControl value={officeMode} onChange={handleOfficeModeChange} />
-            <PlanDropdown value={pricingPlan} onChange={setPricingPlan} />
-          </div>
           {dataStudioNavId === 'people' ? (
             <DataStudioPeoplePage rbacEnforced={rbacEnforced} />
           ) : (
@@ -1708,10 +1702,7 @@ export default function App() {
               <ArrowLeft size={16} strokeWidth={1.5} aria-hidden />
             </button>
             <span className="settings-fullpage__title">Company settings</span>
-            <div className="settings-fullpage__header-actions">
-              <OfficeModeControl value={officeMode} onChange={handleOfficeModeChange} />
-              <PlanDropdown value={pricingPlan} onChange={setPricingPlan} />
-            </div>
+            <div className="settings-fullpage__header-actions" />
           </header>
 
           <div className="settings-fullpage__split">
@@ -1933,6 +1924,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ── Floating prototype controls ──────────────────────────────── */}
+      <div className="floating-controls" role="group" aria-label="Prototype controls">
+        <OfficeModeControl value={officeMode} onChange={handleOfficeModeChange} />
+        <div className="floating-controls__divider" aria-hidden />
+        <PlanDropdown value={pricingPlan} onChange={setPricingPlan} />
+      </div>
     </div>
   )
 }

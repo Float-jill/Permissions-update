@@ -632,25 +632,34 @@
   color: var(--text-primary);
 }
 
-/* ── Preview controls bar (shown in main app view) ─────────────────────── */
-.preview-bar {
+/* ── Floating prototype controls ────────────────────────────────────────── */
+.floating-controls {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9000;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 16px;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--border-panel);
-  background: var(--bg-main);
+  gap: 6px;
+  padding: 6px 10px;
+  background: #23262e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  /* Keep it from being too wide on the plan-dd dropdown */
+  white-space: nowrap;
 }
 
-.preview-bar__label {
-  margin-right: auto;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+.floating-controls__divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 
 /* Office mode segmented control (Single office / Multi-office) */
@@ -761,7 +770,7 @@
 .plan-dd__menu {
   position: absolute;
   z-index: 200;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   left: 0;
   min-width: 200px;
   margin: 0;
