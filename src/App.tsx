@@ -1760,36 +1760,7 @@ export default function App() {
                       Pro
                     </span>
                   </button>
-                ) : officeMode === 'single' ? (
-                  <>
-                    <div className="sidebar__section-label-row">
-                      <p className="sidebar__section-label sidebar__section-label--inline">Office</p>
-                    </div>
-                    <div className="sidebar__nav">
-                      {OFFICE_SUBITEMS.map((item) => {
-                        const isActive =
-                          !activeOrgId &&
-                          active.mode === 'section' &&
-                          active.childId === item.id
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className={`nav-row${isActive ? ' nav-row--active' : ''}`}
-                            aria-current={isActive ? 'page' : undefined}
-                            onClick={() => {
-                              setActiveOrgId(null)
-                              setActive({ mode: 'section', officeId: 'beaverton', childId: item.id })
-                            }}
-                          >
-                            <NavItemIcon Icon={ChevronRight} active={isActive} />
-                            <span className="nav-row__label">{item.label}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </>
-                ) : (
+                ) : officeMode === 'single' ? null : (
                   <>
                     <div className="sidebar__section-label-row">
                       <p className="sidebar__section-label sidebar__section-label--inline">Offices</p>
