@@ -58,6 +58,16 @@ const AVAILABLE_ADDITIONAL_PERMISSIONS = [
 
 const ADDITIONAL_PERM_CATEGORIES = ['People', 'Projects', 'Settings'] as const
 
+const CATEGORY_TABS = [
+  { id: 'employees',  label: 'Employees' },
+  { id: 'contractors', label: 'Contractors' },
+  { id: 'departments', label: 'Departments' },
+  { id: 'delivery',   label: 'Delivery teams' },
+  { id: 'groups',     label: 'Groups' },
+] as const
+
+type CategoryId = (typeof CATEGORY_TABS)[number]['id']
+
 const STATUS_FILTERS = [
   { id: 'active', label: '243 Active' },
   { id: 'archived', label: '0 Archived' },
@@ -409,6 +419,7 @@ function nameInitial(name: string) {
 }
 
 export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: boolean }) {
+  const [category, setCategory] = useState<CategoryId>('employees')
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('active')
   const [onlyWithAccess, setOnlyWithAccess] = useState(false)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
@@ -535,6 +546,32 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
           <button type="button" className="dh-people__add-btn" aria-label="Add person">
             <Plus size={16} strokeWidth={2} aria-hidden />
           </button>
+        </div>
+      </div>
+
+      {/* ── Office selector + category tabs ───────────────────────────────── */}
+      <div className="dh-people__catbar">
+        <button type="button" className="dh-people__office-btn">
+          All offices
+          <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
+        </button>
+        <div className="dh-people__cattabs" role="tablist" aria-label="People categories">
+          {CATEGORY_TABS.map((tab) => {
+            const isActive = category === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`dh-people__cattab${isActive ? ' dh-people__cattab--active' : ''}`}
+                onClick={() => setCategory(tab.id)}
+              >
+                {isActive && <span className="dh-people__cattab-dot" aria-hidden>•</span>}
+                {tab.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 

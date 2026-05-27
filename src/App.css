@@ -1152,7 +1152,76 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+/* ── Office + category bar ────────────────────────────────────────────────── */
+
+.dh-people__catbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.dh-people__office-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border-panel);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.dh-people__office-btn:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dh-people__cattabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.dh-people__cattab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.dh-people__cattab:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dh-people__cattab--active {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.dh-people__cattab-dot {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-primary);
 }
 
 .dh-people__topbar-left {
