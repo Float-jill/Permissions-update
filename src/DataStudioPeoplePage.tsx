@@ -1,14 +1,40 @@
 import { useEffect, useState } from 'react'
 import {
   ChevronDown,
-  Circle,
-  Filter,
+  Download,
+  ExternalLink,
   Plus,
-  RefreshCw,
+  SlidersHorizontal,
   X,
 } from 'lucide-react'
 import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRoles'
 import { ROLES, GROUP_ORDER, ReadOnlyPermGroup } from './App'
+
+// ── Float custom icons (inline SVG, matched from Figma) ───────────────────────
+
+/** Float views-20px: stacked diamond + add-view "+" */
+function IconViews({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M8.00008 3.1665L12.8334 5.99984L8.00008 8.83317L3.16675 5.99984L8.00008 3.1665Z" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9.6001 8.12354L10.4002 8.58542" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M8.00008 12.8334L3.16675 10L6.16675 8" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M11.8999 10.3999V13.3999" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M10.3999 11.8999L13.3999 11.8999" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+/** Float search-filter-16px: magnifying glass with trailing filter lines */
+function IconSearchFilter({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="M7.33342 3.1665C5.03223 3.1665 3.16675 5.03198 3.16675 7.33317C3.16675 9.63436 5.03223 11.4998 7.33342 11.4998C9.6346 11.4998 11.5001 9.63436 11.5001 7.33317M12.8334 12.8332L10.3334 10.3332" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M10 3.3335L12.6667 3.3335" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M10.6667 5.3335L12.0001 5.3335" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
 
 /**
  * Per-user additive permission overrides (V1: additive only — these can only
@@ -32,21 +58,12 @@ const AVAILABLE_ADDITIONAL_PERMISSIONS = [
 
 const ADDITIONAL_PERM_CATEGORIES = ['People', 'Projects', 'Settings'] as const
 
-const CATEGORY_TABS = [
-  { id: 'employees', label: 'Employees' },
-  { id: 'contractors', label: 'Contractors' },
-  { id: 'departments', label: 'Departments' },
-  { id: 'delivery', label: 'Delivery teams' },
-  { id: 'groups', label: 'Groups' },
-] as const
-
 const STATUS_FILTERS = [
   { id: 'active', label: '243 Active' },
   { id: 'archived', label: '0 Archived' },
   { id: 'all', label: 'All' },
 ] as const
 
-type CategoryId = (typeof CATEGORY_TABS)[number]['id']
 type StatusFilterId = (typeof STATUS_FILTERS)[number]['id']
 
 // ── People scope ─────────────────────────────────────────────────────────────
@@ -392,11 +409,15 @@ function nameInitial(name: string) {
 }
 
 export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: boolean }) {
-  const [category, setCategory] = useState<CategoryId>('employees')
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('active')
+  const [onlyWithAccess, setOnlyWithAccess] = useState(false)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [personPanelTab, setPersonPanelTab] = useState<PersonPanelTabId>('access')
   const [people, setPeople] = useState<PeopleRow[]>(SAMPLE_PEOPLE)
+
+  const visiblePeople = onlyWithAccess
+    ? people.filter((p) => p.accessRoleId !== 'member')
+    : people
 
   const selectedPerson = selectedPersonId
     ? people.find((p) => p.id === selectedPersonId) ?? null
@@ -486,71 +507,62 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
   return (
     <>
     <div className="dh-people">
-      <div className="dh-people__toolbar">
-        <div className="dh-people__toolbar-left">
-          <div className="dh-people__title-row">
-            <h1 className="dh-people__title">243 People</h1>
-            <button type="button" className="dh-people__filter-btn">
-              <Filter size={16} strokeWidth={1.5} aria-hidden />
-              Filter
-            </button>
-          </div>
-        </div>
-        <div className="dh-people__top-actions">
-          <button type="button" className="dh-people__icon-add" aria-label="Add employee">
-            <Plus size={22} strokeWidth={1.5} />
+
+      {/* ── Top header bar ─────────────────────────────────────────────── */}
+      <div className="dh-people__topbar">
+        <div className="dh-people__topbar-left">
+          <h1 className="dh-people__title">People</h1>
+          <button type="button" className="dh-people__hdr-icon-btn dh-people__views-btn" aria-label="Views">
+            <IconViews size={16} />
           </button>
-          <button type="button" className="dh-people__import">
-            <RefreshCw size={16} strokeWidth={1.5} aria-hidden />
-            Import/Export
+          <button type="button" className="dh-people__hdr-icon-btn dh-people__filter-trigger">
+            <IconSearchFilter size={16} />
+            Filter
+            <ChevronDown size={12} strokeWidth={1.75} aria-hidden />
+          </button>
+        </div>
+        <div className="dh-people__topbar-right">
+          <button type="button" className="dh-people__hdr-icon-btn" aria-label="Column settings">
+            <SlidersHorizontal size={15} strokeWidth={1.75} aria-hidden />
+          </button>
+          <button type="button" className="dh-people__import-btn">
+            <Download size={14} strokeWidth={1.75} aria-hidden />
+            Import
+          </button>
+          <button type="button" className="dh-people__hdr-icon-btn" aria-label="Open in new tab">
+            <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
+          </button>
+          <button type="button" className="dh-people__add-btn" aria-label="Add person">
+            <Plus size={16} strokeWidth={2} aria-hidden />
           </button>
         </div>
       </div>
 
-      <div className="dh-people__tabs-wrap">
-        <button type="button" className="dh-people__office-dd">
-          All offices
-          <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
-        </button>
-        <div className="dh-people__tabs" role="tablist" aria-label="People categories">
-          {CATEGORY_TABS.map((tab) => {
-            const isActive = category === tab.id
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                className={`dh-people__tab${isActive ? ' dh-people__tab--active' : ''}`}
-                onClick={() => setCategory(tab.id)}
-              >
-                {isActive ? (
-                  <Circle className="dh-people__tab-dot" size={6} fill="currentColor" aria-hidden />
-                ) : null}
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="dh-people__subfilters">
-        <button type="button" className="dh-people__subfilter-plus" aria-label="Add filter">
-          <Plus size={16} strokeWidth={1.5} />
-        </button>
-        <div className="dh-people__status-chips" role="group" aria-label="Status">
+      {/* ── Status tabs + access filter ────────────────────────────────── */}
+      <div className="dh-people__statusbar">
+        <div className="dh-people__status-tabs" role="group" aria-label="Status">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s.id}
               type="button"
-              className={`dh-people__chip${statusFilter === s.id ? ' dh-people__chip--active' : ''}`}
+              className={`dh-people__status-tab${statusFilter === s.id ? ' dh-people__status-tab--active' : ''}`}
               onClick={() => setStatusFilter(s.id)}
             >
               {s.label}
             </button>
           ))}
         </div>
+        <label className="dh-people__access-check">
+          <input
+            type="checkbox"
+            checked={onlyWithAccess}
+            onChange={(e) => setOnlyWithAccess(e.target.checked)}
+          />
+          Only show people with access rights
+        </label>
       </div>
+
+
 
       <div className="dh-people__table-wrap">
         <table className="dh-people__table">
@@ -592,7 +604,7 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
             </tr>
           </thead>
           <tbody>
-            {people.map((row) => (
+            {visiblePeople.map((row) => (
               <tr
                 key={row.id}
                 className={`dh-people__row${selectedPersonId === row.id ? ' dh-people__row--selected' : ''}`}
