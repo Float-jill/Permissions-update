@@ -1766,42 +1766,27 @@ export default function App() {
                       <p className="sidebar__section-label sidebar__section-label--inline">Office</p>
                     </div>
                     <div className="sidebar__nav">
-                      {/* Office name row — acts as overview */}
-                      <div className={`office-row${!activeOrgId && active.mode === 'overview' ? ' office-row--office-active' : ''}`}>
-                        <button
-                          type="button"
-                          className="office-row__main"
-                          onClick={() => selectOfficeOverview('beaverton')}
-                          aria-current={!activeOrgId && active.mode === 'overview' ? 'page' : undefined}
-                        >
-                          <NavItemIcon Icon={Building2} active={!activeOrgId && active.mode === 'overview'} />
-                          <span className="nav-row__label">Beaverton HQ</span>
-                        </button>
-                      </div>
-                      {/* Sub-items directly (no expand/collapse needed) */}
-                      <div className="office-group__nested" role="group" aria-label="Beaverton HQ">
-                        {OFFICE_SUBITEMS.map((item) => {
-                          const isActive =
-                            !activeOrgId &&
-                            active.mode === 'section' &&
-                            active.childId === item.id
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              className={`nav-row nav-row--nested${isActive ? ' nav-row--active' : ''}`}
-                              aria-current={isActive ? 'page' : undefined}
-                              onClick={() => {
-                                setActiveOrgId(null)
-                                setActive({ mode: 'section', officeId: 'beaverton', childId: item.id })
-                              }}
-                            >
-                              <NavItemIcon Icon={ChevronRight} active={isActive} />
-                              <span className="nav-row__label">{item.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
+                      {OFFICE_SUBITEMS.map((item) => {
+                        const isActive =
+                          !activeOrgId &&
+                          active.mode === 'section' &&
+                          active.childId === item.id
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`nav-row${isActive ? ' nav-row--active' : ''}`}
+                            aria-current={isActive ? 'page' : undefined}
+                            onClick={() => {
+                              setActiveOrgId(null)
+                              setActive({ mode: 'section', officeId: 'beaverton', childId: item.id })
+                            }}
+                          >
+                            <NavItemIcon Icon={ChevronRight} active={isActive} />
+                            <span className="nav-row__label">{item.label}</span>
+                          </button>
+                        )
+                      })}
                     </div>
                   </>
                 ) : (
