@@ -188,12 +188,8 @@ const ADMIN_NAV = [
   { id: 'lock-logged',   label: 'Lock logged time', Icon: Lock,        description: 'Prevent edits to logged time after a set period.'                  },
 ] as const
 
-/** Admin items shown on Starter (subset of ADMIN_NAV). */
-const STARTER_ADMIN_IDS = new Set<string>(['timeoff-org', 'statuses'])
-
-function adminNavForPlan(plan: PricingPlanId) {
-  if (plan !== 'starter') return [...ADMIN_NAV]
-  return ADMIN_NAV.filter((item) => STARTER_ADMIN_IDS.has(item.id))
+function adminNavForPlan(_plan: PricingPlanId) {
+  return [...ADMIN_NAV]
 }
 
 type OfficeSectionId = (typeof OFFICE_SUBITEMS)[number]['id']
@@ -298,9 +294,36 @@ function makePerms(
 
 export const ROLES: Role[] = [
   {
+    id: 'account-owner',
+    label: ACCESS_ROLE_LABELS['account-owner'],
+    count: 2,
+    description: 'Full account control including billing, security, and all organisational settings. Cannot be modified.',
+    configPerms: makePerms({
+      // Company — all on
+      billing: true, security: true, integrations: true, 'company-settings': true,
+      // Data studio — all on
+      'manage-offices': true, 'manage-departments': true, 'manage-roles': true,
+      'manage-clients': true, 'manage-tags': true, 'import-export': true,
+      // Resource planning — all on
+      'add-remove-people': true, 'edit-people': true, 'approve-time-off': true,
+      'schedule-others': true, 'schedule-self': true, 'log-time-others': true, 'log-time-self': true,
+      // Project management — all on
+      'add-remove-projects': true, 'edit-projects': true, 'manage-draft-projects': true,
+      'project-templates': true, 'project-budgets': true,
+      // Finance — all on
+      'view-cost-rates': true, 'view-bill-rates': true, 'manage-cost-rates': true,
+      'manage-bill-rates': true, 'manage-project-bill-rates': true, 'manage-rate-cards': true,
+    }, {
+      'add-remove-people': { view: 'everyone', edit: 'everyone' },
+      'approve-time-off':  { view: 'everyone', edit: 'everyone' },
+      'schedule-others':   { view: 'everyone', edit: 'everyone' },
+      'log-time-others':   { view: 'everyone', edit: 'everyone' },
+    }),
+  },
+  {
     id: 'admin',
     label: ACCESS_ROLE_LABELS.admin,
-    count: 2,
+    count: 5,
     description: 'Full organisational control. Billing and Security are off by default — toggle them on to grant.',
     configPerms: makePerms({
       // Company — billing & security off by default
@@ -327,7 +350,7 @@ export const ROLES: Role[] = [
   {
     id: 'project-manager',
     label: ACCESS_ROLE_LABELS['project-manager'],
-    count: 4,
+    count: 35,
     description: 'Plans and delivers projects, manages project teams and logs time for their team.',
     configPerms: makePerms({
       // Company — none
@@ -352,7 +375,7 @@ export const ROLES: Role[] = [
   {
     id: 'resource-planner',
     label: ACCESS_ROLE_LABELS['resource-planner'],
-    count: 2,
+    count: 52,
     description: 'Manages people records and schedules — not project delivery.',
     footerNote: 'Sees project margin % only — no cost rate or bill rate amounts.',
     configPerms: makePerms({
@@ -375,7 +398,7 @@ export const ROLES: Role[] = [
   {
     id: 'member',
     label: ACCESS_ROLE_LABELS.member,
-    count: 6,
+    count: 149,
     description: 'Individual contributor. Manages their own time only.',
     configPerms: makePerms({
       // Everything off except scheduling and logging for self
@@ -639,6 +662,9 @@ function AccessRightsPage({
   const [draftPerms, setDraftPerms] = useState<DraftPerms>({})
   const [confirmSaveRoleId, setConfirmSaveRoleId] = useState<string | null>(null)
   const [customRoles, setCustomRoles] = useState<Role[]>([])
+  const [draftLabel, setDraftLabel] = useState('')
+  const [draftDescription, setDraftDescription] = useState('')
+  const [savedMeta, setSavedMeta] = useState<Record<string, { label: string; description: string }>>({})
 
   const pendingSaveRole = useMemo(
     () =>
@@ -657,6 +683,9 @@ function AccessRightsPage({
   function startEdit(role: Role) {
     const base = savedPerms[role.id] ?? role.configPerms
     setDraftPerms((prev) => ({ ...prev, [role.id]: base.map((p) => ({ ...p })) }))
+    const meta = savedMeta[role.id]
+    setDraftLabel(meta?.label ?? role.label)
+    setDraftDescription(meta?.description ?? role.description ?? '')
     setEditingId(role.id)
   }
 
@@ -666,6 +695,10 @@ function AccessRightsPage({
 
   function saveEdit(roleId: string) {
     setSavedPerms((prev) => ({ ...prev, [roleId]: draftPerms[roleId] }))
+    setSavedMeta((prev) => ({ ...prev, [roleId]: { label: draftLabel, description: draftDescription } }))
+    setCustomRoles((prev) =>
+      prev.map((r) => r.id === roleId ? { ...r, label: draftLabel, description: draftDescription } : r)
+    )
     setEditingId(null)
   }
 
@@ -729,7 +762,7 @@ function AccessRightsPage({
 
   // ── Custom roles ────────────────────────────────────────────────────────────
 
-  const MAX_CUSTOM_ROLES = 12
+  const MAX_CUSTOM_ROLES = 10
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [newRoleName, setNewRoleName] = useState('')
@@ -906,6 +939,7 @@ function AccessRightsPage({
               <th className="roles-table__th">Role</th>
               <th className="roles-table__th">Description</th>
               <th className="roles-table__th">Type</th>
+              <th className="roles-table__th roles-table__th--num">People</th>
               <th className="roles-table__th">Last modified by</th>
               <th className="roles-table__th">Last modified</th>
               <th className="roles-table__th" />
@@ -923,6 +957,8 @@ function AccessRightsPage({
                 label: g,
                 perms: (displayPerms ?? []).filter((p) => p.group === g),
               })).filter((g) => g.perms.length > 0)
+              const effectiveLabel = savedMeta[role.id]?.label ?? role.label
+              const effectiveDescription = savedMeta[role.id]?.description ?? role.description
 
               return (
                 <Fragment key={role.id}>
@@ -934,100 +970,137 @@ function AccessRightsPage({
                     }}
                   >
                     <td className="roles-table__td">
-                      <span className="roles-table__role-link">{role.label}</span>
+                      <span className="roles-table__role-link">{effectiveLabel}</span>
                     </td>
                     <td className="roles-table__td roles-table__td--desc">
-                      {role.description || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No description</span>}
+                      {effectiveDescription || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No description</span>}
                     </td>
                     <td className="roles-table__td">
                       <span className={`roles-table__type-badge${role.isCustom ? ' roles-table__type-badge--custom' : ''}`}>
                         {role.isCustom ? 'Custom' : 'Default'}
                       </span>
                     </td>
+                    <td className="roles-table__td roles-table__td--num">
+                      <span className="roles-table__people-count">{role.count}</span>
+                    </td>
                     <td className="roles-table__td roles-table__td--meta">Float</td>
                     <td className="roles-table__td roles-table__td--meta">May 26, 2026</td>
-                    <td className="roles-table__td roles-table__td--arrow">
-                      <span className={`roles-table__arrow${isExpanded ? ' roles-table__arrow--open' : ''}`} aria-hidden>
-                        {isExpanded ? '↓' : '→'}
-                      </span>
+                    <td className="roles-table__td roles-table__td--actions">
+                      <div className="roles-table__row-actions">
+                        {canEdit && !isEditing && (
+                          <>
+                            {!role.isCustom && (
+                              <button
+                                type="button"
+                                className="roles-table__icon-btn"
+                                aria-label={`Clone ${role.label}`}
+                                title="Clone role"
+                                disabled={customRoles.length >= MAX_CUSTOM_ROLES}
+                                onClick={(e) => { e.stopPropagation(); cloneRole(role) }}
+                              >
+                                <Copy size={14} strokeWidth={1.75} aria-hidden />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="roles-table__icon-btn"
+                              aria-label={`Edit ${role.label}`}
+                              title="Edit role"
+                              onClick={(e) => { e.stopPropagation(); setViewingId(null); startEdit(role) }}
+                            >
+                              <Pencil size={14} strokeWidth={1.75} aria-hidden />
+                            </button>
+                          </>
+                        )}
+                        <ChevronRight
+                          size={14}
+                          strokeWidth={1.75}
+                          className={`roles-table__chevron${isExpanded ? ' roles-table__chevron--open' : ''}`}
+                          aria-hidden
+                        />
+                      </div>
                     </td>
                   </tr>
 
                   {isExpanded && (
                     <tr className="roles-table__detail-row">
-                      <td colSpan={6} className="roles-table__detail-cell">
+                      <td colSpan={7} className="roles-table__detail-cell">
                         <div className="roles-table__detail">
-                          <div className="role-card__table-wrap">
-                            <table className={`cfg-table${isViewing ? ' cfg-table--readonly' : ''}`}>
-                              <thead>
-                                <tr>
-                                  <th className="cfg-table__th">
-                                    {isEditing ? 'Configurable permissions' : 'Permission'}
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {groups.map((g) =>
-                                  isEditing ? (
+                          {isEditing && (
+                            <div className="role-edit-meta">
+                              <div className="role-edit-field">
+                                <label className="role-edit-label" htmlFor={`role-name-${role.id}`}>
+                                  Role name
+                                </label>
+                                <input
+                                  id={`role-name-${role.id}`}
+                                  type="text"
+                                  className="role-edit-input"
+                                  value={draftLabel}
+                                  onChange={(e) => setDraftLabel(e.target.value)}
+                                  placeholder="Role name"
+                                />
+                              </div>
+                              <div className="role-edit-field">
+                                <label className="role-edit-label" htmlFor={`role-desc-${role.id}`}>
+                                  Description
+                                </label>
+                                <textarea
+                                  id={`role-desc-${role.id}`}
+                                  className="role-edit-input role-edit-input--textarea"
+                                  value={draftDescription}
+                                  onChange={(e) => setDraftDescription(e.target.value)}
+                                  placeholder="Describe what this role can do…"
+                                  rows={2}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="role-perms-stack">
+                            {groups.map((g) => (
+                              <table
+                                key={g.label}
+                                className={`cfg-table role-perms-group-table${isViewing ? ' cfg-table--readonly' : ''}`}
+                              >
+                                <tbody>
+                                  {isEditing ? (
                                     <PermGroup
-                                      key={g.label}
                                       label={g.label}
                                       perms={g.perms}
                                       onToggle={(permId) => togglePerm(role.id, permId)}
                                       onScopeChange={(permId, dim, scope) => setScopePerm(role.id, permId, dim, scope)}
                                     />
                                   ) : (
-                                    <ReadOnlyPermGroup key={g.label} label={g.label} perms={g.perms} />
-                                  )
-                                )}
-                              </tbody>
-                            </table>
-                            {role.footerNote && <div className="cfg-table__footer">{role.footerNote}</div>}
+                                    <ReadOnlyPermGroup label={g.label} perms={g.perms} />
+                                  )}
+                                </tbody>
+                              </table>
+                            ))}
                           </div>
-                          {canEdit && (
+                          {role.footerNote && <div className="cfg-table__footer cfg-table__footer--standalone">{role.footerNote}</div>}
+                          {canEdit && isEditing && (
                             <div className="roles-table__detail-actions">
-                              {isEditing ? (
-                                <>
-                                  <button className="btn btn--ghost" type="button" onClick={cancelEdit}>Cancel</button>
-                                  <button
-                                    className="btn btn--primary"
-                                    type="button"
-                                    onClick={() => role.isCustom ? saveEdit(role.id) : requestSave(role.id)}
-                                  >
-                                    Save
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  {!role.isCustom && (
-                                    <button
-                                      className="btn btn--ghost"
-                                      type="button"
-                                      disabled={customRoles.length >= MAX_CUSTOM_ROLES}
-                                      onClick={(e) => { e.stopPropagation(); cloneRole(role) }}
-                                    >
-                                      <Copy size={13} strokeWidth={2} aria-hidden /> Clone
-                                    </button>
-                                  )}
-                                  <button
-                                    className="btn btn--ghost"
-                                    type="button"
-                                    onClick={(e) => { e.stopPropagation(); setViewingId(null); startEdit(role) }}
-                                  >
-                                    <Pencil size={13} strokeWidth={2} aria-hidden /> Edit
-                                  </button>
-                                  {role.isCustom && (
-                                    <button
-                                      className="btn btn--ghost"
-                                      type="button"
-                                      aria-label={`Delete ${role.label}`}
-                                      onClick={(e) => { e.stopPropagation(); deleteCustomRole(role.id) }}
-                                    >
-                                      <Trash2 size={13} strokeWidth={2} aria-hidden />
-                                    </button>
-                                  )}
-                                </>
-                              )}
+                              <button className="btn btn--ghost" type="button" onClick={cancelEdit}>Cancel</button>
+                              <button
+                                className="btn btn--primary"
+                                type="button"
+                                onClick={() => role.isCustom ? saveEdit(role.id) : requestSave(role.id)}
+                              >
+                                Save
+                              </button>
+                            </div>
+                          )}
+                          {role.isCustom && !isEditing && (
+                            <div className="roles-table__detail-actions">
+                              <button
+                                className="btn btn--ghost"
+                                type="button"
+                                aria-label={`Delete ${role.label}`}
+                                onClick={(e) => { e.stopPropagation(); deleteCustomRole(role.id) }}
+                              >
+                                <Trash2 size={13} strokeWidth={2} aria-hidden /> Delete role
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1190,7 +1263,7 @@ function AppRail({
   const [globalOpen, setGlobalOpen] = useState(true)
   const [gridOpen, setGridOpen] = useState(true)
   const [logoMenuOpen, setLogoMenuOpen] = useState(false)
-  const [activeSingleOffice, setActiveSingleOffice] = useState<string>('beaverton')
+  const [_activeSingleOffice, _setActiveSingleOffice] = useState<string>('beaverton')
   const [soNavActive, setSoNavActive] = useState<string>('schedule')
   const [soDataStudioOpen, setSoDataStudioOpen] = useState(true)
   const logoMenuRef = useRef<HTMLDivElement>(null)
@@ -1748,19 +1821,7 @@ export default function App() {
               </div>
 
               <div>
-                {pricingPlan === 'starter' ? (
-                  <button
-                    type="button"
-                    className="sidebar__offices-starter-title"
-                    onClick={() => setOfficesUpsellOpen(true)}
-                    aria-haspopup="dialog"
-                  >
-                    <span className="sidebar__section-label sidebar__section-label--inline">Offices</span>
-                    <span className="sidebar__pro-pill" title="Included on Pro">
-                      Pro
-                    </span>
-                  </button>
-                ) : officeMode === 'single' ? null : (
+                {pricingPlan === 'starter' ? null : officeMode === 'single' ? null : (
                   <>
                     <div className="sidebar__section-label-row">
                       <p className="sidebar__section-label sidebar__section-label--inline">Offices</p>

@@ -1650,7 +1650,74 @@
 .person-panel__access {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+}
+
+/* ── Flat section layout (replaces card-based layout) ────────────────────── */
+
+.person-panel__section {
+  padding: 14px 16px;
+  border: 1px solid var(--border-panel);
+  border-radius: var(--radius-panel);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.person-panel__section-label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.person-panel__section-label-sub {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.person-panel__divider {
+  display: none; /* sections now have their own borders */
+}
+
+.person-panel__role-addl {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.person-panel__section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.person-panel__section-header-row .person-panel__section-label {
+  margin-bottom: 0;
+}
+
+.person-panel__additive-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(110, 140, 240, 0.12);
+  border: 1px solid rgba(110, 140, 240, 0.25);
+  color: var(--accent-blue);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.person-panel__perm-label--checked {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .person-panel__card {
@@ -1711,6 +1778,160 @@
 
 .person-panel__list li {
   margin-bottom: 4px;
+}
+
+/* ── Editable project lists ───────────────────────────────────────────────── */
+
+.person-panel__proj-list {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.person-panel__proj-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.person-panel__proj-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+
+.person-panel__proj-remove {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s ease, background 0.1s ease;
+}
+
+.person-panel__proj-item:hover .person-panel__proj-remove {
+  opacity: 1;
+}
+
+.person-panel__proj-remove:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+.person-panel__proj-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 4px 8px 4px 6px;
+  border: 1px dashed var(--border-panel);
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.person-panel__proj-add:hover:not(:disabled) {
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
+}
+
+.person-panel__proj-add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.person-panel__proj-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.person-panel__proj-add-select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.person-panel__proj-add-select:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+
+.person-panel__proj-add-select option {
+  background: var(--dropdown-bg);
+  color: var(--text-primary);
+}
+
+.person-panel__proj-add-confirm {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #2e5fe8;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.person-panel__proj-add-confirm:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.person-panel__proj-add-confirm:not(:disabled):hover {
+  background: #254cba;
+}
+
+.person-panel__proj-add-cancel {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.person-panel__proj-add-cancel:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-secondary);
 }
 
 .person-panel__placeholder {
@@ -1775,35 +1996,39 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+}
+
+.person-panel__role-row .person-panel__section-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .person-panel__role-select {
-  flex: 1;
   min-width: 0;
-  padding: 7px 10px;
-  border: 1px solid var(--border-panel);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 20px 2px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
   color: var(--text-primary);
   font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23617798' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b8c2d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 30px;
-  transition: border-color 0.15s ease;
+  background-position: right 2px center;
 }
 
 .person-panel__role-select:hover {
-  border-color: #3f3f3f;
+  color: var(--text-primary);
 }
 
 .person-panel__role-select:focus {
-  outline: none;
-  border-color: var(--focus-ring);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .person-panel__role-select option {
@@ -2853,7 +3078,12 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.roles-table__row:hover .roles-table__arrow {
+.roles-table__row:hover .roles-table__arrow,
+.roles-table__row:hover .roles-table__chevron {
+  opacity: 1;
+}
+
+.roles-table__row:hover .roles-table__icon-btn {
   opacity: 1;
 }
 
@@ -2861,7 +3091,8 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.roles-table__row--expanded .roles-table__arrow {
+.roles-table__row--expanded .roles-table__arrow,
+.roles-table__row--expanded .roles-table__chevron {
   opacity: 1;
 }
 
@@ -2878,6 +3109,25 @@
 .roles-table__td--meta {
   color: var(--text-secondary);
   white-space: nowrap;
+}
+
+.roles-table__th--num,
+.roles-table__td--num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.roles-table__people-count {
+  display: inline-block;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border-panel);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
 }
 
 .roles-table__role-link {
@@ -2906,26 +3156,55 @@
   border-color: rgba(99, 102, 241, 0.3);
 }
 
-.roles-table__td--arrow {
-  width: 52px;
-  text-align: right;
-  padding-right: 20px;
+.roles-table__td--actions {
+  width: 1px; /* shrink to content */
+  white-space: nowrap;
+  padding-right: 12px;
 }
 
-.roles-table__arrow {
-  display: inline-flex;
+.roles-table__row-actions {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border-panel);
-  font-size: 16px;
-  color: var(--text-secondary);
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.roles-table__icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease;
-  user-select: none;
+  flex-shrink: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.roles-table__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.roles-table__icon-btn:disabled {
+  opacity: 0.25 !important;
+  cursor: default;
+}
+
+.roles-table__chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.18s ease;
+}
+
+.roles-table__chevron--open {
+  transform: rotate(90deg);
+  opacity: 1;
 }
 
 .roles-table__detail-row {
@@ -2941,13 +3220,80 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 720px;
+}
+
+.role-perms-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-perms-group-table {
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cfg-table__footer--standalone {
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .roles-table__detail-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ── Role name / description editing ─────────────────────────────────────── */
+
+.role-edit-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.role-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.role-edit-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.role-edit-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.role-edit-input:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+}
+
+.role-edit-input--textarea {
+  resize: vertical;
+  line-height: 1.5;
+  min-height: 58px;
 }
 
 /* ── end Access Rights ─────────────────────────────────────────────────── */
@@ -3283,12 +3629,30 @@
 
 /* ── People scope picker ─────────────────────────────────────────────────── */
 
+.people-scope-sub {
+  padding: 10px 0 6px;
+}
+
+.people-scope-sub__label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.people-scope-divider {
+  height: 1px;
+  background: var(--border-panel);
+  margin: 4px 0;
+}
+
 .people-scope-picker {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .people-scope-opt {
@@ -3297,7 +3661,7 @@
   gap: 5px;
   padding: 5px 12px;
   border-radius: 20px;
-  border: 1px solid var(--border-panel);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   background: transparent;
   color: var(--text-secondary);
   font-size: 13px;
@@ -3308,9 +3672,9 @@
   line-height: 1;
 }
 
-.people-scope-opt:hover {
+.people-scope-opt:hover:not(.people-scope-opt--future) {
   background: var(--nav-hover);
-  border-color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.32);
   color: var(--text-primary);
 }
 
@@ -3326,12 +3690,29 @@
   color: var(--accent-blue);
 }
 
+.people-scope-opt--future {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .people-scope-opt__new {
   display: inline-block;
   padding: 1px 5px;
   border-radius: 4px;
   background: color-mix(in srgb, #22c55e 20%, transparent);
   color: #4ade80;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+
+.people-scope-opt__future {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;

@@ -3,12 +3,14 @@
  * Settings → Access rights and Data studio → People (access role).
  */
 export type AccessRoleId =
+  | 'account-owner'
   | 'admin'
   | 'project-manager'
   | 'resource-planner'
   | 'member'
 
 export const ACCESS_ROLE_LABELS: Record<AccessRoleId, string> = {
+  'account-owner': 'Account owner',
   admin: 'Admin',
   'project-manager': 'Project manager',
   'resource-planner': 'Resource planner',
@@ -21,6 +23,7 @@ export function accessRoleLabel(id: AccessRoleId): string {
 
 /** Ordered list — same order as Settings → Access rights cards. */
 export const ACCESS_ROLE_IDS: AccessRoleId[] = [
+  'account-owner',
   'admin',
   'project-manager',
   'resource-planner',
