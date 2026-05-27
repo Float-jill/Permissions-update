@@ -3,6 +3,7 @@ import { ACCESS_ROLE_LABELS } from './accessRoles'
 import { DataStudioPeoplePage } from './DataStudioPeoplePage'
 import { Fragment, useEffect, useRef, useMemo, useState } from 'react'
 import {
+  Activity,
   ArrowLeft,
   BarChart3,
   Bell,
@@ -33,6 +34,7 @@ import {
   ShieldCheck,
   Star,
   Tag,
+  Timer,
   Trash2,
   Umbrella,
   UserCog,
@@ -42,6 +44,7 @@ import {
 
 
 export type PricingPlanId = 'starter' | 'pro' | 'enterprise'
+export type OfficeModeId = 'single' | 'multi'
 
 // ── Scope ────────────────────────────────────────────────────────────────────
 
@@ -131,6 +134,34 @@ function PlanDropdown({
           ))}
         </ul>
       )}
+    </div>
+  )
+}
+
+function OfficeModeControl({
+  value,
+  onChange,
+}: {
+  value: OfficeModeId
+  onChange: (mode: OfficeModeId) => void
+}) {
+  return (
+    <div className="office-mode-ctrl" role="group" aria-label="Office mode">
+      <button
+        type="button"
+        className={`office-mode-ctrl__btn${value === 'single' ? ' office-mode-ctrl__btn--active' : ''}`}
+        onClick={() => onChange('single')}
+      >
+        Single office
+      </button>
+      <button
+        type="button"
+        className={`office-mode-ctrl__btn${value === 'multi' ? ' office-mode-ctrl__btn--active' : ''}`}
+        onClick={() => onChange('multi')}
+      >
+        Multi-office
+        <ChevronDown size={11} strokeWidth={2} aria-hidden />
+      </button>
     </div>
   )
 }
@@ -1127,12 +1158,32 @@ const DATA_STUDIO_PLACEHOLDER: Record<DataStudioNavId, string> = {
   activity: 'Activity log',
 }
 
+const SINGLE_OFFICE_NAV = [
+  { id: 'dashboard',    label: 'Dashboard',    Icon: LayoutDashboard },
+  { id: 'schedule',     label: 'Schedule',     Icon: Calendar },
+  { id: 'project-plan', label: 'Project plan', Icon: Waypoints },
+  { id: 'people',       label: 'People',       Icon: Users },
+  { id: 'projects',     label: 'Projects',     Icon: Folder },
+  { id: 'report',       label: 'Report',       Icon: BarChart3 },
+  { id: 'log-team',     label: 'Log team',     Icon: Clock },
+  { id: 'log-my-time',  label: 'Log my time',  Icon: Timer },
+] as const
+
+const SINGLE_OFFICE_DATA_STUDIO = [
+  { id: 'roles',       label: 'Roles',       Icon: GraduationCap },
+  { id: 'clients',     label: 'Clients',     Icon: Building2 },
+  { id: 'rate-cards',  label: 'Rate cards',  Icon: DollarSign },
+  { id: 'activity',    label: 'Activity',    Icon: Activity },
+] as const
+
 function AppRail({
   onOpenSettings,
+  officeMode,
   dataStudioActive,
   onDataStudioActiveChange,
 }: {
   onOpenSettings: () => void
+  officeMode: OfficeModeId
   dataStudioActive: DataStudioNavId
   onDataStudioActiveChange: (id: DataStudioNavId) => void
 }) {
@@ -1140,6 +1191,9 @@ function AppRail({
   const [globalOpen, setGlobalOpen] = useState(true)
   const [gridOpen, setGridOpen] = useState(true)
   const [logoMenuOpen, setLogoMenuOpen] = useState(false)
+  const [activeSingleOffice, setActiveSingleOffice] = useState<string>('beaverton')
+  const [soNavActive, setSoNavActive] = useState<string>('schedule')
+  const [soDataStudioOpen, setSoDataStudioOpen] = useState(true)
   const logoMenuRef = useRef<HTMLDivElement>(null)
 
   const iconSize = 16
@@ -1260,107 +1314,193 @@ function AppRail({
       </header>
 
       <nav className="app-rail__scroll" aria-label="Primary">
-        <div className="app-rail__block">
-          <button
-            type="button"
-            className="app-rail__section-head"
-            onClick={() => setGlobalOpen((o) => !o)}
-            aria-expanded={globalOpen}
-          >
-            <BookOpen size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-            <span className="app-rail__section-label">Global</span>
-            <ChevronDown
-              size={16}
-              strokeWidth={1.5}
-              className={`app-rail__chev${globalOpen ? ' app-rail__chev--open' : ''}`}
-              aria-hidden
-            />
-          </button>
-          {globalOpen && (
-            <div className="app-rail__indent">
-              <button type="button" className="app-rail__row">
-                <LayoutDashboard size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-                <span className="app-rail__row-label">Dashboard</span>
-              </button>
-              <button type="button" className="app-rail__row">
-                <BarChart3 size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-                <span className="app-rail__row-label">Report</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="app-rail__block app-rail__block--locations">
-          {RAIL_LOCATIONS.map((name) => (
-            <button key={name} type="button" className="app-rail__location">
-              <BookOpen size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-              <span className="app-rail__row-label">{name}</span>
-              <ChevronUp size={16} strokeWidth={1.5} className="app-rail__chev-loc" aria-hidden />
-            </button>
-          ))}
-        </div>
-
-        <div className="app-rail__block">
-          <button type="button" className="app-rail__row">
-            <Star size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-            <span className="app-rail__row-label">Skills graph</span>
-          </button>
-          <button type="button" className="app-rail__row">
-            <Share2 size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-            <span className="app-rail__row-label">Talent graph</span>
-          </button>
-          <button type="button" className="app-rail__row">
-            <Waypoints size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-            <span className="app-rail__row-label">Project graph</span>
-          </button>
-        </div>
-
-        <div className="app-rail__block">
-          <button
-            type="button"
-            className="app-rail__section-head"
-            onClick={() => setGridOpen((o) => !o)}
-            aria-expanded={gridOpen}
-          >
-            <Database size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-            <span className="app-rail__section-label">Data studio</span>
-            <ChevronDown
-              size={16}
-              strokeWidth={1.5}
-              className={`app-rail__chev${gridOpen ? ' app-rail__chev--open' : ''}`}
-              aria-hidden
-            />
-          </button>
-          {gridOpen && (
-            <div className="app-rail__subnav">
-              <div className="app-rail__subnav-line" aria-hidden />
-              <div className="app-rail__subnav-rows">
-                {(
-                  [
-                    { id: 'offices' as const, label: 'Offices', Icon: BookOpen },
-                    { id: 'people' as const, label: 'People', Icon: Users },
-                    { id: 'roles' as const, label: 'Roles', Icon: GraduationCap },
-                    { id: 'projects' as const, label: 'Projects', Icon: Folder },
-                    { id: 'clients' as const, label: 'Clients', Icon: Building2 },
-                    { id: 'rate-cards' as const, label: 'Rate cards', Icon: DollarSign },
-                    { id: 'activity' as const, label: 'Activity log', Icon: Clock },
-                  ] as const
-                ).map(({ id, label, Icon }) => (
+        {officeMode === 'single' ? (
+          <>
+            {/* ── Single office nav ─────────────────────────────────────── */}
+            <div className="app-rail__block app-rail__block--so-offices">
+              {OFFICES.map((office) => {
+                const isActive = activeSingleOffice === office.id
+                return (
                   <button
-                    key={id}
+                    key={office.id}
                     type="button"
-                    className={`app-rail__subrow${dataStudioActive === id ? ' app-rail__subrow--active' : ''}`}
-                    onClick={() => onDataStudioActiveChange(id)}
-                    aria-current={dataStudioActive === id ? 'page' : undefined}
+                    className={`app-rail__so-office${isActive ? ' app-rail__so-office--active' : ''}`}
+                    onClick={() => setActiveSingleOffice(office.id)}
+                    aria-current={isActive ? 'page' : undefined}
                   >
-                    <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-                    <span className="app-rail__row-label">{label}</span>
+                    <Building2 size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                    <span className="app-rail__row-label">{office.label}</span>
+                    {isActive
+                      ? <ChevronDown size={14} strokeWidth={1.5} className="app-rail__so-chev" aria-hidden />
+                      : <ChevronRight size={14} strokeWidth={1.5} className="app-rail__so-chev" aria-hidden />
+                    }
                   </button>
-                ))}
-              </div>
+                )
+              })}
             </div>
-          )}
-        </div>
+
+            <div className="app-rail__so-divider" aria-hidden />
+
+            {/* Main nav items — flat, no section header */}
+            <div className="app-rail__block">
+              {SINGLE_OFFICE_NAV.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`app-rail__row${soNavActive === id ? ' app-rail__row--active' : ''}`}
+                  onClick={() => setSoNavActive(id)}
+                  aria-current={soNavActive === id ? 'page' : undefined}
+                >
+                  <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                  <span className="app-rail__row-label">{label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Data studio */}
+            <div className="app-rail__block">
+              <button
+                type="button"
+                className="app-rail__section-head"
+                onClick={() => setSoDataStudioOpen((o) => !o)}
+                aria-expanded={soDataStudioOpen}
+              >
+                <Database size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                <span className="app-rail__section-label">Data studio</span>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={1.5}
+                  className={`app-rail__chev${soDataStudioOpen ? ' app-rail__chev--open' : ''}`}
+                  aria-hidden
+                />
+              </button>
+              {soDataStudioOpen && (
+                <div className="app-rail__subnav">
+                  <div className="app-rail__subnav-line" aria-hidden />
+                  <div className="app-rail__subnav-rows">
+                    {SINGLE_OFFICE_DATA_STUDIO.map(({ id, label, Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`app-rail__subrow${dataStudioActive === id ? ' app-rail__subrow--active' : ''}`}
+                        onClick={() => onDataStudioActiveChange(id as DataStudioNavId)}
+                        aria-current={dataStudioActive === id ? 'page' : undefined}
+                      >
+                        <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                        <span className="app-rail__row-label">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* ── Multi-office nav (existing) ───────────────────────────── */}
+            <div className="app-rail__block">
+              <button
+                type="button"
+                className="app-rail__section-head"
+                onClick={() => setGlobalOpen((o) => !o)}
+                aria-expanded={globalOpen}
+              >
+                <BookOpen size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                <span className="app-rail__section-label">Global</span>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={1.5}
+                  className={`app-rail__chev${globalOpen ? ' app-rail__chev--open' : ''}`}
+                  aria-hidden
+                />
+              </button>
+              {globalOpen && (
+                <div className="app-rail__indent">
+                  <button type="button" className="app-rail__row">
+                    <LayoutDashboard size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                    <span className="app-rail__row-label">Dashboard</span>
+                  </button>
+                  <button type="button" className="app-rail__row">
+                    <BarChart3 size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                    <span className="app-rail__row-label">Report</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="app-rail__block app-rail__block--locations">
+              {RAIL_LOCATIONS.map((name) => (
+                <button key={name} type="button" className="app-rail__location">
+                  <BookOpen size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                  <span className="app-rail__row-label">{name}</span>
+                  <ChevronUp size={16} strokeWidth={1.5} className="app-rail__chev-loc" aria-hidden />
+                </button>
+              ))}
+            </div>
+
+            <div className="app-rail__block">
+              <button type="button" className="app-rail__row">
+                <Star size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                <span className="app-rail__row-label">Skills graph</span>
+              </button>
+              <button type="button" className="app-rail__row">
+                <Share2 size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                <span className="app-rail__row-label">Talent graph</span>
+              </button>
+              <button type="button" className="app-rail__row">
+                <Waypoints size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                <span className="app-rail__row-label">Project graph</span>
+              </button>
+            </div>
+
+            <div className="app-rail__block">
+              <button
+                type="button"
+                className="app-rail__section-head"
+                onClick={() => setGridOpen((o) => !o)}
+                aria-expanded={gridOpen}
+              >
+                <Database size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                <span className="app-rail__section-label">Data studio</span>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={1.5}
+                  className={`app-rail__chev${gridOpen ? ' app-rail__chev--open' : ''}`}
+                  aria-hidden
+                />
+              </button>
+              {gridOpen && (
+                <div className="app-rail__subnav">
+                  <div className="app-rail__subnav-line" aria-hidden />
+                  <div className="app-rail__subnav-rows">
+                    {(
+                      [
+                        { id: 'offices' as const, label: 'Offices', Icon: BookOpen },
+                        { id: 'people' as const, label: 'People', Icon: Users },
+                        { id: 'roles' as const, label: 'Roles', Icon: GraduationCap },
+                        { id: 'projects' as const, label: 'Projects', Icon: Folder },
+                        { id: 'clients' as const, label: 'Clients', Icon: Building2 },
+                        { id: 'rate-cards' as const, label: 'Rate cards', Icon: DollarSign },
+                        { id: 'activity' as const, label: 'Activity log', Icon: Clock },
+                      ] as const
+                    ).map(({ id, label, Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`app-rail__subrow${dataStudioActive === id ? ' app-rail__subrow--active' : ''}`}
+                        onClick={() => onDataStudioActiveChange(id)}
+                        aria-current={dataStudioActive === id ? 'page' : undefined}
+                      >
+                        <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                        <span className="app-rail__row-label">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </nav>
     </aside>
   )
@@ -1378,6 +1518,7 @@ export default function App() {
   const [dataStudioNavId, setDataStudioNavId] = useState<DataStudioNavId>('people')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pricingPlan, setPricingPlan] = useState<PricingPlanId>('pro')
+  const [officeMode, setOfficeMode] = useState<OfficeModeId>('multi')
   const [rbacEnforced, setRbacEnforced] = useState(false)
   const [activeOrgId, setActiveOrgId] = useState<string | null>('access')
   const [expandedOfficeId, setExpandedOfficeId] = useState<string | null>('beaverton')
@@ -1387,6 +1528,15 @@ export default function App() {
     officeId: 'beaverton',
     childId: 'policies',
   })
+
+  function handleOfficeModeChange(mode: OfficeModeId) {
+    setOfficeMode(mode)
+    // If currently viewing an office section, reset to the primary office
+    if (activeOrgId === null) {
+      setActive({ mode: 'section', officeId: 'beaverton', childId: 'policies' })
+      setExpandedOfficeId('beaverton')
+    }
+  }
 
   const orgNavItems = useMemo(() => [...ORG_NAV], [])
   const adminNavItems = useMemo(() => adminNavForPlan(pricingPlan), [pricingPlan])
@@ -1484,6 +1634,7 @@ export default function App() {
     <div className="app-shell">
       <AppRail
         onOpenSettings={() => setSettingsOpen(true)}
+        officeMode={officeMode}
         dataStudioActive={dataStudioNavId}
         onDataStudioActiveChange={setDataStudioNavId}
       />
@@ -1575,6 +1726,7 @@ export default function App() {
             </button>
             <span className="settings-fullpage__title">Company settings</span>
             <div className="settings-fullpage__header-actions">
+              <OfficeModeControl value={officeMode} onChange={handleOfficeModeChange} />
               <PlanDropdown value={pricingPlan} onChange={setPricingPlan} />
             </div>
           </header>
@@ -1635,6 +1787,50 @@ export default function App() {
                       Pro
                     </span>
                   </button>
+                ) : officeMode === 'single' ? (
+                  <>
+                    <div className="sidebar__section-label-row">
+                      <p className="sidebar__section-label sidebar__section-label--inline">Office</p>
+                    </div>
+                    <div className="sidebar__nav">
+                      {/* Office name row — acts as overview */}
+                      <div className={`office-row${!activeOrgId && active.mode === 'overview' ? ' office-row--office-active' : ''}`}>
+                        <button
+                          type="button"
+                          className="office-row__main"
+                          onClick={() => selectOfficeOverview('beaverton')}
+                          aria-current={!activeOrgId && active.mode === 'overview' ? 'page' : undefined}
+                        >
+                          <NavItemIcon Icon={Building2} active={!activeOrgId && active.mode === 'overview'} />
+                          <span className="nav-row__label">Beaverton HQ</span>
+                        </button>
+                      </div>
+                      {/* Sub-items directly (no expand/collapse needed) */}
+                      <div className="office-group__nested" role="group" aria-label="Beaverton HQ">
+                        {OFFICE_SUBITEMS.map((item) => {
+                          const isActive =
+                            !activeOrgId &&
+                            active.mode === 'section' &&
+                            active.childId === item.id
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={`nav-row nav-row--nested${isActive ? ' nav-row--active' : ''}`}
+                              aria-current={isActive ? 'page' : undefined}
+                              onClick={() => {
+                                setActiveOrgId(null)
+                                setActive({ mode: 'section', officeId: 'beaverton', childId: item.id })
+                              }}
+                            >
+                              <NavItemIcon Icon={ChevronRight} active={isActive} />
+                              <span className="nav-row__label">{item.label}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <>
                     <div className="sidebar__section-label-row">

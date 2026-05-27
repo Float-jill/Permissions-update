@@ -520,6 +520,78 @@
   align-items: center;
 }
 
+/* ── Single-office rail ─────────────────────────────────────────────────── */
+
+.app-rail__block--so-offices {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px 4px;
+}
+
+.app-rail__so-office {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-rail__so-office:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+
+.app-rail__so-office--active {
+  background: var(--nav-active);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.app-rail__so-office .app-rail__row-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-rail__so-chev {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.app-rail__so-divider {
+  height: 1px;
+  margin: 6px 16px;
+  background: var(--border-sidebar);
+}
+
+/* hide text in collapsed rail */
+.app-rail--collapsed .app-rail__so-office {
+  justify-content: center;
+}
+.app-rail--collapsed .app-rail__so-chev {
+  display: none;
+}
+
+/* active row highlight for single-office main nav */
+.app-rail__row--active {
+  background: var(--nav-active);
+  color: var(--text-primary);
+}
+
 .sidebar {
   width: var(--sidebar-width);
   flex-shrink: 0;
@@ -554,6 +626,49 @@
   letter-spacing: -0.4px;
   line-height: 1.2;
   color: var(--text-primary);
+}
+
+/* Office mode segmented control (Single office / Multi-office) */
+.office-mode-ctrl {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-panel);
+  gap: 2px;
+}
+
+.office-mode-ctrl__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.office-mode-ctrl__btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.office-mode-ctrl__btn--active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.office-mode-ctrl__btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
 }
 
 /* Plan preview switcher (Pro vs Starter) */
