@@ -1,7 +1,7 @@
 import './App.css'
 import { ACCESS_ROLE_LABELS } from './accessRoles'
 import { DataStudioPeoplePage, SAMPLE_PEOPLE } from './DataStudioPeoplePage'
-import { Fragment, useEffect, useRef, useMemo, useState } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 import {
   Activity,
   ArrowLeft,

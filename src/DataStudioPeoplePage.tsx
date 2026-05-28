@@ -176,9 +176,6 @@ const PERSON_PANEL_TABS = [
 
 type PersonPanelTabId = (typeof PERSON_PANEL_TABS)[number]['id']
 
-const DEFAULT_PROJECT_VIEW = ['Build a house', 'Build a car', 'Build a spaceship']
-const DEFAULT_PROJECT_EDIT = ['Build a fish']
-
 // ── People generator ──────────────────────────────────────────────────────────
 
 const GEN_FIRST = [
@@ -246,78 +243,6 @@ function generatePeople(count: number): PeopleRow[] {
 
 export const SAMPLE_PEOPLE: PeopleRow[] = generatePeople(243)
 
-const ALL_PROJECTS = [
-  'Build a house',
-  'Build a car',
-  'Build a spaceship',
-  'Build a fish',
-  'Design system refresh',
-  'Q4 marketing campaign',
-  'Mobile app v2',
-  'Data platform migration',
-  'Brand guidelines update',
-  'Analytics dashboard',
-]
-
-function ProjectAddRow({
-  onAdd,
-  existing,
-}: {
-  onAdd: (project: string) => void
-  existing: string[]
-}) {
-  const [open, setOpen] = useState(false)
-  const [value, setValue] = useState('')
-  const available = ALL_PROJECTS.filter((p) => !existing.includes(p))
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className="person-panel__proj-add"
-        onClick={() => setOpen(true)}
-        disabled={available.length === 0}
-      >
-        <Plus size={12} strokeWidth={2.5} aria-hidden />
-        Add project
-      </button>
-    )
-  }
-
-  return (
-    <div className="person-panel__proj-add-row">
-      <select
-        className="person-panel__proj-add-select"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        autoFocus
-      >
-        <option value="">Select a project…</option>
-        {available.map((p) => (
-          <option key={p} value={p}>{p}</option>
-        ))}
-      </select>
-      <button
-        type="button"
-        className="person-panel__proj-add-confirm"
-        disabled={!value}
-        onClick={() => {
-          if (value) { onAdd(value); setValue(''); setOpen(false) }
-        }}
-      >
-        Add
-      </button>
-      <button
-        type="button"
-        className="person-panel__proj-add-cancel"
-        aria-label="Cancel"
-        onClick={() => { setValue(''); setOpen(false) }}
-      >
-        <X size={13} strokeWidth={2} aria-hidden />
-      </button>
-    </div>
-  )
-}
 
 function ScopePicker({
   id,
