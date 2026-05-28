@@ -1264,7 +1264,7 @@ function AppRail({
   const [gridOpen, setGridOpen] = useState(true)
   const [logoMenuOpen, setLogoMenuOpen] = useState(false)
   const [_activeSingleOffice, _setActiveSingleOffice] = useState<string>('beaverton')
-  const [soNavActive, setSoNavActive] = useState<string>('schedule')
+  const [soNavActive, setSoNavActive] = useState<string>('people')
   const [soDataStudioOpen, setSoDataStudioOpen] = useState(true)
   const logoMenuRef = useRef<HTMLDivElement>(null)
 
