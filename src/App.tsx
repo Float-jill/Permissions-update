@@ -1,6 +1,6 @@
 import './App.css'
 import { ACCESS_ROLE_LABELS } from './accessRoles'
-import { DataStudioPeoplePage } from './DataStudioPeoplePage'
+import { DataStudioPeoplePage, SAMPLE_PEOPLE } from './DataStudioPeoplePage'
 import { Fragment, useEffect, useRef, useMemo, useState } from 'react'
 import {
   Activity,
@@ -40,6 +40,7 @@ import {
   UserCog,
   Users,
   Waypoints,
+  X,
 } from 'lucide-react'
 
 
@@ -63,10 +64,6 @@ const SCOPE_OPTIONS: { id: ScopeId; label: string }[] = [
   { id: 'self',           label: 'Self' },
 ]
 
-/** Higher rank = narrower scope. editScope rank must be ≥ viewScope rank. */
-const SCOPE_RANK: Record<ScopeId, number> = {
-  everyone: 0, departments: 1, 'direct-reports': 2, 'project-teams': 3, self: 4,
-}
 
 const PLAN_OPTIONS: { id: PricingPlanId; label: string; hint: string }[] = [
   { id: 'starter',    label: 'Starter',              hint: 'Core settings' },
@@ -226,10 +223,6 @@ export interface ConfigPerm {
   group?: string           // which collapsible group this belongs to
   /** If set, this perm is auto-granted when the named parent perm is enabled */
   grantedBy?: string
-  /** Who this role can see data for. Only on people-action perms. */
-  viewScope?: ScopeId
-  /** Who this role can act on. Rank must be ≥ viewScope rank (same or narrower). */
-  editScope?: ScopeId
 }
 
 interface Role {
@@ -237,264 +230,259 @@ interface Role {
   label: string
   count: number
   description: string
+  /** Data scope: the people/projects this role's permissions apply to */
+  scope: ScopeId
   configPerms: ConfigPerm[]
   footerNote?: string
   isCustom?: boolean  // true for roles added by the customer
 }
 
-interface ScopeOverride { view?: ScopeId; edit?: ScopeId }
-
-/** Shared 28-permission template — each role gets its own copy with independent enabled flags */
-function makePerms(
-  enabledMap: Record<string, boolean>,
-  scopeMap: Record<string, ScopeOverride> = {},
-): ConfigPerm[] {
+/** Permission template — each role gets its own copy with independent enabled flags */
+function makePerms(enabledMap: Record<string, boolean>): ConfigPerm[] {
   const on = (id: string) => enabledMap[id] ?? false
-  /** Spread scope fields onto people-action perms, defaulting to 'everyone'/'everyone' */
-  const sc = (id: string): { viewScope: ScopeId; editScope: ScopeId } => ({
-    viewScope: scopeMap[id]?.view ?? 'everyone',
-    editScope: scopeMap[id]?.edit ?? 'everyone',
-  })
   return [
-    // ── Company ─────────────────────────────────────────────────────────────
-    { id: 'billing',                  group: 'Company',             label: 'Billing',                    description: 'View and manage billing, subscription, and plan changes',                                    enabled: on('billing') },
-    { id: 'security',                 group: 'Company',             label: 'Security',                   description: 'Manage SSO, 2FA, password policies, and security settings',                                 enabled: on('security') },
-    { id: 'integrations',             group: 'Company',             label: 'Integrations & API keys',    description: 'Manage third-party integrations and API keys',                                               enabled: on('integrations') },
-    { id: 'company-settings',         group: 'Company',             label: 'Company settings',           description: 'Edit company-wide preferences (work hours, regions, holidays, status types, time off types)', enabled: on('company-settings') },
-    // ── Data studio ──────────────────────────────────────────────────────────
-    { id: 'manage-offices',           group: 'Data studio',         label: 'Manage offices',             description: 'Create, edit, delete offices and manage office-level settings',                              enabled: on('manage-offices') },
-    { id: 'manage-departments',       group: 'Data studio',         label: 'Manage departments',         description: 'Create, edit, delete departments',                                                           enabled: on('manage-departments') },
-    { id: 'manage-roles',             group: 'Data studio',         label: 'Manage roles',               description: 'Create, edit, delete role placeholders',                                                     enabled: on('manage-roles') },
-    { id: 'manage-clients',           group: 'Data studio',         label: 'Manage clients',             description: 'Create, edit, delete clients',                                                               enabled: on('manage-clients') },
-    { id: 'manage-tags',              group: 'Data studio',         label: 'Manage tags',                description: 'Create, edit, delete project and people tags',                                               enabled: on('manage-tags') },
-    { id: 'import-export',            group: 'Data studio',         label: 'Import / Export data',       description: 'Import and export data via bulk operations',                                                 enabled: on('import-export') },
-    // ── Resource planning — scoped perms get view + edit scope ───────────────
-    { id: 'add-remove-people',        group: 'Resource planning',   label: 'Add & remove people',        description: 'Create new people records, deactivate or delete people',                                     enabled: on('add-remove-people'), ...sc('add-remove-people') },
-    { id: 'edit-people',              group: 'Resource planning',   label: 'Edit existing people',       description: "Granted because 'Add & remove people' is enabled",                                          enabled: on('edit-people'),        grantedBy: 'add-remove-people' },
-    { id: 'approve-time-off',         group: 'Resource planning',   label: 'Approve time off',           description: 'Approve or reject time off requests',                                                       enabled: on('approve-time-off'), ...sc('approve-time-off') },
-    { id: 'schedule-others',          group: 'Resource planning',   label: 'Schedule other people',      description: 'Create, edit, delete tasks and time off for other people',                                   enabled: on('schedule-others'), ...sc('schedule-others') },
-    { id: 'schedule-self',            group: 'Resource planning',   label: 'Schedule themselves',        description: "Granted because 'Schedule other people' is enabled",                                        enabled: on('schedule-self'),      grantedBy: 'schedule-others' },
-    { id: 'log-time-others',          group: 'Resource planning',   label: 'Log time for other people',  description: 'Create, edit, delete logged time entries for other people',                                  enabled: on('log-time-others'), ...sc('log-time-others') },
-    { id: 'log-time-self',            group: 'Resource planning',   label: 'Log time for themselves',    description: "Granted because 'Log time for other people' is enabled",                                    enabled: on('log-time-self'),      grantedBy: 'log-time-others' },
-    // ── Project management ───────────────────────────────────────────────────
-    { id: 'add-remove-projects',      group: 'Project management',  label: 'Add & remove projects',      description: 'Create new projects, delete or archive existing projects',                                   enabled: on('add-remove-projects') },
-    { id: 'edit-projects',            group: 'Project management',  label: 'Edit existing projects',     description: "Granted because 'Add & remove projects' is enabled",                                        enabled: on('edit-projects'),      grantedBy: 'add-remove-projects' },
-    { id: 'manage-draft-projects',    group: 'Project management',  label: 'Manage draft projects',      description: "Granted because 'Add & remove projects' is enabled",                                        enabled: on('manage-draft-projects'), grantedBy: 'add-remove-projects' },
-    { id: 'project-templates',        group: 'Project management',  label: 'Manage project templates',   description: 'Create, edit, delete project templates',                                                     enabled: on('project-templates') },
-    { id: 'project-budgets',          group: 'Project management',  label: 'Manage project budgets',     description: 'Set and modify project/phase budgets, manage project expenses',                              enabled: on('project-budgets') },
-    // ── Finance ──────────────────────────────────────────────────────────────
-    { id: 'view-cost-rates',          group: 'Finance',             label: 'View cost rates',            description: 'See cost rate data on people and projects',                                                  enabled: on('view-cost-rates') },
-    { id: 'view-bill-rates',          group: 'Finance',             label: 'View bill rates',            description: 'See bill rate data on people and projects',                                                  enabled: on('view-bill-rates') },
-    { id: 'manage-cost-rates',        group: 'Finance',             label: 'Manage cost rates',          description: 'Set and modify cost rates on people',                                                        enabled: on('manage-cost-rates') },
-    { id: 'manage-bill-rates',        group: 'Finance',             label: 'Manage bill rates',          description: 'Set and modify bill rates on people',                                                        enabled: on('manage-bill-rates') },
-    { id: 'manage-project-bill-rates',group: 'Finance',             label: 'Manage project bill rates',  description: 'Set and modify bill rate overrides at the project or phase level',                          enabled: on('manage-project-bill-rates') },
-    { id: 'manage-rate-cards',        group: 'Finance',             label: 'Manage rate cards',          description: 'Create, edit, delete rate cards',                                                            enabled: on('manage-rate-cards') },
+    // ── People ───────────────────────────────────────────────────────────────
+    { id: 'people.view',                  group: 'People',   label: 'View people',                    description: 'View people in the organisation. Scope: Everyone / Department(s) / Direct reports / Project teams / Self',               enabled: on('people.view') },
+    { id: 'people.edit',                  group: 'People',   label: 'Edit people',                    description: 'Edit people records. Scope: Everyone / Department(s) / Direct reports / Project teams / Self / None',                   enabled: on('people.edit') },
+    { id: 'people.schedule',              group: 'People',   label: 'Schedule people',                description: 'Schedule people — mirrors people.edit scope',                                                                            enabled: on('people.schedule') },
+    { id: 'people.create',                group: 'People',   label: 'Add new people',                 description: 'Create new people records',                                                                                             enabled: on('people.create') },
+    { id: 'people.delete',                group: 'People',   label: 'Delete people',                  description: 'Delete people records',                                                                                                 enabled: on('people.delete') },
+    { id: 'people.request_time_off',      group: 'People',   label: 'Request time off for self',      description: 'Request time off (Self scope)',                                                                                          enabled: on('people.request_time_off') },
+    { id: 'people.approve_time_off',      group: 'People',   label: 'Approve time off requests',      description: "Approve people's time off requests — mirrors people.edit scope",                                                        enabled: on('people.approve_time_off') },
+    { id: 'people.view_reports',          group: 'People',   label: 'View people reports',            description: 'View people reports — mirrors people.view scope',                                                                        enabled: on('people.view_reports') },
+    { id: 'people.log_time.view',         group: 'People',   label: 'View log time for people',       description: 'View logged time for others — mirrors people.view scope. Once decoupled from schedule, department-scoped view no longer automatically grants log time visibility.', enabled: on('people.log_time.view') },
+    { id: 'people.log_time',              group: 'People',   label: 'Log time for people',            description: 'Log time for people against projects',                                                                                  enabled: on('people.log_time') },
+    { id: 'people.log_time.edit',         group: 'People',   label: 'Edit logged time for people',    description: 'Edit logged time for others against projects — mirrors people.edit scope. Once decoupled from schedule, department-scoped edit no longer automatically grants log time visibility.', enabled: on('people.log_time.edit') },
+    { id: 'people.approve_log_time',      group: 'People',   label: 'Approve logged time',            description: "Approve people's logged time",                                                                                          enabled: on('people.approve_log_time') },
+    { id: 'people.view_bill_rates',       group: 'People',   label: 'View bill rates',                description: 'View bill rates for roles, people and on projects',                                                                     enabled: on('people.view_bill_rates') },
+    { id: 'people.view_cost_rates',       group: 'People',   label: 'View cost rates',                description: 'View cost rates for people and roles',                                                                                  enabled: on('people.view_cost_rates') },
+    // ── Projects ─────────────────────────────────────────────────────────────
+    { id: 'project.view',                 group: 'Projects', label: 'View projects',                  description: 'View projects. Scope: All projects / Projects owned / Projects member of',                                              enabled: on('project.view') },
+    { id: 'project.edit',                 group: 'Projects', label: 'Edit project settings',          description: 'Edit project settings. Scope: All projects / Projects owned / Projects member of',                                      enabled: on('project.edit') },
+    { id: 'project.plan',                 group: 'Projects', label: 'Plan unassigned roles',          description: 'Plan allocations on unassigned roles — mirrors project.edit scope',                                                     enabled: on('project.plan') },
+    { id: 'project.create',               group: 'Projects', label: 'Create new projects',            description: 'Create new projects',                                                                                                   enabled: on('project.create') },
+    { id: 'project.delete',               group: 'Projects', label: 'Delete projects',                description: 'Delete projects',                                                                                                       enabled: on('project.delete') },
+    { id: 'project.manage_estimates',     group: 'Projects', label: 'Manage project estimates',       description: 'Create and edit project estimates — mirrors project.edit scope',                                                         enabled: on('project.manage_estimates') },
+    { id: 'project.view_budgets',         group: 'Projects', label: 'See budgets',                    description: 'View project budgets in hours and/or currency',                                                                         enabled: on('project.view_budgets') },
+    { id: 'project.edit_budgets',         group: 'Projects', label: 'Set and edit project budgets',   description: 'Set and edit project budgets in hours and/or currency',                                                                 enabled: on('project.edit_budgets') },
+    { id: 'project.view_profitability',   group: 'Projects', label: 'View project profitability',     description: 'View project profitability (margin, revenue) — mirrors project.view scope',                                             enabled: on('project.view_profitability') },
+    { id: 'project.view_reports',         group: 'Projects', label: 'View project reports',           description: 'View project-level reports — mirrors project.view scope',                                                               enabled: on('project.view_reports') },
+    { id: 'project.owner',                group: 'Projects', label: 'Project owner',                  description: 'Designation on the project record that activates project.edit for the designated user',                                enabled: on('project.owner') },
+    { id: 'project.contributors',         group: 'Projects', label: 'Project contributors',           description: 'List of people and/or groups with edit rights on a specific project',                                                  enabled: on('project.contributors') },
+    { id: 'project.view_notes',           group: 'Projects', label: 'View project notes',             description: 'View notes on projects',                                                                                                enabled: on('project.view_notes') },
+    // ── Clients ──────────────────────────────────────────────────────────────
+    { id: 'client.view',                  group: 'Clients',  label: 'View clients',                   description: 'View clients and their projects. Scope: All or scoped via client_group visibility policy on Pro+',                      enabled: on('client.view') },
+    { id: 'client.create',                group: 'Clients',  label: 'Add new clients',                description: 'Create new client records',                                                                                             enabled: on('client.create') },
+    { id: 'client.edit',                  group: 'Clients',  label: 'Edit client details',            description: 'Edit client details. Scope: All or scoped via client_group visibility policy on Pro+',                                  enabled: on('client.edit') },
+    { id: 'client.delete',                group: 'Clients',  label: 'Delete clients',                 description: 'Delete client records',                                                                                                 enabled: on('client.delete') },
+    { id: 'client.view_rate_cards',       group: 'Clients',  label: 'View client rate cards',         description: 'View client rate cards. Scope: All or scoped via client_group visibility policy on Pro+',                              enabled: on('client.view_rate_cards') },
+    { id: 'client.edit_rate_cards',       group: 'Clients',  label: 'Edit client rate cards',         description: 'Edit client rate cards. Scope: All or scoped via client_group visibility policy on Pro+',                              enabled: on('client.edit_rate_cards') },
+    { id: 'client_group.view',            group: 'Clients',  label: 'Client group visibility',        description: 'Scope controls per-user visibility policy for a client group',                                                          enabled: on('client_group.view') },
+    // ── Offices ──────────────────────────────────────────────────────────────
+    { id: 'office.view',                  group: 'Offices',  label: 'View office',                    description: 'View people and projects in an office',                                                                                 enabled: on('office.view') },
+    { id: 'office.edit',                  group: 'Offices',  label: 'Edit office',                    description: 'Schedule, resource, and manage within an office',                                                                       enabled: on('office.edit') },
+    { id: 'office.grant_access',          group: 'Offices',  label: 'Grant office access',            description: 'Grant additional office access to other users',                                                                         enabled: on('office.grant_access') },
+    { id: 'office.manage_settings',       group: 'Offices',  label: 'Manage office settings',         description: 'Manage office-level settings. Operations Admin: [Office] or Company',                                                  enabled: on('office.manage_settings') },
+    { id: 'office.home',                  group: 'Offices',  label: 'Home office',                    description: 'Per-user attribute. Sets default scope.',                                                                               enabled: on('office.home') },
+    { id: 'office.additional_access',     group: 'Offices',  label: 'Additional office access',       description: 'Per-user multi-select of additional [Office: view] or [Office: edit] grants',                                          enabled: on('office.additional_access') },
+    // ── Settings ─────────────────────────────────────────────────────────────
+    { id: 'settings.manage_team',         group: 'Settings', label: 'Manage team settings',           description: 'Manage team settings',                                                                                                  enabled: on('settings.manage_team') },
+    { id: 'settings.manage_billing',      group: 'Settings', label: 'Manage billing and plan',        description: 'Manage billing and plan',                                                                                               enabled: on('settings.manage_billing') },
+    { id: 'settings.manage_security_sso', group: 'Settings', label: 'Manage security & SSO',          description: 'Manage SSO, domain restrictions',                                                                                       enabled: on('settings.manage_security_sso') },
+    { id: 'settings.manage_api_keys',     group: 'Settings', label: 'Manage API keys',                description: 'Manage API keys',                                                                                                       enabled: on('settings.manage_api_keys') },
+    { id: 'settings.access_activity_log', group: 'Settings', label: 'Access activity log',            description: "Access the activity log. If a user doesn't have permission to see an entity and they can see the activity log, they won't see the entity in the log.", enabled: on('settings.access_activity_log') },
+    { id: 'settings.manage_access_rights',group: 'Settings', label: 'Manage access rights',           description: 'Manage the Access Rights settings page — view and edit profile configurations. Operations Admin: Company.',             enabled: on('settings.manage_access_rights') },
   ]
 }
 
 export const ROLES: Role[] = [
+  // ── 1. Account owner — all permissions, all data ──────────────────────────
   {
     id: 'account-owner',
     label: ACCESS_ROLE_LABELS['account-owner'],
     count: 2,
-    description: 'Full account control including billing, security, and all organisational settings. Cannot be modified.',
+    scope: 'everyone',
+    description: 'Full account control. All permissions across all offices. Cannot be modified.',
     configPerms: makePerms({
-      // Company — all on
-      billing: true, security: true, integrations: true, 'company-settings': true,
-      // Data studio — all on
-      'manage-offices': true, 'manage-departments': true, 'manage-roles': true,
-      'manage-clients': true, 'manage-tags': true, 'import-export': true,
-      // Resource planning — all on
-      'add-remove-people': true, 'edit-people': true, 'approve-time-off': true,
-      'schedule-others': true, 'schedule-self': true, 'log-time-others': true, 'log-time-self': true,
-      // Project management — all on
-      'add-remove-projects': true, 'edit-projects': true, 'manage-draft-projects': true,
-      'project-templates': true, 'project-budgets': true,
-      // Finance — all on
-      'view-cost-rates': true, 'view-bill-rates': true, 'manage-cost-rates': true,
-      'manage-bill-rates': true, 'manage-project-bill-rates': true, 'manage-rate-cards': true,
-    }, {
-      'add-remove-people': { view: 'everyone', edit: 'everyone' },
-      'approve-time-off':  { view: 'everyone', edit: 'everyone' },
-      'schedule-others':   { view: 'everyone', edit: 'everyone' },
-      'log-time-others':   { view: 'everyone', edit: 'everyone' },
+      'people.view': true, 'people.edit': true, 'people.schedule': true,
+      'people.create': true, 'people.delete': true, 'people.request_time_off': true,
+      'people.approve_time_off': true, 'people.view_reports': true,
+      'people.log_time.view': true, 'people.log_time': true, 'people.log_time.edit': true,
+      'people.approve_log_time': true, 'people.view_bill_rates': true, 'people.view_cost_rates': true,
+      'project.view': true, 'project.edit': true, 'project.plan': true,
+      'project.create': true, 'project.delete': true, 'project.manage_estimates': true,
+      'project.view_budgets': true, 'project.edit_budgets': true,
+      'project.view_profitability': true, 'project.view_reports': true,
+      'project.owner': true, 'project.contributors': true, 'project.view_notes': true,
+      'client.view': true, 'client.create': true, 'client.edit': true, 'client.delete': true,
+      'client.view_rate_cards': true, 'client.edit_rate_cards': true, 'client_group.view': true,
+      'office.view': true, 'office.edit': true, 'office.grant_access': true,
+      'office.manage_settings': true, 'office.home': true, 'office.additional_access': true,
+      'settings.manage_team': true, 'settings.manage_billing': true,
+      'settings.manage_security_sso': true, 'settings.manage_api_keys': true,
+      'settings.access_activity_log': true, 'settings.manage_access_rights': true,
     }),
   },
+
+  // ── 2. Admin — all permissions, scoped to managed offices ─────────────────
   {
     id: 'admin',
     label: ACCESS_ROLE_LABELS.admin,
     count: 5,
-    description: 'Full organisational control. Billing and Security are off by default — toggle them on to grant.',
+    scope: 'everyone',
+    description: 'All permissions scoped to managed offices. Billing is off by default.',
     configPerms: makePerms({
-      // Company — billing & security off by default
-      integrations: true, 'company-settings': true,
-      // Data studio — all on
-      'manage-offices': true, 'manage-departments': true, 'manage-roles': true,
-      'manage-clients': true, 'manage-tags': true, 'import-export': true,
-      // Resource planning — all on
-      'add-remove-people': true, 'edit-people': true, 'approve-time-off': true,
-      'schedule-others': true, 'schedule-self': true, 'log-time-others': true, 'log-time-self': true,
-      // Project management — all on
-      'add-remove-projects': true, 'edit-projects': true, 'manage-draft-projects': true,
-      'project-templates': true, 'project-budgets': true,
-      // Finance — all on
-      'view-cost-rates': true, 'view-bill-rates': true, 'manage-cost-rates': true,
-      'manage-bill-rates': true, 'manage-project-bill-rates': true, 'manage-rate-cards': true,
-    }, {
-      'add-remove-people': { view: 'everyone', edit: 'everyone' },
-      'approve-time-off':  { view: 'everyone', edit: 'everyone' },
-      'schedule-others':   { view: 'everyone', edit: 'everyone' },
-      'log-time-others':   { view: 'everyone', edit: 'everyone' },
+      'people.view': true, 'people.edit': true, 'people.schedule': true,
+      'people.create': true, 'people.delete': true, 'people.request_time_off': true,
+      'people.approve_time_off': true, 'people.view_reports': true,
+      'people.log_time.view': true, 'people.log_time': true, 'people.log_time.edit': true,
+      'people.approve_log_time': true, 'people.view_bill_rates': true, 'people.view_cost_rates': true,
+      'project.view': true, 'project.edit': true, 'project.plan': true,
+      'project.create': true, 'project.delete': true, 'project.manage_estimates': true,
+      'project.view_budgets': true, 'project.edit_budgets': true,
+      'project.view_profitability': true, 'project.view_reports': true,
+      'project.owner': true, 'project.contributors': true, 'project.view_notes': true,
+      'client.view': true, 'client.create': true, 'client.edit': true, 'client.delete': true,
+      'client.view_rate_cards': true, 'client.edit_rate_cards': true, 'client_group.view': true,
+      'office.view': true, 'office.edit': true, 'office.grant_access': true,
+      'office.manage_settings': true, 'office.home': true, 'office.additional_access': true,
+      'settings.manage_team': true, 'settings.manage_billing': false,
+      'settings.manage_security_sso': true, 'settings.manage_api_keys': true,
+      'settings.access_activity_log': true, 'settings.manage_access_rights': true,
     }),
   },
+
+  // ── 3. People manager — people & time off, scoped to depts/direct reports ─
+  {
+    id: 'people-manager',
+    label: ACCESS_ROLE_LABELS['people-manager'],
+    count: 15,
+    scope: 'departments',
+    description: 'Manages people records and time off. Scoped to their departments or direct reports.',
+    configPerms: makePerms({
+      'people.view': true, 'people.edit': true, 'people.schedule': true,
+      'people.create': true, 'people.request_time_off': true,
+      'people.approve_time_off': true, 'people.view_reports': true,
+      'people.log_time.view': true, 'people.log_time': true, 'people.log_time.edit': true,
+      'people.approve_log_time': true,
+      'project.view': true, 'project.view_reports': true, 'project.view_notes': true,
+      'client.view': true,
+      'office.view': true, 'office.home': true, 'office.additional_access': true,
+    }),
+  },
+
+  // ── 4. Project manager — projects & estimates, scoped to project teams ────
   {
     id: 'project-manager',
     label: ACCESS_ROLE_LABELS['project-manager'],
-    count: 35,
-    description: 'Plans and delivers projects, manages project teams and logs time for their team.',
+    count: 20,
+    scope: 'project-teams',
+    description: 'Manages projects and estimates. Scoped to projects they own or contribute to.',
     configPerms: makePerms({
-      // Company — none
-      // Data studio — clients and tags only
-      'manage-clients': true, 'manage-tags': true,
-      // Resource planning — scheduling and time logging
-      'schedule-others': true, 'schedule-self': true,
-      'log-time-others': true, 'log-time-self': true,
-      // Project management — create/edit (draft only) + budgets
-      'add-remove-projects': true, 'edit-projects': true, 'manage-draft-projects': true,
-      'project-budgets': true,
-      // Finance — view bill rates only (no cost rates)
-      'view-bill-rates': true,
-    }, {
-      // Sees everyone on the schedule; can only act on their project teams
-      'add-remove-people': { view: 'everyone', edit: 'everyone' },
-      'approve-time-off':  { view: 'everyone', edit: 'project-teams' },
-      'schedule-others':   { view: 'everyone', edit: 'project-teams' },
-      'log-time-others':   { view: 'everyone', edit: 'project-teams' },
+      'people.view': true, 'people.schedule': true,
+      'people.request_time_off': true,
+      'people.log_time.view': true, 'people.log_time': true, 'people.log_time.edit': true,
+      'people.view_bill_rates': true,
+      'project.view': true, 'project.edit': true, 'project.plan': true,
+      'project.create': true, 'project.manage_estimates': true,
+      'project.view_budgets': true, 'project.edit_budgets': true,
+      'project.view_reports': true, 'project.owner': true,
+      'project.contributors': true, 'project.view_notes': true,
+      'client.view': true, 'client.view_rate_cards': true,
+      'office.view': true, 'office.home': true, 'office.additional_access': true,
     }),
   },
+
+  // ── 5. Resource planner — all staffing, scoped to departments ─────────────
   {
     id: 'resource-planner',
     label: ACCESS_ROLE_LABELS['resource-planner'],
     count: 52,
-    description: 'Manages people records and schedules — not project delivery.',
-    footerNote: 'Sees project margin % only — no cost rate or bill rate amounts.',
+    scope: 'departments',
+    description: 'All staffing permissions. Scoped to departments or projects they own or contribute to.',
     configPerms: makePerms({
-      // Company — none
-      // Data studio — departments, roles, tags
-      'manage-departments': true, 'manage-roles': true, 'manage-tags': true,
-      // Resource planning — all people + scheduling; no log time for others
-      'add-remove-people': true, 'edit-people': true, 'approve-time-off': true,
-      'schedule-others': true, 'schedule-self': true,
-      'log-time-self': true,
-      // Project management — none
-      // Finance — none (margin % is surfaced in reports, not a discrete permission)
-    }, {
-      'add-remove-people': { view: 'everyone', edit: 'everyone' },
-      'approve-time-off':  { view: 'everyone', edit: 'everyone' },
-      'schedule-others':   { view: 'everyone', edit: 'everyone' },
-      'log-time-others':   { view: 'everyone', edit: 'everyone' },
+      'people.view': true, 'people.edit': true, 'people.schedule': true,
+      'people.create': true, 'people.request_time_off': true,
+      'people.approve_time_off': true, 'people.view_reports': true,
+      'people.log_time.view': true, 'people.log_time': true,
+      'project.view': true, 'project.plan': true,
+      'project.view_reports': true, 'project.view_notes': true,
+      'client.view': true,
+      'office.view': true, 'office.edit': true,
+      'office.home': true, 'office.additional_access': true,
     }),
   },
+
+  // ── 6. Member — own data only, self scope ─────────────────────────────────
   {
     id: 'member',
     label: ACCESS_ROLE_LABELS.member,
     count: 149,
-    description: 'Individual contributor. Manages their own time only.',
+    scope: 'self',
+    description: 'Individual contributor. No reports or finance data. Sees only their own data.',
     configPerms: makePerms({
-      // Everything off except scheduling and logging for self
-      'schedule-self': true,
-      'log-time-self': true,
-    }, {
-      'add-remove-people': { view: 'self', edit: 'self' },
-      'approve-time-off':  { view: 'self', edit: 'self' },
-      'schedule-others':   { view: 'self', edit: 'self' },
-      'log-time-others':   { view: 'self', edit: 'self' },
+      'people.view': true, 'people.request_time_off': true, 'people.log_time': true,
+      'project.view': true, 'project.view_notes': true,
+      'office.home': true,
     }),
   },
 ]
 
-export const GROUP_ORDER = ['Company', 'Data studio', 'Resource planning', 'Project management', 'Finance']
+export const GROUP_ORDER = ['People', 'Projects', 'Clients', 'Offices', 'Settings']
 
 type DraftPerms = Record<string, ConfigPerm[]>
 
-// ── ScopeChip — inline dropdown for view / edit scope ─────────────────────
+// ── RoleScopeSelector — standalone scope control for the role card ──────────
 
-function ScopeChip({
-  dim,
+function RoleScopeSelector({
   value,
-  minRank = 0,
   onChange,
+  readOnly = false,
 }: {
-  dim: 'View' | 'Edit'
   value: ScopeId
-  /** Minimum rank allowed (inclusive). Edit scope can't be broader than view scope. */
-  minRank?: number
-  onChange: (v: ScopeId) => void
+  onChange?: (v: ScopeId) => void
+  readOnly?: boolean
 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [open])
-
-  const options = SCOPE_OPTIONS.filter((o) => SCOPE_RANK[o.id] >= minRank)
-  const current = SCOPE_OPTIONS.find((o) => o.id === value)!
+  if (readOnly) {
+    const active = SCOPE_OPTIONS.find((o) => o.id === value)
+    return (
+      <div className="role-scope-selector role-scope-selector--readonly">
+        <span className="role-scope-opt role-scope-opt--active role-scope-opt--readonly">
+          {active?.label ?? value}
+        </span>
+      </div>
+    )
+  }
 
   return (
-    <span ref={ref} className="scope-chip">
-      <span className="scope-chip__dim">{dim}</span>
-      <button
-        type="button"
-        className="scope-chip__btn"
-        onClick={(e) => { e.preventDefault(); setOpen((o) => !o) }}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        {current.label}
-        <ChevronDown size={10} strokeWidth={2.5} className="scope-chip__chevron" aria-hidden />
-      </button>
-      {open && (
-        <ul className="scope-chip__menu" role="listbox">
-          {options.map((opt) => (
-            <li key={opt.id}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={opt.id === value}
-                className={`scope-chip__option${opt.id === value ? ' scope-chip__option--active' : ''}`}
-                onClick={() => { onChange(opt.id); setOpen(false) }}
-              >
-                {opt.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </span>
+    <div className="role-scope-selector">
+      {SCOPE_OPTIONS.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          className={`role-scope-opt${value === opt.id ? ' role-scope-opt--active' : ''}`}
+          onClick={() => onChange?.(opt.id)}
+          aria-pressed={value === opt.id}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
   )
 }
 
-// ── PermRow — editable permission row ─────────────────────────────────────
+// ── PermRow — editable permission row (no scope — scope is role-level) ──────
 
 function PermRow({
   perm,
   isAutoGranted,
   onToggle,
-  onScopeChange,
 }: {
   perm: ConfigPerm
   isAutoGranted: boolean
   onToggle: () => void
-  onScopeChange?: (dim: 'view' | 'edit', scope: ScopeId) => void
 }) {
   const effectiveEnabled = isAutoGranted || perm.enabled
-  const showScope = effectiveEnabled && !isAutoGranted && perm.viewScope !== undefined
 
   return (
     <tr className={`cfg-table__row${effectiveEnabled ? '' : ' cfg-table__row--off'}${isAutoGranted ? ' cfg-table__row--granted' : ''}`}>
@@ -512,21 +500,6 @@ function PermRow({
             {perm.description && (
               <span className="cfg-perm-label__desc">{perm.description}</span>
             )}
-            {showScope && (
-              <span className="perm-scope-row">
-                <ScopeChip
-                  dim="View"
-                  value={perm.viewScope!}
-                  onChange={(v) => onScopeChange?.('view', v)}
-                />
-                <ScopeChip
-                  dim="Edit"
-                  value={perm.editScope!}
-                  minRank={SCOPE_RANK[perm.viewScope!]}
-                  onChange={(v) => onScopeChange?.('edit', v)}
-                />
-              </span>
-            )}
           </span>
         </label>
       </td>
@@ -538,12 +511,10 @@ function PermGroup({
   label,
   perms,
   onToggle,
-  onScopeChange,
 }: {
   label: string
   perms: ConfigPerm[]
   onToggle: (permId: string) => void
-  onScopeChange?: (permId: string, dim: 'view' | 'edit', scope: ScopeId) => void
 }) {
   const [open, setOpen] = useState(true)
   const permMap = new Map(perms.map((p) => [p.id, p]))
@@ -573,7 +544,6 @@ function PermGroup({
             perm={perm}
             isAutoGranted={isAutoGranted}
             onToggle={() => onToggle(perm.id)}
-            onScopeChange={(dim, scope) => onScopeChange?.(perm.id, dim, scope)}
           />
         )
       })}
@@ -584,7 +554,6 @@ function PermGroup({
 /** Row used in the read-only (collapsed) view */
 function ReadOnlyPermRow({ perm, isAutoGranted }: { perm: ConfigPerm; isAutoGranted: boolean }) {
   const effectiveEnabled = isAutoGranted || perm.enabled
-  const showScope = effectiveEnabled && perm.viewScope !== undefined
 
   return (
     <tr className={`cfg-table__row${effectiveEnabled ? '' : ' cfg-table__row--off'}${isAutoGranted ? ' cfg-table__row--granted' : ''}`}>
@@ -594,22 +563,6 @@ function ReadOnlyPermRow({ perm, isAutoGranted }: { perm: ConfigPerm; isAutoGran
           <span className="cfg-perm-label__name">{perm.label}</span>
           {perm.description && (
             <span className="cfg-perm-label__desc">{perm.description}</span>
-          )}
-          {showScope && (
-            <span className="perm-scope-row perm-scope-row--ro">
-              <span className="scope-pill">
-                <span className="scope-pill__dim">View</span>
-                <span className="scope-pill__val">
-                  {SCOPE_OPTIONS.find((o) => o.id === perm.viewScope)?.label}
-                </span>
-              </span>
-              <span className="scope-pill">
-                <span className="scope-pill__dim">Edit</span>
-                <span className="scope-pill__val">
-                  {SCOPE_OPTIONS.find((o) => o.id === perm.editScope)?.label}
-                </span>
-              </span>
-            </span>
           )}
         </span>
       </td>
@@ -660,10 +613,13 @@ function AccessRightsPage({
   const [viewingId, setViewingId] = useState<string | null>(null)
   const [savedPerms, setSavedPerms] = useState<DraftPerms>({})
   const [draftPerms, setDraftPerms] = useState<DraftPerms>({})
+  const [savedScope, setSavedScope] = useState<Record<string, ScopeId>>({})
+  const [draftScope, setDraftScope] = useState<Record<string, ScopeId>>({})
   const [confirmSaveRoleId, setConfirmSaveRoleId] = useState<string | null>(null)
   const [customRoles, setCustomRoles] = useState<Role[]>([])
   const [draftLabel, setDraftLabel] = useState('')
   const [draftDescription, setDraftDescription] = useState('')
+  const [peopleSectionOpen, setPeopleSectionOpen] = useState(true)
   const [savedMeta, setSavedMeta] = useState<Record<string, { label: string; description: string }>>({})
 
   const pendingSaveRole = useMemo(
@@ -680,9 +636,14 @@ function AccessRightsPage({
     setConfirmSaveRoleId(null)
   }, [plan])
 
+  useEffect(() => {
+    setPeopleSectionOpen(true)
+  }, [viewingId, editingId])
+
   function startEdit(role: Role) {
     const base = savedPerms[role.id] ?? role.configPerms
     setDraftPerms((prev) => ({ ...prev, [role.id]: base.map((p) => ({ ...p })) }))
+    setDraftScope((prev) => ({ ...prev, [role.id]: savedScope[role.id] ?? role.scope }))
     const meta = savedMeta[role.id]
     setDraftLabel(meta?.label ?? role.label)
     setDraftDescription(meta?.description ?? role.description ?? '')
@@ -695,6 +656,7 @@ function AccessRightsPage({
 
   function saveEdit(roleId: string) {
     setSavedPerms((prev) => ({ ...prev, [roleId]: draftPerms[roleId] }))
+    setSavedScope((prev) => ({ ...prev, [roleId]: draftScope[roleId] }))
     setSavedMeta((prev) => ({ ...prev, [roleId]: { label: draftLabel, description: draftDescription } }))
     setCustomRoles((prev) =>
       prev.map((r) => r.id === roleId ? { ...r, label: draftLabel, description: draftDescription } : r)
@@ -743,23 +705,6 @@ function AccessRightsPage({
     })
   }
 
-  function setScopePerm(roleId: string, permId: string, dim: 'view' | 'edit', scope: ScopeId) {
-    setDraftPerms((prev) => ({
-      ...prev,
-      [roleId]: prev[roleId].map((p) => {
-        if (p.id !== permId) return p
-        if (dim === 'view') {
-          const newViewRank = SCOPE_RANK[scope]
-          const curEditRank = SCOPE_RANK[p.editScope ?? 'everyone']
-          // If edit is now broader than the new view, snap it to match view
-          const newEdit = curEditRank < newViewRank ? scope : p.editScope
-          return { ...p, viewScope: scope, editScope: newEdit }
-        }
-        return { ...p, editScope: scope }
-      }),
-    }))
-  }
-
   // ── Custom roles ────────────────────────────────────────────────────────────
 
   const MAX_CUSTOM_ROLES = 10
@@ -789,19 +734,21 @@ function AccessRightsPage({
     const name = newRoleName.trim()
     if (!name) return
     const id = `custom-${Date.now()}`
-    const basePerms = newRoleCloneId
-      ? (allRoles.find((r) => r.id === newRoleCloneId)?.configPerms ?? []).map((p) => ({ ...p }))
-      : []
+    const sourceRole = newRoleCloneId ? allRoles.find((r) => r.id === newRoleCloneId) : undefined
+    const basePerms = sourceRole ? sourceRole.configPerms.map((p) => ({ ...p })) : []
+    const baseScope: ScopeId = sourceRole?.scope ?? 'everyone'
     const newRole: Role = {
       id,
       label: name,
       count: 0,
       description: '',
+      scope: baseScope,
       configPerms: basePerms,
       isCustom: true,
     }
     setCustomRoles((prev) => [...prev, newRole])
     setDraftPerms((prev) => ({ ...prev, [id]: basePerms.map((p) => ({ ...p })) }))
+    setDraftScope((prev) => ({ ...prev, [id]: baseScope }))
     setEditingId(id)
     closeAddModal()
   }
@@ -816,16 +763,19 @@ function AccessRightsPage({
     if (customRoles.length >= MAX_CUSTOM_ROLES) return
     const id = `custom-${Date.now()}`
     const perms = (savedPerms[role.id] ?? role.configPerms).map((p) => ({ ...p }))
+    const scope = savedScope[role.id] ?? role.scope
     const cloned: Role = {
       id,
       label: `${role.label} (copy)`,
       count: 0,
       description: role.description,
+      scope,
       configPerms: perms,
       isCustom: true,
     }
     setCustomRoles((prev) => [...prev, cloned])
     setDraftPerms((prev) => ({ ...prev, [id]: perms.map((p) => ({ ...p })) }))
+    setDraftScope((prev) => ({ ...prev, [id]: scope }))
     setEditingId(id)
   }
 
@@ -947,172 +897,250 @@ function AccessRightsPage({
           </thead>
           <tbody>
             {allRoles.map((role) => {
-              const isEditing = canEdit && editingId === role.id
-              const isViewing = !isEditing && viewingId === role.id
-              const isExpanded = isEditing || isViewing
-              const displayPerms = isEditing
-                ? draftPerms[role.id]
-                : (savedPerms[role.id] ?? role.configPerms)
-              const groups = GROUP_ORDER.map((g) => ({
-                label: g,
-                perms: (displayPerms ?? []).filter((p) => p.group === g),
-              })).filter((g) => g.perms.length > 0)
+              const isActive = editingId === role.id || viewingId === role.id
               const effectiveLabel = savedMeta[role.id]?.label ?? role.label
               const effectiveDescription = savedMeta[role.id]?.description ?? role.description
-
               return (
-                <Fragment key={role.id}>
-                  <tr
-                    className={`roles-table__row${isExpanded ? ' roles-table__row--expanded' : ''}`}
-                    onClick={() => {
-                      if (isEditing) return
-                      setViewingId(isViewing ? null : role.id)
-                    }}
-                  >
-                    <td className="roles-table__td">
-                      <span className="roles-table__role-link">{effectiveLabel}</span>
-                    </td>
-                    <td className="roles-table__td roles-table__td--desc">
-                      {effectiveDescription || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No description</span>}
-                    </td>
-                    <td className="roles-table__td">
-                      <span className={`roles-table__type-badge${role.isCustom ? ' roles-table__type-badge--custom' : ''}`}>
-                        {role.isCustom ? 'Custom' : 'Default'}
-                      </span>
-                    </td>
-                    <td className="roles-table__td roles-table__td--num">
-                      <span className="roles-table__people-count">{role.count}</span>
-                    </td>
-                    <td className="roles-table__td roles-table__td--meta">Float</td>
-                    <td className="roles-table__td roles-table__td--meta">May 26, 2026</td>
-                    <td className="roles-table__td roles-table__td--actions">
-                      <div className="roles-table__row-actions">
-                        {canEdit && !isEditing && (
-                          <>
-                            {!role.isCustom && (
-                              <button
-                                type="button"
-                                className="roles-table__icon-btn"
-                                aria-label={`Clone ${role.label}`}
-                                title="Clone role"
-                                disabled={customRoles.length >= MAX_CUSTOM_ROLES}
-                                onClick={(e) => { e.stopPropagation(); cloneRole(role) }}
-                              >
-                                <Copy size={14} strokeWidth={1.75} aria-hidden />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="roles-table__icon-btn"
-                              aria-label={`Edit ${role.label}`}
-                              title="Edit role"
-                              onClick={(e) => { e.stopPropagation(); setViewingId(null); startEdit(role) }}
-                            >
-                              <Pencil size={14} strokeWidth={1.75} aria-hidden />
-                            </button>
-                          </>
-                        )}
-                        <ChevronRight
-                          size={14}
-                          strokeWidth={1.75}
-                          className={`roles-table__chevron${isExpanded ? ' roles-table__chevron--open' : ''}`}
-                          aria-hidden
-                        />
-                      </div>
-                    </td>
-                  </tr>
-
-                  {isExpanded && (
-                    <tr className="roles-table__detail-row">
-                      <td colSpan={7} className="roles-table__detail-cell">
-                        <div className="roles-table__detail">
-                          {isEditing && (
-                            <div className="role-edit-meta">
-                              <div className="role-edit-field">
-                                <label className="role-edit-label" htmlFor={`role-name-${role.id}`}>
-                                  Role name
-                                </label>
-                                <input
-                                  id={`role-name-${role.id}`}
-                                  type="text"
-                                  className="role-edit-input"
-                                  value={draftLabel}
-                                  onChange={(e) => setDraftLabel(e.target.value)}
-                                  placeholder="Role name"
-                                />
-                              </div>
-                              <div className="role-edit-field">
-                                <label className="role-edit-label" htmlFor={`role-desc-${role.id}`}>
-                                  Description
-                                </label>
-                                <textarea
-                                  id={`role-desc-${role.id}`}
-                                  className="role-edit-input role-edit-input--textarea"
-                                  value={draftDescription}
-                                  onChange={(e) => setDraftDescription(e.target.value)}
-                                  placeholder="Describe what this role can do…"
-                                  rows={2}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="role-perms-stack">
-                            {groups.map((g) => (
-                              <table
-                                key={g.label}
-                                className={`cfg-table role-perms-group-table${isViewing ? ' cfg-table--readonly' : ''}`}
-                              >
-                                <tbody>
-                                  {isEditing ? (
-                                    <PermGroup
-                                      label={g.label}
-                                      perms={g.perms}
-                                      onToggle={(permId) => togglePerm(role.id, permId)}
-                                      onScopeChange={(permId, dim, scope) => setScopePerm(role.id, permId, dim, scope)}
-                                    />
-                                  ) : (
-                                    <ReadOnlyPermGroup label={g.label} perms={g.perms} />
-                                  )}
-                                </tbody>
-                              </table>
-                            ))}
-                          </div>
-                          {role.footerNote && <div className="cfg-table__footer cfg-table__footer--standalone">{role.footerNote}</div>}
-                          {canEdit && isEditing && (
-                            <div className="roles-table__detail-actions">
-                              <button className="btn btn--ghost" type="button" onClick={cancelEdit}>Cancel</button>
-                              <button
-                                className="btn btn--primary"
-                                type="button"
-                                onClick={() => role.isCustom ? saveEdit(role.id) : requestSave(role.id)}
-                              >
-                                Save
-                              </button>
-                            </div>
-                          )}
-                          {role.isCustom && !isEditing && (
-                            <div className="roles-table__detail-actions">
-                              <button
-                                className="btn btn--ghost"
-                                type="button"
-                                aria-label={`Delete ${role.label}`}
-                                onClick={(e) => { e.stopPropagation(); deleteCustomRole(role.id) }}
-                              >
-                                <Trash2 size={13} strokeWidth={2} aria-hidden /> Delete role
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                <tr
+                  key={role.id}
+                  className={`roles-table__row${isActive ? ' roles-table__row--expanded' : ''}`}
+                  onClick={() => {
+                    if (editingId === role.id) return
+                    setViewingId(viewingId === role.id ? null : role.id)
+                  }}
+                >
+                  <td className="roles-table__td">
+                    <span className="roles-table__role-link">{effectiveLabel}</span>
+                  </td>
+                  <td className="roles-table__td roles-table__td--desc">
+                    {effectiveDescription || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No description</span>}
+                  </td>
+                  <td className="roles-table__td">
+                    <span className={`roles-table__type-badge${role.isCustom ? ' roles-table__type-badge--custom' : ''}`}>
+                      {role.isCustom ? 'Custom' : 'Default'}
+                    </span>
+                  </td>
+                  <td className="roles-table__td roles-table__td--num">
+                    <span className="roles-table__people-count">{role.count}</span>
+                  </td>
+                  <td className="roles-table__td roles-table__td--meta">Float</td>
+                  <td className="roles-table__td roles-table__td--meta">May 26, 2026</td>
+                  <td className="roles-table__td roles-table__td--actions">
+                    <div className="roles-table__row-actions">
+                      {canEdit && !role.isCustom && (
+                        <button
+                          type="button"
+                          className="roles-table__icon-btn"
+                          aria-label={`Clone ${role.label}`}
+                          title="Clone role"
+                          disabled={customRoles.length >= MAX_CUSTOM_ROLES}
+                          onClick={(e) => { e.stopPropagation(); cloneRole(role) }}
+                        >
+                          <Copy size={14} strokeWidth={1.75} aria-hidden />
+                        </button>
+                      )}
+                      <ChevronRight size={14} strokeWidth={1.75} className="roles-table__chevron" aria-hidden />
+                    </div>
+                  </td>
+                </tr>
               )
             })}
           </tbody>
         </table>
       </div>
+
+      {/* ── Role side panel ─────────────────────────────────────────────────── */}
+      {(viewingId || editingId) && (() => {
+        const activeId = editingId ?? viewingId!
+        const role = allRoles.find((r) => r.id === activeId)
+        if (!role) return null
+        const isEditing = canEdit && editingId === role.id
+        const isViewing = !isEditing
+        const displayPerms = isEditing ? draftPerms[role.id] : (savedPerms[role.id] ?? role.configPerms)
+        const groups = GROUP_ORDER.map((g) => ({
+          label: g,
+          perms: (displayPerms ?? []).filter((p) => p.group === g),
+        })).filter((g) => g.perms.length > 0)
+        const effectiveLabel = savedMeta[role.id]?.label ?? role.label
+        const effectiveScope = isEditing ? (draftScope[role.id] ?? role.scope) : (savedScope[role.id] ?? role.scope)
+        const closePanel = () => { setViewingId(null); cancelEdit() }
+
+        return (
+          <>
+            <div className="role-panel__backdrop" role="presentation" aria-hidden onClick={closePanel} />
+            <aside className="role-panel" aria-label={`${effectiveLabel} permissions`}>
+              {/* Header */}
+              <header className="role-panel__header">
+                <div className="role-panel__header-left">
+                  <span className="role-panel__title">{effectiveLabel}</span>
+                  <span className="role-panel__subtitle">{role.count} {role.count === 1 ? 'person' : 'people'}</span>
+                </div>
+                <div className="role-panel__header-right">
+                  {isViewing && canEdit && !role.isCustom && (
+                    <button
+                      type="button"
+                      className="roles-table__icon-btn"
+                      title="Clone role"
+                      disabled={customRoles.length >= MAX_CUSTOM_ROLES}
+                      onClick={() => { cloneRole(role); closePanel() }}
+                    >
+                      <Copy size={14} strokeWidth={1.75} aria-hidden />
+                    </button>
+                  )}
+                  {isViewing && (
+                    <button
+                      type="button"
+                      className="role-panel__edit-btn"
+                      onClick={() => { setViewingId(null); startEdit(role) }}
+                    >
+                      <Pencil size={13} strokeWidth={2} aria-hidden />
+                      Edit
+                    </button>
+                  )}
+                  <button type="button" className="role-panel__close" aria-label="Close" onClick={closePanel}>
+                    <X size={18} strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
+              </header>
+
+              {/* Body */}
+              <div className="role-panel__body">
+                {isEditing && (
+                  <div className="role-edit-meta">
+                    <div className="role-edit-field">
+                      <label className="role-edit-label" htmlFor={`rp-name-${role.id}`}>Role name</label>
+                      <input
+                        id={`rp-name-${role.id}`}
+                        type="text"
+                        className="role-edit-input"
+                        value={draftLabel}
+                        onChange={(e) => setDraftLabel(e.target.value)}
+                        placeholder="Role name"
+                      />
+                    </div>
+                    <div className="role-edit-field">
+                      <label className="role-edit-label" htmlFor={`rp-desc-${role.id}`}>Description</label>
+                      <textarea
+                        id={`rp-desc-${role.id}`}
+                        className="role-edit-input role-edit-input--textarea"
+                        value={draftDescription}
+                        onChange={(e) => setDraftDescription(e.target.value)}
+                        placeholder="Describe what this role can do…"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="role-section-card">
+                  <div className="role-section-card__header">
+                    <span className="role-section-card__title">Data scope</span>
+                    <span className="role-section-card__desc">The data this role can see and act on. Applies to all permissions below.</span>
+                  </div>
+                  <RoleScopeSelector
+                    value={effectiveScope}
+                    readOnly={!isEditing}
+                    onChange={(v) => setDraftScope((prev) => ({ ...prev, [role.id]: v }))}
+                  />
+                </div>
+
+                <div className="role-section-card">
+                  <div className="role-section-card__header">
+                    <span className="role-section-card__title">Permissions</span>
+                    <span className="role-section-card__desc">The actions this role can take on the data above.</span>
+                  </div>
+                  <div className="role-perms-stack">
+                    {groups.map((g) => (
+                      <table key={g.label} className={`cfg-table role-perms-group-table${isViewing ? ' cfg-table--readonly' : ''}`}>
+                        <tbody>
+                          {isEditing
+                            ? <PermGroup label={g.label} perms={g.perms} onToggle={(permId) => togglePerm(role.id, permId)} />
+                            : <ReadOnlyPermGroup label={g.label} perms={g.perms} />
+                          }
+                        </tbody>
+                      </table>
+                    ))}
+                  </div>
+                </div>
+                {role.footerNote && <div className="cfg-table__footer cfg-table__footer--standalone">{role.footerNote}</div>}
+
+                {/* ── People assigned this role ────────────────────────── */}
+                {(() => {
+                  const assigned = SAMPLE_PEOPLE.filter((p) => p.accessRoleId === role.id)
+                  const SHOW_MAX = 12
+                  const visible = assigned.slice(0, SHOW_MAX)
+                  const overflow = assigned.length - SHOW_MAX
+                  if (assigned.length === 0) return null
+                  return (
+                    <div className="role-section-card">
+                      <button
+                        type="button"
+                        className="role-section-card__toggle"
+                        aria-expanded={peopleSectionOpen}
+                        onClick={() => setPeopleSectionOpen((o) => !o)}
+                      >
+                        <div className="role-section-card__header">
+                          <span className="role-section-card__title">
+                            People
+                            <span className="role-panel-people__count">{assigned.length}</span>
+                          </span>
+                          <span className="role-section-card__desc">People currently assigned this access role.</span>
+                        </div>
+                        <ChevronDown
+                          size={15}
+                          strokeWidth={1.75}
+                          className={`role-section-card__chevron${peopleSectionOpen ? ' role-section-card__chevron--open' : ''}`}
+                          aria-hidden
+                        />
+                      </button>
+                      {peopleSectionOpen && (
+                        <>
+                          <ul className="role-panel-people__list">
+                            {visible.map((person) => (
+                              <li key={person.id} className="role-panel-people__item">
+                                <span className="role-panel-people__avatar" aria-hidden>
+                                  {person.name.trim().charAt(0).toUpperCase()}
+                                </span>
+                                <span className="role-panel-people__name">{person.name}</span>
+                                <span className="role-panel-people__role">{person.role}</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {overflow > 0 && (
+                            <p className="role-panel-people__more">+{overflow} more</p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Footer */}
+              {(isEditing || (role.isCustom && isViewing)) && (
+                <footer className="role-panel__footer">
+                  {isEditing ? (
+                    <>
+                      <button className="btn btn--ghost" type="button" onClick={closePanel}>Cancel</button>
+                      <button
+                        className="btn btn--primary"
+                        type="button"
+                        onClick={() => role.isCustom ? saveEdit(role.id) : requestSave(role.id)}
+                      >
+                        Save
+                      </button>
+                    </>
+                  ) : (
+                    <button className="btn btn--ghost" type="button" onClick={() => { deleteCustomRole(role.id); closePanel() }}>
+                      <Trash2 size={13} strokeWidth={2} aria-hidden /> Delete role
+                    </button>
+                  )}
+                </footer>
+              )}
+            </aside>
+          </>
+        )
+      })()}
 
       {/* ── Add custom role ─────────────────────────────────────────────────── */}
       {canEdit && (

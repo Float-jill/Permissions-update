@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import {
+  Archive,
   ChevronDown,
   Download,
   ExternalLink,
+  Pencil,
   Plus,
   SlidersHorizontal,
+  UserPlus,
   X,
 } from 'lucide-react'
 import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRoles'
@@ -119,14 +122,26 @@ const PEOPLE_SCOPE_OPTIONS: {
 /** Return the sensible default view scope for a given access role. */
 function defaultPeopleScope(roleId: AccessRoleId): PeopleScope {
   if (roleId === 'project-manager') return 'project-teams'
+  if (roleId === 'people-manager' || roleId === 'resource-planner') return 'departments'
   if (roleId === 'member') return 'self'
   return 'everyone'
 }
 
 /** Return the sensible default edit scope for a given access role. */
-function defaultPeopleScopeEdit(_roleId: AccessRoleId): PeopleScope {
+function defaultPeopleScopeEdit(roleId: AccessRoleId): PeopleScope {
+  if (roleId === 'project-manager') return 'project-teams'
+  if (roleId === 'people-manager' || roleId === 'resource-planner') return 'departments'
+  if (roleId === 'member') return 'self'
   return 'everyone'
 }
+
+export type ProjectAccessLevel = 'all' | 'assigned' | 'none'
+
+const PROJECT_ACCESS_OPTIONS: { id: ProjectAccessLevel; label: string; description: string }[] = [
+  { id: 'all',      label: 'All projects',       description: 'Can see and be scheduled on every project in the account.' },
+  { id: 'assigned', label: 'Assigned projects',  description: 'Can only see projects where they are an owner or member of the project team.' },
+  { id: 'none',     label: 'None',               description: 'Cannot access any projects.' },
+]
 
 export interface PeopleRow {
   id: string
@@ -144,10 +159,8 @@ export interface PeopleRow {
   peopleScope: PeopleScope
   /** Controls which people this user can edit across Float. */
   peopleScopeEdit: PeopleScope
-  /** Projects this person can view — Access tab. */
-  projectCanView: string[]
-  /** Projects this person can edit — Access tab. */
-  projectCanEdit: string[]
+  /** Top-level project access level for this person. */
+  projectAccess: ProjectAccessLevel
   /** Bespoke permissions granted to this individual beyond their role. */
   additionalPermissions: string[]
 }
@@ -196,7 +209,8 @@ const GEN_GROUPS = ['Leadership','Hiring committee','AI working group','Culture 
 const GEN_ROLES: AccessRoleId[] = [
   ...Array<AccessRoleId>(2).fill('account-owner'),
   ...Array<AccessRoleId>(5).fill('admin'),
-  ...Array<AccessRoleId>(35).fill('project-manager'),
+  ...Array<AccessRoleId>(15).fill('people-manager'),
+  ...Array<AccessRoleId>(20).fill('project-manager'),
   ...Array<AccessRoleId>(52).fill('resource-planner'),
   ...Array<AccessRoleId>(149).fill('member'),
 ]
@@ -224,14 +238,13 @@ function generatePeople(count: number): PeopleRow[] {
       accessRoleId: roleId,
       peopleScope: defaultPeopleScope(roleId),
       peopleScopeEdit: defaultPeopleScopeEdit(roleId),
-      projectCanView: DEFAULT_PROJECT_VIEW,
-      projectCanEdit: i % 4 === 0 ? DEFAULT_PROJECT_EDIT : [],
+      projectAccess: (roleId === 'account-owner' || roleId === 'admin') ? 'all' : roleId === 'member' ? 'assigned' : 'all',
       additionalPermissions: [],
     }
   })
 }
 
-const SAMPLE_PEOPLE: PeopleRow[] = generatePeople(243)
+export const SAMPLE_PEOPLE: PeopleRow[] = generatePeople(243)
 
 const ALL_PROJECTS = [
   'Build a house',
@@ -418,6 +431,163 @@ function nameInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || '?'
 }
 
+// ── Bulk edit ─────────────────────────────────────────────────────────────────
+
+type BulkFieldId = 'department' | 'delivery-team' | 'office' | 'group'
+
+const BULK_FIELDS: { id: BulkFieldId; label: string }[] = [
+  { id: 'department',    label: 'Department' },
+  { id: 'delivery-team', label: 'Delivery team' },
+  { id: 'office',        label: 'Office' },
+  { id: 'group',         label: 'Group' },
+]
+
+const BULK_FIELD_OPTIONS: Record<BulkFieldId, string[]> = {
+  department:      GEN_DEPTS,
+  'delivery-team': GEN_TEAMS,
+  office:          GEN_OFFICES,
+  group:           GEN_GROUPS,
+}
+
+interface BulkEditValues {
+  field?: BulkFieldId
+  fieldValue?: string
+  role?: string
+  accessRoleId?: string
+}
+
+function BulkEditModal({
+  count,
+  onApply,
+  onClose,
+}: {
+  count: number
+  onApply: (values: BulkEditValues) => void
+  onClose: () => void
+}) {
+  const [field, setField] = useState<BulkFieldId | ''>('')
+  const [fieldValue, setFieldValue] = useState('')
+  const [roleValue, setRoleValue] = useState('')
+  const [accessValue, setAccessValue] = useState('')
+
+  const fieldOptions = field ? BULK_FIELD_OPTIONS[field] : []
+  const canApply = (field !== '' && fieldValue !== '') || roleValue !== '' || accessValue !== ''
+
+  function handleFieldChange(f: BulkFieldId | '') {
+    setField(f)
+    setFieldValue('')
+  }
+
+  function handleApply() {
+    if (!canApply) return
+    const patch: BulkEditValues = {}
+    if (field && fieldValue) { patch.field = field; patch.fieldValue = fieldValue }
+    if (roleValue)   patch.role = roleValue
+    if (accessValue) patch.accessRoleId = accessValue
+    onApply(patch)
+    onClose()
+  }
+
+  return (
+    <div
+      className="bulk-modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+    >
+      <div
+        className="bulk-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bulk-modal-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bulk-modal__header">
+          <h2 className="bulk-modal__title" id="bulk-modal-title">
+            Edit {count} {count === 1 ? 'person' : 'people'}
+          </h2>
+          <button type="button" className="bulk-modal__close" aria-label="Close" onClick={onClose}>✕</button>
+        </div>
+        <div className="bulk-modal__body">
+
+          {/* Field + conditional value */}
+          <div className="bulk-modal__field-row">
+            <label className="bulk-modal__label" htmlFor="bulk-field-select">Field</label>
+            <select
+              id="bulk-field-select"
+              className="bulk-modal__select"
+              value={field}
+              onChange={(e) => handleFieldChange(e.target.value as BulkFieldId | '')}
+            >
+              <option value=""></option>
+              {BULK_FIELDS.map((f) => (
+                <option key={f.id} value={f.id}>{f.label}</option>
+              ))}
+            </select>
+            {field !== '' && (
+              <select
+                className="bulk-modal__select bulk-modal__select--value"
+                value={fieldValue}
+                onChange={(e) => setFieldValue(e.target.value)}
+                aria-label={`${BULK_FIELDS.find(f => f.id === field)?.label} value`}
+              >
+                <option value="">Select a value…</option>
+                {fieldOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Role */}
+          <div className="bulk-modal__field-row">
+            <label className="bulk-modal__label" htmlFor="bulk-role-select">Role</label>
+            <select
+              id="bulk-role-select"
+              className="bulk-modal__select"
+              value={roleValue}
+              onChange={(e) => setRoleValue(e.target.value)}
+            >
+              <option value=""></option>
+              {GEN_TITLES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Access role */}
+          <div className="bulk-modal__field-row">
+            <label className="bulk-modal__label" htmlFor="bulk-access-select">Access role</label>
+            <select
+              id="bulk-access-select"
+              className="bulk-modal__select"
+              value={accessValue}
+              onChange={(e) => setAccessValue(e.target.value)}
+            >
+              <option value=""></option>
+              {ACCESS_ROLE_IDS.map((id) => (
+                <option key={id} value={id}>{accessRoleLabel(id)}</option>
+              ))}
+            </select>
+          </div>
+
+        </div>
+        <div className="bulk-modal__footer">
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={!canApply}
+            onClick={handleApply}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: boolean }) {
   const [category, setCategory] = useState<CategoryId>('employees')
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('active')
@@ -425,6 +595,8 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [personPanelTab, setPersonPanelTab] = useState<PersonPanelTabId>('access')
   const [people, setPeople] = useState<PeopleRow[]>(SAMPLE_PEOPLE)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBulkModal, setShowBulkModal] = useState(false)
 
   const visiblePeople = onlyWithAccess
     ? people.filter((p) => p.accessRoleId !== 'member')
@@ -446,40 +618,8 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, peopleScopeEdit: scope } : p)))
   }
 
-  function addProjectView(id: string, project: string) {
-    setPeople((prev) =>
-      prev.map((p) =>
-        p.id === id && !p.projectCanView.includes(project)
-          ? { ...p, projectCanView: [...p.projectCanView, project] }
-          : p,
-      ),
-    )
-  }
-
-  function removeProjectView(id: string, project: string) {
-    setPeople((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, projectCanView: p.projectCanView.filter((x) => x !== project) } : p,
-      ),
-    )
-  }
-
-  function addProjectEdit(id: string, project: string) {
-    setPeople((prev) =>
-      prev.map((p) =>
-        p.id === id && !p.projectCanEdit.includes(project)
-          ? { ...p, projectCanEdit: [...p.projectCanEdit, project] }
-          : p,
-      ),
-    )
-  }
-
-  function removeProjectEdit(id: string, project: string) {
-    setPeople((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, projectCanEdit: p.projectCanEdit.filter((x) => x !== project) } : p,
-      ),
-    )
+  function updateProjectAccess(id: string, level: ProjectAccessLevel) {
+    setPeople((prev) => prev.map((p) => p.id === id ? { ...p, projectAccess: level } : p))
   }
 
   function toggleAdditionalPermission(id: string, permId: string) {
@@ -495,6 +635,52 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
         }
       }),
     )
+  }
+
+  // ── Selection helpers ────────────────────────────────────────────────────
+  const visibleIds = visiblePeople.map((p) => p.id)
+  const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id))
+  const someSelected = visibleIds.some((id) => selectedIds.has(id))
+
+  function toggleRow(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(visibleIds))
+    }
+  }
+
+  function applyBulkEdit(values: BulkEditValues) {
+    setPeople((prev) =>
+      prev.map((p) => {
+        if (!selectedIds.has(p.id)) return p
+        const next = { ...p }
+        if (values.role)         next.role = values.role
+        if (values.accessRoleId) next.accessRoleId = values.accessRoleId as AccessRoleId
+        if (values.field && values.fieldValue) {
+          switch (values.field) {
+            case 'department':    next.department  = values.fieldValue; break
+            case 'delivery-team': next.deliveryTeam = values.fieldValue; break
+            case 'office':        next.office      = values.fieldValue; break
+            case 'group':
+              if (!next.groups.includes(values.fieldValue))
+                next.groups = [...next.groups, values.fieldValue]
+              break
+          }
+        }
+        return next
+      })
+    )
+    setSelectedIds(new Set())
   }
 
   function openPerson(id: string) {
@@ -601,50 +787,86 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
 
 
 
+      {/* ── Bulk action bar ─────────────────────────────────────────────── */}
+      {selectedIds.size > 0 && (
+        <div className="dh-people__bulk-bar">
+          <span className="dh-people__bulk-count">{selectedIds.size} selected</span>
+          <button
+            type="button"
+            className="btn btn--primary dh-people__bulk-btn"
+            onClick={() => setShowBulkModal(true)}
+          >
+            <Pencil size={13} strokeWidth={2} aria-hidden />
+            Edit
+          </button>
+          <button
+            type="button"
+            className="btn btn--primary dh-people__bulk-btn"
+            onClick={() => {/* Assign to project */}}
+          >
+            <UserPlus size={14} strokeWidth={1.75} aria-hidden />
+            Assign to project
+          </button>
+          <button
+            type="button"
+            className="btn btn--primary dh-people__bulk-btn"
+            onClick={() => {/* Archive */}}
+          >
+            <Archive size={14} strokeWidth={1.75} aria-hidden />
+            Archive
+          </button>
+          <button
+            type="button"
+            className="dh-people__bulk-clear"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="dh-people__table-wrap">
         <table className="dh-people__table">
           <thead>
             <tr>
               <th className="dh-people__th dh-people__th--check" scope="col">
-                <span className="sr-only">Select</span>
+                <input
+                  type="checkbox"
+                  className="dh-people__checkbox"
+                  aria-label="Select all"
+                  checked={allSelected}
+                  ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
+                  onChange={toggleAll}
+                />
               </th>
-              <th className="dh-people__th" scope="col">
-                Name
-              </th>
+              <th className="dh-people__th" scope="col">Name</th>
               <th className="dh-people__th" scope="col">
                 <button type="button" className="dh-people__th-btn">
-                  Role
-                  <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
+                  Role <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
+                </button>
+              </th>
+              <th className="dh-people__th" scope="col">Access</th>
+              <th className="dh-people__th" scope="col">
+                <button type="button" className="dh-people__th-btn">
+                  Department <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
               <th className="dh-people__th" scope="col">
-                Access
-              </th>
-              <th className="dh-people__th" scope="col">
                 <button type="button" className="dh-people__th-btn">
-                  Department
-                  <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
+                  Delivery Team <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
-              <th className="dh-people__th" scope="col">
-                <button type="button" className="dh-people__th-btn">
-                  Delivery Team
-                  <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
-                </button>
-              </th>
-              <th className="dh-people__th" scope="col">
-                Group
-              </th>
-              <th className="dh-people__th" scope="col">
-                Office
-              </th>
+              <th className="dh-people__th" scope="col">Group</th>
+              <th className="dh-people__th" scope="col">Office</th>
             </tr>
           </thead>
           <tbody>
-            {visiblePeople.map((row) => (
+            {visiblePeople.map((row) => {
+              const isChecked = selectedIds.has(row.id)
+              return (
               <tr
                 key={row.id}
-                className={`dh-people__row${selectedPersonId === row.id ? ' dh-people__row--selected' : ''}`}
+                className={`dh-people__row${selectedPersonId === row.id ? ' dh-people__row--selected' : ''}${isChecked ? ' dh-people__row--checked' : ''}`}
                 onClick={() => openPerson(row.id)}
               >
                 <td className="dh-people__td dh-people__td--check">
@@ -652,7 +874,9 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                     type="checkbox"
                     className="dh-people__checkbox"
                     aria-label={`Select ${row.name}`}
-                    onClick={(e) => e.stopPropagation()}
+                    checked={isChecked}
+                    onChange={() => {}}
+                    onClick={(e) => toggleRow(row.id, e)}
                   />
                 </td>
                 <td className="dh-people__td">
@@ -685,24 +909,26 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                 </td>
                 <td className="dh-people__td">{row.office}</td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
     </div>
 
     {selectedPerson && (
-      <>
-        <div
-          className="person-panel__backdrop"
-          role="presentation"
-          aria-hidden
-          onClick={closePersonPanel}
-        />
+      <div
+        className="person-panel__backdrop"
+        role="presentation"
+        onClick={closePersonPanel}
+        onKeyDown={(e) => { if (e.key === 'Escape') closePersonPanel() }}
+      >
         <aside
           className="person-panel"
+          role="dialog"
+          aria-modal="true"
           aria-label={`${selectedPerson.name} profile`}
           id="person-side-panel"
+          onClick={(e) => e.stopPropagation()}
         >
           <header className="person-panel__header">
             <div className="person-panel__header-text">
@@ -850,51 +1076,23 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                 <section className="person-panel__section" aria-labelledby="project-access-heading">
                   <p id="project-access-heading" className="person-panel__section-label">
                     Project access
-                    <span className="person-panel__section-label-sub">active projects</span>
                   </p>
-                  <div className="person-panel__access-block">
-                    <p className="person-panel__access-sub">Can view</p>
-                    <ul className="person-panel__proj-list">
-                      {selectedPerson.projectCanView.map((proj) => (
-                        <li key={proj} className="person-panel__proj-item">
-                          <span className="person-panel__proj-name">{proj}</span>
-                          <button
-                            type="button"
-                            className="person-panel__proj-remove"
-                            aria-label={`Remove ${proj}`}
-                            onClick={() => removeProjectView(selectedPerson.id, proj)}
-                          >
-                            <X size={12} strokeWidth={2} aria-hidden />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <ProjectAddRow
-                      onAdd={(proj) => addProjectView(selectedPerson.id, proj)}
-                      existing={selectedPerson.projectCanView}
-                    />
-                  </div>
-                  <div className="person-panel__access-block">
-                    <p className="person-panel__access-sub">Can edit</p>
-                    <ul className="person-panel__proj-list">
-                      {selectedPerson.projectCanEdit.map((proj) => (
-                        <li key={proj} className="person-panel__proj-item">
-                          <span className="person-panel__proj-name">{proj}</span>
-                          <button
-                            type="button"
-                            className="person-panel__proj-remove"
-                            aria-label={`Remove ${proj}`}
-                            onClick={() => removeProjectEdit(selectedPerson.id, proj)}
-                          >
-                            <X size={12} strokeWidth={2} aria-hidden />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                    <ProjectAddRow
-                      onAdd={(proj) => addProjectEdit(selectedPerson.id, proj)}
-                      existing={selectedPerson.projectCanEdit}
-                    />
+                  <div className="proj-access-opts" role="group" aria-labelledby="project-access-heading">
+                    {PROJECT_ACCESS_OPTIONS.map((opt) => {
+                      const isActive = selectedPerson.projectAccess === opt.id
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className={`proj-access-opt${isActive ? ' proj-access-opt--active' : ''}`}
+                          aria-pressed={isActive}
+                          onClick={() => updateProjectAccess(selectedPerson.id, opt.id)}
+                        >
+                          <span className="proj-access-opt__label">{opt.label}</span>
+                          <span className="proj-access-opt__desc">{opt.description}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </section>
 
@@ -949,7 +1147,15 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
             </button>
           </footer>
         </aside>
-      </>
+      </div>
+    )}
+
+    {showBulkModal && (
+      <BulkEditModal
+        count={selectedIds.size}
+        onApply={applyBulkEdit}
+        onClose={() => setShowBulkModal(false)}
+      />
     )}
     </>
   )

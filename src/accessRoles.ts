@@ -5,16 +5,18 @@
 export type AccessRoleId =
   | 'account-owner'
   | 'admin'
+  | 'people-manager'
   | 'project-manager'
   | 'resource-planner'
   | 'member'
 
 export const ACCESS_ROLE_LABELS: Record<AccessRoleId, string> = {
-  'account-owner': 'Account owner',
-  admin: 'Admin',
+  'account-owner':   'Account owner',
+  admin:             'Admin',
+  'people-manager':  'People manager',
   'project-manager': 'Project manager',
-  'resource-planner': 'Resource planner',
-  member: 'Member',
+  'resource-planner':'Resource planner',
+  member:            'Member',
 }
 
 export function accessRoleLabel(id: AccessRoleId): string {
@@ -25,6 +27,7 @@ export function accessRoleLabel(id: AccessRoleId): string {
 export const ACCESS_ROLE_IDS: AccessRoleId[] = [
   'account-owner',
   'admin',
+  'people-manager',
   'project-manager',
   'resource-planner',
   'member',
