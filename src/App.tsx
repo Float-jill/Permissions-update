@@ -1,6 +1,6 @@
 import './App.css'
 import { ACCESS_ROLE_LABELS } from './accessRoles'
-import { DataStudioPeoplePage, SAMPLE_PEOPLE } from './DataStudioPeoplePage'
+import { DataStudioPeoplePage, DeptTagPicker, SAMPLE_PEOPLE } from './DataStudioPeoplePage'
 import { useEffect, useRef, useMemo, useState } from 'react'
 import {
   Activity,
@@ -56,14 +56,28 @@ export type ScopeId =
   | 'project-teams'
   | 'self'
 
-const SCOPE_OPTIONS: { id: ScopeId; label: string }[] = [
-  { id: 'everyone',       label: 'Everyone' },
-  { id: 'departments',    label: 'Department(s)' },
-  { id: 'direct-reports', label: 'Direct reports' },
-  { id: 'project-teams',  label: 'Project teams' },
-  { id: 'self',           label: 'Self' },
+const SCOPE_OPTIONS: { id: ScopeId; label: string; description: string }[] = [
+  { id: 'everyone',      label: 'Everyone',       description: 'Can see all people in the organisation.' },
+  { id: 'departments',   label: 'Department(s)',   description: 'Can see people in the selected departments only.' },
+  { id: 'project-teams', label: 'Project teams',  description: 'Can see only members of projects they have access to. Designed for Project Managers — lets them plan and schedule within their projects, with Resource Planners staffing from the full people pool.' },
+  { id: 'self',          label: 'Self',            description: 'Can only see themselves.' },
 ]
 
+
+export type ProjectScopeId = 'all' | 'owned' | 'member'
+
+const PROJECT_SCOPE_OPTIONS: { id: ProjectScopeId; label: string; description: string }[] = [
+  { id: 'all',    label: 'All projects',       description: 'Can see and act on every project in the account.' },
+  { id: 'owned',  label: 'Projects owned',     description: 'Can only act on projects where they are listed as an owner.' },
+  { id: 'member', label: 'Projects member of', description: 'Can only act on projects where they are a member of the project team.' },
+]
+
+export type ClientScopeId = 'all' | 'client-group'
+
+const CLIENT_SCOPE_OPTIONS: { id: ClientScopeId; label: string; description: string }[] = [
+  { id: 'all',          label: 'All',                    description: 'Can see all clients in the account.' },
+  { id: 'client-group', label: 'Scoped via Client group', description: 'Visibility is controlled per client group membership. Requires Pro+.' },
+]
 
 const PLAN_OPTIONS: { id: PricingPlanId; label: string; hint: string }[] = [
   { id: 'starter',    label: 'Starter',              hint: 'Core settings' },
@@ -242,41 +256,33 @@ function makePerms(enabledMap: Record<string, boolean>): ConfigPerm[] {
   const on = (id: string) => enabledMap[id] ?? false
   return [
     // ── People ───────────────────────────────────────────────────────────────
-    { id: 'people.view',                  group: 'People',   label: 'View people',                    description: 'View people in the organisation. Scope: Everyone / Department(s) / Direct reports / Project teams / Self',               enabled: on('people.view') },
-    { id: 'people.edit',                  group: 'People',   label: 'Edit people',                    description: 'Edit people records. Scope: Everyone / Department(s) / Direct reports / Project teams / Self / None',                   enabled: on('people.edit') },
-    { id: 'people.schedule',              group: 'People',   label: 'Schedule people',                description: 'Schedule people — mirrors people.edit scope',                                                                            enabled: on('people.schedule') },
+    { id: 'people.schedule',              group: 'People',   label: 'Schedule people',                description: 'Schedule people — can edit scope: {{people-edit-scope}}',                                                               enabled: on('people.schedule') },
     { id: 'people.create',                group: 'People',   label: 'Add new people',                 description: 'Create new people records',                                                                                             enabled: on('people.create') },
     { id: 'people.delete',                group: 'People',   label: 'Delete people',                  description: 'Delete people records',                                                                                                 enabled: on('people.delete') },
     { id: 'people.request_time_off',      group: 'People',   label: 'Request time off for self',      description: 'Request time off (Self scope)',                                                                                          enabled: on('people.request_time_off') },
-    { id: 'people.approve_time_off',      group: 'People',   label: 'Approve time off requests',      description: "Approve people's time off requests — mirrors people.edit scope",                                                        enabled: on('people.approve_time_off') },
-    { id: 'people.view_reports',          group: 'People',   label: 'View people reports',            description: 'View people reports — mirrors people.view scope',                                                                        enabled: on('people.view_reports') },
-    { id: 'people.log_time.view',         group: 'People',   label: 'View log time for people',       description: 'View logged time for others — mirrors people.view scope. Once decoupled from schedule, department-scoped view no longer automatically grants log time visibility.', enabled: on('people.log_time.view') },
+    { id: 'people.approve_time_off',      group: 'People',   label: 'Approve time off requests',      description: "Approve people's time off requests — can edit scope: {{people-edit-scope}}",                                            enabled: on('people.approve_time_off') },
+    { id: 'people.view_reports',          group: 'People',   label: 'View people reports',            description: 'View people reports — can view scope: {{people-view-scope}}',                                                           enabled: on('people.view_reports') },
+    { id: 'people.log_time.view',         group: 'People',   label: 'View log time for people',       description: 'View logged time for others — can view scope: {{people-view-scope}}',                                                   enabled: on('people.log_time.view') },
     { id: 'people.log_time',              group: 'People',   label: 'Log time for people',            description: 'Log time for people against projects',                                                                                  enabled: on('people.log_time') },
-    { id: 'people.log_time.edit',         group: 'People',   label: 'Edit logged time for people',    description: 'Edit logged time for others against projects — mirrors people.edit scope. Once decoupled from schedule, department-scoped edit no longer automatically grants log time visibility.', enabled: on('people.log_time.edit') },
+    { id: 'people.log_time.edit',         group: 'People',   label: 'Edit logged time for people',    description: 'Edit logged time for others against projects — can edit scope: {{people-edit-scope}}',                                  enabled: on('people.log_time.edit') },
     { id: 'people.approve_log_time',      group: 'People',   label: 'Approve logged time',            description: "Approve people's logged time",                                                                                          enabled: on('people.approve_log_time') },
     { id: 'people.view_bill_rates',       group: 'People',   label: 'View bill rates',                description: 'View bill rates for roles, people and on projects',                                                                     enabled: on('people.view_bill_rates') },
     { id: 'people.view_cost_rates',       group: 'People',   label: 'View cost rates',                description: 'View cost rates for people and roles',                                                                                  enabled: on('people.view_cost_rates') },
     // ── Projects ─────────────────────────────────────────────────────────────
-    { id: 'project.view',                 group: 'Projects', label: 'View projects',                  description: 'View projects. Scope: All projects / Projects owned / Projects member of',                                              enabled: on('project.view') },
-    { id: 'project.edit',                 group: 'Projects', label: 'Edit project settings',          description: 'Edit project settings. Scope: All projects / Projects owned / Projects member of',                                      enabled: on('project.edit') },
-    { id: 'project.plan',                 group: 'Projects', label: 'Plan unassigned roles',          description: 'Plan allocations on unassigned roles — mirrors project.edit scope',                                                     enabled: on('project.plan') },
+    { id: 'project.plan',                 group: 'Projects', label: 'Plan unassigned roles',          description: 'Plan allocations on unassigned roles — project edit scope',                                                            enabled: on('project.plan') },
     { id: 'project.create',               group: 'Projects', label: 'Create new projects',            description: 'Create new projects',                                                                                                   enabled: on('project.create') },
     { id: 'project.delete',               group: 'Projects', label: 'Delete projects',                description: 'Delete projects',                                                                                                       enabled: on('project.delete') },
-    { id: 'project.manage_estimates',     group: 'Projects', label: 'Manage project estimates',       description: 'Create and edit project estimates — mirrors project.edit scope',                                                         enabled: on('project.manage_estimates') },
+    { id: 'project.manage_estimates',     group: 'Projects', label: 'Manage project estimates',       description: 'Create and edit project estimates — project edit scope',                                                               enabled: on('project.manage_estimates') },
     { id: 'project.view_budgets',         group: 'Projects', label: 'See budgets',                    description: 'View project budgets in hours and/or currency',                                                                         enabled: on('project.view_budgets') },
     { id: 'project.edit_budgets',         group: 'Projects', label: 'Set and edit project budgets',   description: 'Set and edit project budgets in hours and/or currency',                                                                 enabled: on('project.edit_budgets') },
-    { id: 'project.view_profitability',   group: 'Projects', label: 'View project profitability',     description: 'View project profitability (margin, revenue) — mirrors project.view scope',                                             enabled: on('project.view_profitability') },
-    { id: 'project.view_reports',         group: 'Projects', label: 'View project reports',           description: 'View project-level reports — mirrors project.view scope',                                                               enabled: on('project.view_reports') },
+    { id: 'project.view_profitability',   group: 'Projects', label: 'View project profitability',     description: 'View project profitability (margin, revenue) — project view scope',                                             enabled: on('project.view_profitability') },
+    { id: 'project.view_reports',         group: 'Projects', label: 'View project reports',           description: 'View project-level reports — project view scope',                                                               enabled: on('project.view_reports') },
     { id: 'project.owner',                group: 'Projects', label: 'Project owner',                  description: 'Designation on the project record that activates project.edit for the designated user',                                enabled: on('project.owner') },
     { id: 'project.contributors',         group: 'Projects', label: 'Project contributors',           description: 'List of people and/or groups with edit rights on a specific project',                                                  enabled: on('project.contributors') },
     { id: 'project.view_notes',           group: 'Projects', label: 'View project notes',             description: 'View notes on projects',                                                                                                enabled: on('project.view_notes') },
     // ── Clients ──────────────────────────────────────────────────────────────
-    { id: 'client.view',                  group: 'Clients',  label: 'View clients',                   description: 'View clients and their projects. Scope: All or scoped via client_group visibility policy on Pro+',                      enabled: on('client.view') },
     { id: 'client.create',                group: 'Clients',  label: 'Add new clients',                description: 'Create new client records',                                                                                             enabled: on('client.create') },
-    { id: 'client.edit',                  group: 'Clients',  label: 'Edit client details',            description: 'Edit client details. Scope: All or scoped via client_group visibility policy on Pro+',                                  enabled: on('client.edit') },
     { id: 'client.delete',                group: 'Clients',  label: 'Delete clients',                 description: 'Delete client records',                                                                                                 enabled: on('client.delete') },
-    { id: 'client.view_rate_cards',       group: 'Clients',  label: 'View client rate cards',         description: 'View client rate cards. Scope: All or scoped via client_group visibility policy on Pro+',                              enabled: on('client.view_rate_cards') },
-    { id: 'client.edit_rate_cards',       group: 'Clients',  label: 'Edit client rate cards',         description: 'Edit client rate cards. Scope: All or scoped via client_group visibility policy on Pro+',                              enabled: on('client.edit_rate_cards') },
     { id: 'client_group.view',            group: 'Clients',  label: 'Client group visibility',        description: 'Scope controls per-user visibility policy for a client group',                                                          enabled: on('client_group.view') },
     // ── Offices ──────────────────────────────────────────────────────────────
     { id: 'office.view',                  group: 'Offices',  label: 'View office',                    description: 'View people and projects in an office',                                                                                 enabled: on('office.view') },
@@ -439,34 +445,151 @@ function RoleScopeSelector({
   onChange,
   readOnly = false,
 }: {
-  value: ScopeId
-  onChange?: (v: ScopeId) => void
+  value: ScopeId[]
+  onChange?: (v: ScopeId[]) => void
   readOnly?: boolean
 }) {
+  const selected = SCOPE_OPTIONS.filter((o) => value.includes(o.id))
+
+  function toggle(id: ScopeId) {
+    if (value.includes(id)) {
+      const next = value.filter((v) => v !== id)
+      onChange?.(next.length > 0 ? next : [id]) // keep at least one
+    } else {
+      onChange?.([...value, id])
+    }
+  }
+
   if (readOnly) {
-    const active = SCOPE_OPTIONS.find((o) => o.id === value)
     return (
       <div className="role-scope-selector role-scope-selector--readonly">
-        <span className="role-scope-opt role-scope-opt--active role-scope-opt--readonly">
-          {active?.label ?? value}
-        </span>
+        <div className="role-scope-selector__pills">
+          {selected.map((opt) => (
+            <span key={opt.id} className="role-scope-opt role-scope-opt--active role-scope-opt--readonly">
+              {opt.label}
+            </span>
+          ))}
+        </div>
+        {selected.map((opt) => (
+          <p key={opt.id} className="role-scope-selector__desc">{opt.description}</p>
+        ))}
       </div>
     )
   }
 
   return (
     <div className="role-scope-selector">
-      {SCOPE_OPTIONS.map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          className={`role-scope-opt${value === opt.id ? ' role-scope-opt--active' : ''}`}
-          onClick={() => onChange?.(opt.id)}
-          aria-pressed={value === opt.id}
-        >
-          {opt.label}
-        </button>
+      <div className="role-scope-selector__pills">
+        {SCOPE_OPTIONS.map((opt) => {
+          const isActive = value.includes(opt.id)
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              className={`role-scope-opt${isActive ? ' role-scope-opt--active' : ''}`}
+              onClick={() => toggle(opt.id)}
+              aria-pressed={isActive}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
+      {selected.map((opt) => (
+        <p key={opt.id} className="role-scope-selector__desc">{opt.description}</p>
       ))}
+    </div>
+  )
+}
+
+function ProjectScopeSelector({
+  value,
+  onChange,
+  readOnly = false,
+}: {
+  value: ProjectScopeId
+  onChange?: (v: ProjectScopeId) => void
+  readOnly?: boolean
+}) {
+  const active = PROJECT_SCOPE_OPTIONS.find((o) => o.id === value)
+
+  if (readOnly) {
+    return (
+      <div className="role-scope-selector role-scope-selector--readonly">
+        <span className="role-scope-opt role-scope-opt--active role-scope-opt--readonly">
+          {active?.label ?? value}
+        </span>
+        {active?.description && (
+          <p className="role-scope-selector__desc">{active.description}</p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="role-scope-selector">
+      <div className="role-scope-selector__pills">
+        {PROJECT_SCOPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            className={`role-scope-opt${value === opt.id ? ' role-scope-opt--active' : ''}`}
+            onClick={() => onChange?.(opt.id)}
+            aria-pressed={value === opt.id}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {active?.description && (
+        <p className="role-scope-selector__desc">{active.description}</p>
+      )}
+    </div>
+  )
+}
+
+function ClientScopeSelector({
+  value,
+  onChange,
+  readOnly = false,
+}: {
+  value: ClientScopeId
+  onChange?: (v: ClientScopeId) => void
+  readOnly?: boolean
+}) {
+  const active = CLIENT_SCOPE_OPTIONS.find((o) => o.id === value)
+
+  if (readOnly) {
+    return (
+      <div className="role-scope-selector role-scope-selector--readonly">
+        <span className="role-scope-opt role-scope-opt--active role-scope-opt--readonly">
+          {active?.label ?? value}
+        </span>
+        {active?.description && (
+          <p className="role-scope-selector__desc">{active.description}</p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="role-scope-selector">
+      <div className="role-scope-selector__pills">
+        {CLIENT_SCOPE_OPTIONS.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            className={`role-scope-opt${value === opt.id ? ' role-scope-opt--active' : ''}`}
+            onClick={() => onChange?.(opt.id)}
+            aria-pressed={value === opt.id}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+      {active?.description && (
+        <p className="role-scope-selector__desc">{active.description}</p>
+      )}
     </div>
   )
 }
@@ -603,18 +726,36 @@ function AccessRightsPage({
   rbacEnforced,
   onRbacEnforcedChange,
   onUpgradeToPro,
+  officeMode = 'single',
 }: {
   plan: PricingPlanId
   rbacEnforced: boolean
   onRbacEnforcedChange: (v: boolean) => void
   onUpgradeToPro: () => void
+  officeMode?: OfficeModeId
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [viewingId, setViewingId] = useState<string | null>(null)
   const [savedPerms, setSavedPerms] = useState<DraftPerms>({})
   const [draftPerms, setDraftPerms] = useState<DraftPerms>({})
-  const [savedScope, setSavedScope] = useState<Record<string, ScopeId>>({})
-  const [draftScope, setDraftScope] = useState<Record<string, ScopeId>>({})
+  const [savedScope, setSavedScope] = useState<Record<string, ScopeId[]>>({})
+  const [draftScope, setDraftScope] = useState<Record<string, ScopeId[]>>({})
+  const [savedScopeEdit, setSavedScopeEdit] = useState<Record<string, ScopeId[]>>({})
+  const [draftScopeEdit, setDraftScopeEdit] = useState<Record<string, ScopeId[]>>({})
+  const [roleScopeDepts, setRoleScopeDepts] = useState<Record<string, string[]>>({})
+  const [roleScopeEditDepts, setRoleScopeEditDepts] = useState<Record<string, string[]>>({})
+  const [savedProjectScope, setSavedProjectScope] = useState<Record<string, ProjectScopeId>>({})
+  const [draftProjectScope, setDraftProjectScope] = useState<Record<string, ProjectScopeId>>({})
+  const [savedProjectScopeEdit, setSavedProjectScopeEdit] = useState<Record<string, ProjectScopeId>>({})
+  const [draftProjectScopeEdit, setDraftProjectScopeEdit] = useState<Record<string, ProjectScopeId>>({})
+  const [savedClientScope, setSavedClientScope] = useState<Record<string, ClientScopeId>>({})
+  const [draftClientScope, setDraftClientScope] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientScopeEdit, setSavedClientScopeEdit] = useState<Record<string, ClientScopeId>>({})
+  const [draftClientScopeEdit, setDraftClientScopeEdit] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientRateView, setSavedClientRateView] = useState<Record<string, ClientScopeId>>({})
+  const [draftClientRateView, setDraftClientRateView] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientRateEdit, setSavedClientRateEdit] = useState<Record<string, ClientScopeId>>({})
+  const [draftClientRateEdit, setDraftClientRateEdit] = useState<Record<string, ClientScopeId>>({})
   const [confirmSaveRoleId, setConfirmSaveRoleId] = useState<string | null>(null)
   const [customRoles, setCustomRoles] = useState<Role[]>([])
   const [draftLabel, setDraftLabel] = useState('')
@@ -927,7 +1068,7 @@ function AccessRightsPage({
                   <td className="roles-table__td roles-table__td--meta">May 26, 2026</td>
                   <td className="roles-table__td roles-table__td--actions">
                     <div className="roles-table__row-actions">
-                      {canEdit && !role.isCustom && (
+                      {canEdit && !role.isCustom && role.id !== 'account-owner' && (
                         <button
                           type="button"
                           className="roles-table__icon-btn"
@@ -957,12 +1098,32 @@ function AccessRightsPage({
         const isEditing = canEdit && editingId === role.id
         const isViewing = !isEditing
         const displayPerms = isEditing ? draftPerms[role.id] : (savedPerms[role.id] ?? role.configPerms)
-        const groups = GROUP_ORDER.map((g) => ({
-          label: g,
-          perms: (displayPerms ?? []).filter((p) => p.group === g),
-        })).filter((g) => g.perms.length > 0)
         const effectiveLabel = savedMeta[role.id]?.label ?? role.label
-        const effectiveScope = isEditing ? (draftScope[role.id] ?? role.scope) : (savedScope[role.id] ?? role.scope)
+        const effectiveScope: ScopeId[] = isEditing ? (draftScope[role.id] ?? [role.scope]) : (savedScope[role.id] ?? [role.scope])
+        const effectiveScopeEdit: ScopeId[] = isEditing ? (draftScopeEdit[role.id] ?? [role.scope]) : (savedScopeEdit[role.id] ?? [role.scope])
+        const effectiveProjectScope: ProjectScopeId = isEditing ? (draftProjectScope[role.id] ?? 'all') : (savedProjectScope[role.id] ?? 'all')
+        const effectiveProjectScopeEdit: ProjectScopeId = isEditing ? (draftProjectScopeEdit[role.id] ?? 'all') : (savedProjectScopeEdit[role.id] ?? 'all')
+        const effectiveClientScope: ClientScopeId = isEditing ? (draftClientScope[role.id] ?? 'all') : (savedClientScope[role.id] ?? 'all')
+        const effectiveClientScopeEdit: ClientScopeId = isEditing ? (draftClientScopeEdit[role.id] ?? 'all') : (savedClientScopeEdit[role.id] ?? 'all')
+        const effectiveClientRateView: ClientScopeId = isEditing ? (draftClientRateView[role.id] ?? 'all') : (savedClientRateView[role.id] ?? 'all')
+        const effectiveClientRateEdit: ClientScopeId = isEditing ? (draftClientRateEdit[role.id] ?? 'all') : (savedClientRateEdit[role.id] ?? 'all')
+        const viewScopeLabel = effectiveScope.map((s) => SCOPE_OPTIONS.find((o) => o.id === s)?.label ?? s).join(', ')
+        const editScopeLabel = effectiveScopeEdit.map((s) => SCOPE_OPTIONS.find((o) => o.id === s)?.label ?? s).join(', ')
+        const projectViewScopeLabel = PROJECT_SCOPE_OPTIONS.find((o) => o.id === effectiveProjectScope)?.label ?? effectiveProjectScope
+        const projectEditScopeLabel = PROJECT_SCOPE_OPTIONS.find((o) => o.id === effectiveProjectScopeEdit)?.label ?? effectiveProjectScopeEdit
+        const resolvedPerms = (displayPerms ?? []).map((p) => ({
+          ...p,
+          description: p.description
+            .replace('{{people-view-scope}}', viewScopeLabel)
+            .replace('{{people-edit-scope}}', editScopeLabel)
+            .replace('project view scope', projectViewScopeLabel)
+            .replace('project edit scope', projectEditScopeLabel),
+        }))
+        const visibleGroupOrder = officeMode === 'multi' ? GROUP_ORDER : GROUP_ORDER.filter((g) => g !== 'Offices')
+        const groups = visibleGroupOrder.map((g) => ({
+          label: g,
+          perms: resolvedPerms.filter((p) => p.group === g),
+        })).filter((g) => g.perms.length > 0)
         const closePanel = () => { setViewingId(null); cancelEdit() }
 
         return (
@@ -976,7 +1137,7 @@ function AccessRightsPage({
                   <span className="role-panel__subtitle">{role.count} {role.count === 1 ? 'person' : 'people'}</span>
                 </div>
                 <div className="role-panel__header-right">
-                  {isViewing && canEdit && !role.isCustom && (
+                  {isViewing && canEdit && !role.isCustom && role.id !== 'account-owner' && (
                     <button
                       type="button"
                       className="roles-table__icon-btn"
@@ -987,7 +1148,7 @@ function AccessRightsPage({
                       <Copy size={14} strokeWidth={1.75} aria-hidden />
                     </button>
                   )}
-                  {isViewing && (
+                  {isViewing && role.id !== 'account-owner' && (
                     <button
                       type="button"
                       className="role-panel__edit-btn"
@@ -1005,6 +1166,11 @@ function AccessRightsPage({
 
               {/* Body */}
               <div className="role-panel__body">
+                {role.id === 'account-owner' && (
+                  <p className="role-panel__readonly-notice">
+                    Account owner is read-only. There must always be at least one account owner.
+                  </p>
+                )}
                 {isEditing && (
                   <div className="role-edit-meta">
                     <div className="role-edit-field">
@@ -1032,36 +1198,116 @@ function AccessRightsPage({
                   </div>
                 )}
 
-                <div className="role-section-card">
-                  <div className="role-section-card__header">
-                    <span className="role-section-card__title">Data scope</span>
-                    <span className="role-section-card__desc">The data this role can see and act on. Applies to all permissions below.</span>
+                {groups.map((g) => (
+                  <div key={g.label} className="role-section-card">
+                    <div className="role-section-card__header">
+                      <span className="role-section-card__title">{g.label}</span>
+                    </div>
+                    {g.label === 'People' && (
+                      <div className="role-inline-scope">
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can view</p>
+                          <RoleScopeSelector
+                            value={effectiveScope}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftScope((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                          {effectiveScope.includes('departments') && (
+                            <DeptTagPicker
+                              selected={roleScopeDepts[role.id] ?? []}
+                              onChange={(depts) => setRoleScopeDepts((prev) => ({ ...prev, [role.id]: depts }))}
+                              readOnly={!isEditing}
+                            />
+                          )}
+                        </div>
+                        <div className="role-scope-divider" />
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can edit</p>
+                          <RoleScopeSelector
+                            value={effectiveScopeEdit}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftScopeEdit((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                          {effectiveScopeEdit.includes('departments') && (
+                            <DeptTagPicker
+                              selected={roleScopeEditDepts[role.id] ?? []}
+                              onChange={(depts) => setRoleScopeEditDepts((prev) => ({ ...prev, [role.id]: depts }))}
+                              readOnly={!isEditing}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {g.label === 'Projects' && (
+                      <div className="role-inline-scope">
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can view</p>
+                          <ProjectScopeSelector
+                            value={effectiveProjectScope}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftProjectScope((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                        </div>
+                        <div className="role-scope-divider" />
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can edit</p>
+                          <ProjectScopeSelector
+                            value={effectiveProjectScopeEdit}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftProjectScopeEdit((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {g.label === 'Clients' && (
+                      <div className="role-inline-scope">
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can view</p>
+                          <ClientScopeSelector
+                            value={effectiveClientScope}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftClientScope((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                        </div>
+                        <div className="role-scope-divider" />
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can edit</p>
+                          <ClientScopeSelector
+                            value={effectiveClientScopeEdit}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftClientScopeEdit((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                        </div>
+                        <div className="role-scope-divider" />
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can view rate cards</p>
+                          <ClientScopeSelector
+                            value={effectiveClientRateView}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftClientRateView((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                        </div>
+                        <div className="role-scope-divider" />
+                        <div className="role-scope-sub">
+                          <p className="role-scope-sub__label">Can edit rate cards</p>
+                          <ClientScopeSelector
+                            value={effectiveClientRateEdit}
+                            readOnly={!isEditing}
+                            onChange={(v) => setDraftClientRateEdit((prev) => ({ ...prev, [role.id]: v }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <table className={`cfg-table role-perms-group-table${isViewing ? ' cfg-table--readonly' : ''}`}>
+                      <tbody>
+                        {isEditing
+                          ? <PermGroup label="Permissions" perms={g.perms} onToggle={(permId) => togglePerm(role.id, permId)} />
+                          : <ReadOnlyPermGroup label="Permissions" perms={g.perms} />
+                        }
+                      </tbody>
+                    </table>
                   </div>
-                  <RoleScopeSelector
-                    value={effectiveScope}
-                    readOnly={!isEditing}
-                    onChange={(v) => setDraftScope((prev) => ({ ...prev, [role.id]: v }))}
-                  />
-                </div>
-
-                <div className="role-section-card">
-                  <div className="role-section-card__header">
-                    <span className="role-section-card__title">Permissions</span>
-                    <span className="role-section-card__desc">The actions this role can take on the data above.</span>
-                  </div>
-                  <div className="role-perms-stack">
-                    {groups.map((g) => (
-                      <table key={g.label} className={`cfg-table role-perms-group-table${isViewing ? ' cfg-table--readonly' : ''}`}>
-                        <tbody>
-                          {isEditing
-                            ? <PermGroup label={g.label} perms={g.perms} onToggle={(permId) => togglePerm(role.id, permId)} />
-                            : <ReadOnlyPermGroup label={g.label} perms={g.perms} />
-                          }
-                        </tbody>
-                      </table>
-                    ))}
-                  </div>
-                </div>
+                ))}
                 {role.footerNote && <div className="cfg-table__footer cfg-table__footer--standalone">{role.footerNote}</div>}
 
                 {/* ── People assigned this role ────────────────────────── */}
@@ -1958,6 +2204,7 @@ export default function App() {
                   rbacEnforced={rbacEnforced}
                   onRbacEnforcedChange={setRbacEnforced}
                   onUpgradeToPro={() => setPricingPlan('pro')}
+                  officeMode={officeMode}
                 />
               ) : (
                 <div className="empty-panel" role="status" aria-live="polite">

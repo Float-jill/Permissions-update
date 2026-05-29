@@ -49,14 +49,14 @@ const AVAILABLE_ADDITIONAL_PERMISSIONS = [
   { id: 'people.view_bill_rates',    label: 'View bill rates',              category: 'People' },
   { id: 'people.approve_time_off',   label: 'Approve time off',             category: 'People' },
   { id: 'people.view_reports',       label: 'View people reports',          category: 'People' },
-  { id: 'people.log_time_view',      label: 'View logged time for others',  category: 'People' },
+  { id: 'people.log_time.view',      label: 'View logged time for others',  category: 'People' },
   // Projects
   { id: 'project.view_budgets',      label: 'View project budgets',         category: 'Projects' },
   { id: 'project.view_profitability',label: 'View project profitability',   category: 'Projects' },
   { id: 'project.edit_budgets',      label: 'Edit project budgets',         category: 'Projects' },
   // Settings
   { id: 'settings.manage_billing',   label: 'Manage billing',               category: 'Settings' },
-  { id: 'settings.manage_access',    label: 'Manage access rights',         category: 'Settings' },
+  { id: 'settings.manage_access_rights', label: 'Manage access rights',     category: 'Settings' },
 ]
 
 const ADDITIONAL_PERM_CATEGORIES = ['People', 'Projects', 'Settings'] as const
@@ -81,43 +81,8 @@ type StatusFilterId = (typeof STATUS_FILTERS)[number]['id']
 
 // ── People scope ─────────────────────────────────────────────────────────────
 
-export type PeopleScope = 'everyone' | 'departments' | 'project-teams' | 'self' | 'groups'
+export type PeopleScope = 'everyone' | 'departments' | 'project-teams' | 'self'
 
-const PEOPLE_SCOPE_OPTIONS: {
-  id: PeopleScope
-  label: string
-  description: string
-  isNew?: boolean
-  isFuture?: boolean
-}[] = [
-  {
-    id: 'everyone',
-    label: 'Everyone',
-    description: 'Can see all people in the organisation.',
-  },
-  {
-    id: 'departments',
-    label: 'Departments',
-    description: 'Can see people in their own department(s) only.',
-  },
-  {
-    id: 'project-teams',
-    label: 'Project teams',
-    description: 'Can see only members of projects they have access to. Designed for Project Managers — lets them plan and schedule within their projects, with Resource Planners staffing from the full people pool.',
-    isNew: true,
-  },
-  {
-    id: 'self',
-    label: 'Self',
-    description: 'Can only see themselves.',
-  },
-  {
-    id: 'groups',
-    label: 'Groups',
-    description: 'Can see only people who share a group membership with them. Coming soon.',
-    isFuture: true,
-  },
-]
 
 /** Return the sensible default view scope for a given access role. */
 function defaultPeopleScope(roleId: AccessRoleId): PeopleScope {
@@ -127,21 +92,9 @@ function defaultPeopleScope(roleId: AccessRoleId): PeopleScope {
   return 'everyone'
 }
 
-/** Return the sensible default edit scope for a given access role. */
-function defaultPeopleScopeEdit(roleId: AccessRoleId): PeopleScope {
-  if (roleId === 'project-manager') return 'project-teams'
-  if (roleId === 'people-manager' || roleId === 'resource-planner') return 'departments'
-  if (roleId === 'member') return 'self'
-  return 'everyone'
-}
 
 export type ProjectAccessLevel = 'all' | 'assigned' | 'none'
 
-const PROJECT_ACCESS_OPTIONS: { id: ProjectAccessLevel; label: string; description: string }[] = [
-  { id: 'all',      label: 'All projects',       description: 'Can see and be scheduled on every project in the account.' },
-  { id: 'assigned', label: 'Assigned projects',  description: 'Can only see projects where they are an owner or member of the project team.' },
-  { id: 'none',     label: 'None',               description: 'Cannot access any projects.' },
-]
 
 export interface PeopleRow {
   id: string
@@ -155,14 +108,24 @@ export interface PeopleRow {
   groups: string[]
   office: string
   email: string
-  /** Controls which people this user can view across Float. */
+  /** Controls which people this user can view and manage across Float. */
   peopleScope: PeopleScope
-  /** Controls which people this user can edit across Float. */
-  peopleScopeEdit: PeopleScope
+  /** Selected departments when peopleScope === 'departments'. */
+  peopleScopeDepartments: string[]
+  /** Number of people directly managed by this person. */
+  directReportsCount: number
   /** Top-level project access level for this person. */
   projectAccess: ProjectAccessLevel
   /** Bespoke permissions granted to this individual beyond their role. */
   additionalPermissions: string[]
+  /** Departments this person manages (manages.departments scope attribute). */
+  managedDepartments: string[]
+  /** IDs of people this person directly manages (manages.people scope attribute). */
+  managedPersonIds: string[]
+  /** Project IDs this person is owner of. */
+  ownedProjectIds: string[]
+  /** Project IDs this person contributes to (not owner). */
+  contributorProjectIds: string[]
 }
 
 const PERSON_PANEL_TABS = [
@@ -198,6 +161,35 @@ const GEN_TITLES = [
   'Account Manager','Customer Success Manager','Research Lead',
 ]
 const GEN_DEPTS = ['Design','Engineering','Product','Marketing','Operations','Finance','HR','Sales','Research']
+
+// ── Sample projects ───────────────────────────────────────────────────────────
+
+export interface ProjectRow {
+  id: string
+  name: string
+  client: string
+  color: string
+}
+
+const PROJECT_COLORS = ['#3b6fd4','#c0392b','#e6a817','#27ae60','#8e44ad','#2980b9','#16a085','#d35400']
+
+export const SAMPLE_PROJECTS: ProjectRow[] = [
+  { id: 'p1',  name: '*1 Day',                   client: 'A new client',    color: PROJECT_COLORS[0] },
+  { id: 'p2',  name: 'Monthly phases',            client: 'A new client',    color: PROJECT_COLORS[1] },
+  { id: 'p3',  name: 'My draft project',          client: 'A new client',    color: PROJECT_COLORS[2] },
+  { id: 'p4',  name: 'New project name',          client: 'A new client',    color: PROJECT_COLORS[3] },
+  { id: 'p5',  name: 'Project name',              client: 'A new client',    color: PROJECT_COLORS[4] },
+  { id: 'p6',  name: '*3 Days',                   client: 'Core',            color: PROJECT_COLORS[0] },
+  { id: 'p7',  name: 'New Project Edit',          client: 'Core',            color: PROJECT_COLORS[3] },
+  { id: 'p8',  name: 'Racing time - Brand campaign', client: 'Core',         color: PROJECT_COLORS[4] },
+  { id: 'p9',  name: '* New Project',             client: 'Different client',color: PROJECT_COLORS[0] },
+  { id: 'p10', name: 'Brand refresh',             client: 'Acme Corp',       color: PROJECT_COLORS[5] },
+  { id: 'p11', name: 'Q3 Growth campaign',        client: 'Acme Corp',       color: PROJECT_COLORS[2] },
+  { id: 'p12', name: 'Infrastructure upgrade',    client: 'Internal',        color: PROJECT_COLORS[6] },
+  { id: 'p13', name: 'Sales enablement toolkit',  client: 'Bright Co',       color: PROJECT_COLORS[7] },
+  { id: 'p14', name: 'Design system v2',          client: 'Internal',        color: PROJECT_COLORS[4] },
+  { id: 'p15', name: 'Annual report 2024',        client: 'Pinnacle Ltd',    color: PROJECT_COLORS[1] },
+]
 const GEN_TEAMS = ['Core','Acquisition','Retention','Creative studio','Growth','Platform','Infrastructure','Analytics','Enterprise']
 const GEN_OFFICES = ['New York','London','Sydney','Melbourne','Berlin','Singapore','Toronto','Amsterdam','Austin']
 const GEN_GROUPS = ['Leadership','Hiring committee','AI working group','Culture club','Safety team','DEI committee','Tech guild']
@@ -234,9 +226,16 @@ function generatePeople(count: number): PeopleRow[] {
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i > 0 && GEN_FIRST[i % GEN_FIRST.length] === GEN_FIRST[(i - GEN_FIRST.length) % GEN_FIRST.length] ? i : ''}@example.com`,
       accessRoleId: roleId,
       peopleScope: defaultPeopleScope(roleId),
-      peopleScopeEdit: defaultPeopleScopeEdit(roleId),
+      peopleScopeDepartments: [dept],
+      directReportsCount: roleId === 'people-manager' ? 4 + (i % 6) : roleId === 'admin' ? 2 + (i % 4) : 0,
       projectAccess: (roleId === 'account-owner' || roleId === 'admin') ? 'all' : roleId === 'member' ? 'assigned' : 'all',
       additionalPermissions: [],
+      managedDepartments: (roleId === 'people-manager' || roleId === 'admin') ? [dept] : [],
+      managedPersonIds: [],
+      ownedProjectIds: (roleId === 'project-manager' || roleId === 'admin')
+        ? [SAMPLE_PROJECTS[i % 5].id, SAMPLE_PROJECTS[(i + 2) % 5].id]
+        : [],
+      contributorProjectIds: SAMPLE_PROJECTS.slice(5, 5 + (i % 5) + 1).map((p) => p.id),
     }
   })
 }
@@ -244,78 +243,66 @@ function generatePeople(count: number): PeopleRow[] {
 export const SAMPLE_PEOPLE: PeopleRow[] = generatePeople(243)
 
 
-function ScopePicker({
-  id,
-  label,
-  scope,
-  onScopeChange,
+
+export function DeptTagPicker({
+  selected,
+  onChange,
+  readOnly = false,
 }: {
-  id: string
-  label: string
-  scope: PeopleScope
-  onScopeChange: (s: PeopleScope) => void
+  selected: string[]
+  onChange: (depts: string[]) => void
+  readOnly?: boolean
 }) {
-  const active = PEOPLE_SCOPE_OPTIONS.find((o) => o.id === scope) ?? PEOPLE_SCOPE_OPTIONS[0]
+  const available = GEN_DEPTS.filter((d) => !selected.includes(d))
+
+  function remove(dept: string) {
+    onChange(selected.filter((d) => d !== dept))
+  }
+
+  function add(dept: string) {
+    if (dept && !selected.includes(dept)) onChange([...selected, dept])
+  }
+
   return (
-    <div className="people-scope-sub">
-      <p id={id} className="people-scope-sub__label">{label}</p>
-      <div className="people-scope-picker" role="group" aria-labelledby={id}>
-        {PEOPLE_SCOPE_OPTIONS.map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            className={[
-              'people-scope-opt',
-              scope === opt.id ? 'people-scope-opt--active' : '',
-              opt.isFuture ? 'people-scope-opt--future' : '',
-            ].filter(Boolean).join(' ')}
-            onClick={() => !opt.isFuture && onScopeChange(opt.id)}
-            aria-pressed={scope === opt.id}
-            aria-disabled={opt.isFuture}
-          >
-            {opt.label}
-            {opt.isNew && <span className="people-scope-opt__new">New</span>}
-            {opt.isFuture && <span className="people-scope-opt__future">Future</span>}
-          </button>
+    <div className="dept-tag-picker">
+      <p className="dept-tag-picker__label">Departments</p>
+      <div className={`dept-tag-picker__field${readOnly ? ' dept-tag-picker__field--readonly' : ''}`}>
+        {selected.map((dept) => (
+          <span key={dept} className="dept-tag-picker__tag">
+            {dept}
+            {!readOnly && (
+              <button
+                type="button"
+                className="dept-tag-picker__remove"
+                aria-label={`Remove ${dept}`}
+                onClick={() => remove(dept)}
+              >
+                ×
+              </button>
+            )}
+          </span>
         ))}
+        {!readOnly && available.length > 0 && (
+          <select
+            className="dept-tag-picker__add"
+            value=""
+            onChange={(e) => { add(e.target.value); e.target.value = '' }}
+            aria-label="Add department"
+          >
+            <option value="">Add department…</option>
+            {available.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        )}
+        {readOnly && selected.length === 0 && (
+          <span className="dept-tag-picker__empty">None selected</span>
+        )}
       </div>
-      <p className="people-scope-desc">{active.description}</p>
     </div>
   )
 }
 
-function PeopleScopeCard({
-  scopeView,
-  scopeEdit,
-  onScopeViewChange,
-  onScopeEditChange,
-}: {
-  scopeView: PeopleScope
-  scopeEdit: PeopleScope
-  onScopeViewChange: (s: PeopleScope) => void
-  onScopeEditChange: (s: PeopleScope) => void
-}) {
-  return (
-    <section className="person-panel__section" aria-labelledby="people-scope-heading">
-      <p id="people-scope-heading" className="person-panel__section-label">
-        People scope
-      </p>
-      <ScopePicker
-        id="people-scope-view"
-        label="Can view"
-        scope={scopeView}
-        onScopeChange={onScopeViewChange}
-      />
-      <div className="people-scope-divider" />
-      <ScopePicker
-        id="people-scope-edit"
-        label="Can edit"
-        scope={scopeEdit}
-        onScopeChange={onScopeEditChange}
-      />
-    </section>
-  )
-}
 
 function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
   const role = ROLES.find((r) => r.id === accessRoleId)
@@ -352,19 +339,336 @@ function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
   )
 }
 
+function ProjectsTab({
+  person,
+  allProjects,
+  onOwnedChange,
+  onContributorChange,
+}: {
+  person: PeopleRow
+  allProjects: ProjectRow[]
+  onOwnedChange: (ids: string[]) => void
+  onContributorChange: (ids: string[]) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const assignedIds = new Set([...person.ownedProjectIds, ...person.contributorProjectIds])
+  const available = allProjects.filter((p) => !assignedIds.has(p.id))
+  const lowerQ = query.toLowerCase()
+  const filtered = available.filter(
+    (p) => p.name.toLowerCase().includes(lowerQ) || p.client.toLowerCase().includes(lowerQ),
+  )
+
+  function assign(projectId: string) {
+    onContributorChange([...person.contributorProjectIds, projectId])
+    setQuery('')
+    setOpen(false)
+  }
+
+  function removeOwned(id: string) {
+    onOwnedChange(person.ownedProjectIds.filter((x) => x !== id))
+  }
+
+  function removeContributor(id: string) {
+    onContributorChange(person.contributorProjectIds.filter((x) => x !== id))
+  }
+
+  const ownedProjects = person.ownedProjectIds
+    .map((id) => allProjects.find((p) => p.id === id))
+    .filter(Boolean) as ProjectRow[]
+
+  const contributorProjects = person.contributorProjectIds
+    .map((id) => allProjects.find((p) => p.id === id))
+    .filter(Boolean) as ProjectRow[]
+
+  return (
+    <div className="projects-tab">
+      {/* ── Assign search ── */}
+      <div className="projects-tab__search-wrap">
+        <p className="projects-tab__search-label">Assign a project</p>
+        <div className="projects-tab__search-field">
+          <input
+            type="text"
+            className="projects-tab__input"
+            placeholder="Type and select projects"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            aria-label="Search projects"
+          />
+          <ChevronDown size={14} strokeWidth={1.5} className="projects-tab__chevron" aria-hidden />
+        </div>
+        {open && (
+          <div className="projects-tab__dropdown" role="listbox">
+            {filtered.length === 0 ? (
+              <div className="projects-tab__dropdown-empty">
+                {query ? `No results for "${query}"` : 'All projects already assigned'}
+              </div>
+            ) : (
+              filtered.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  className="projects-tab__dropdown-item"
+                  onMouseDown={() => assign(p.id)}
+                >
+                  <span className="projects-tab__dot" style={{ background: p.color }} aria-hidden />
+                  <span>
+                    <span className="projects-tab__item-name">{p.name}</span>
+                    <span className="projects-tab__item-client">{p.client}</span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Owner section ── */}
+      <div className="projects-tab__section">
+        <p className="projects-tab__section-label">Project owner of</p>
+        {ownedProjects.length === 0 ? (
+          <p className="projects-tab__empty">Not an owner of any projects.</p>
+        ) : (
+          <ul className="projects-tab__list">
+            {ownedProjects.map((p) => (
+              <li key={p.id} className="projects-tab__row">
+                <span className="projects-tab__dot" style={{ background: p.color }} aria-hidden />
+                <span className="projects-tab__row-text">
+                  <span className="projects-tab__row-name">{p.name}</span>
+                  <span className="projects-tab__row-client">{p.client}</span>
+                </span>
+                <button
+                  type="button"
+                  className="projects-tab__remove"
+                  aria-label={`Remove ${p.name}`}
+                  onClick={() => removeOwned(p.id)}
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* ── Contributor section ── */}
+      <div className="projects-tab__section">
+        <p className="projects-tab__section-label">Project contributor</p>
+        {contributorProjects.length === 0 ? (
+          <p className="projects-tab__empty">Not a contributor on any projects.</p>
+        ) : (
+          <ul className="projects-tab__list">
+            {contributorProjects.map((p) => (
+              <li key={p.id} className="projects-tab__row">
+                <span className="projects-tab__dot" style={{ background: p.color }} aria-hidden />
+                <span className="projects-tab__row-text">
+                  <span className="projects-tab__row-name">{p.name}</span>
+                  <span className="projects-tab__row-client">{p.client}</span>
+                </span>
+                <button
+                  type="button"
+                  className="projects-tab__remove"
+                  aria-label={`Remove ${p.name}`}
+                  onClick={() => removeContributor(p.id)}
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ManagesTab({
+  person,
+  allPeople,
+  onDepartmentsChange,
+  onPeopleChange,
+}: {
+  person: PeopleRow
+  allPeople: PeopleRow[]
+  onDepartmentsChange: (depts: string[]) => void
+  onPeopleChange: (ids: string[]) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const availableDepts = GEN_DEPTS.filter((d) => !person.managedDepartments.includes(d))
+  const availablePeople = allPeople.filter(
+    (p) => p.id !== person.id && !person.managedPersonIds.includes(p.id),
+  )
+
+  const lowerQ = query.toLowerCase()
+  const filteredDepts = availableDepts.filter((d) => d.toLowerCase().includes(lowerQ))
+  const filteredPeople = availablePeople.filter((p) => p.name.toLowerCase().includes(lowerQ))
+  const hasResults = filteredDepts.length > 0 || filteredPeople.length > 0
+
+  function addDept(dept: string) {
+    onDepartmentsChange([...person.managedDepartments, dept])
+    setQuery('')
+    setOpen(false)
+  }
+
+  function removeDept(dept: string) {
+    onDepartmentsChange(person.managedDepartments.filter((d) => d !== dept))
+  }
+
+  function addPerson(id: string) {
+    onPeopleChange([...person.managedPersonIds, id])
+    setQuery('')
+    setOpen(false)
+  }
+
+  function removePerson(id: string) {
+    onPeopleChange(person.managedPersonIds.filter((x) => x !== id))
+  }
+
+  const managedPeople = person.managedPersonIds
+    .map((id) => allPeople.find((p) => p.id === id))
+    .filter(Boolean) as PeopleRow[]
+
+  return (
+    <div className="manages-tab">
+      {/* ── Search field ── */}
+      <div className="manages-tab__search-wrap">
+        <div className="manages-tab__search-field">
+          <input
+            type="text"
+            className="manages-tab__input"
+            placeholder="Type and select departments and people"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            aria-label="Search departments and people"
+          />
+        </div>
+        {open && query.length > 0 && (
+          <div className="manages-tab__dropdown" role="listbox">
+            {!hasResults && (
+              <div className="manages-tab__dropdown-empty">No results for "{query}"</div>
+            )}
+            {filteredDepts.length > 0 && (
+              <>
+                <div className="manages-tab__dropdown-group-label">Departments</div>
+                {filteredDepts.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    className="manages-tab__dropdown-item"
+                    onMouseDown={() => addDept(d)}
+                  >
+                    <span className="manages-tab__dropdown-dept-icon" aria-hidden>⬡</span>
+                    {d}
+                  </button>
+                ))}
+              </>
+            )}
+            {filteredPeople.length > 0 && (
+              <>
+                <div className="manages-tab__dropdown-group-label">People</div>
+                {filteredPeople.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    className="manages-tab__dropdown-item"
+                    onMouseDown={() => addPerson(p.id)}
+                  >
+                    <span className="manages-tab__dropdown-avatar" aria-hidden>
+                      {nameInitial(p.name)}
+                    </span>
+                    <span>
+                      <span className="manages-tab__dropdown-name">{p.name}</span>
+                      <span className="manages-tab__dropdown-role">{p.role}</span>
+                    </span>
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Departments ── */}
+      <div className="manages-tab__section">
+        <p className="manages-tab__section-label">Departments</p>
+        {person.managedDepartments.length === 0 ? (
+          <p className="manages-tab__empty">No departments added yet.</p>
+        ) : (
+          <div className="manages-tab__dept-tags">
+            {person.managedDepartments.map((d) => (
+              <span key={d} className="manages-tab__dept-tag">
+                {d}
+                <button
+                  type="button"
+                  className="manages-tab__remove"
+                  aria-label={`Remove ${d}`}
+                  onClick={() => removeDept(d)}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── People ── */}
+      <div className="manages-tab__section">
+        <p className="manages-tab__section-label">People</p>
+        {managedPeople.length === 0 ? (
+          <p className="manages-tab__empty">No people added yet.</p>
+        ) : (
+          <ul className="manages-tab__people-list">
+            {managedPeople.map((p) => (
+              <li key={p.id} className="manages-tab__person-row">
+                <span className="manages-tab__person-avatar" aria-hidden>
+                  {nameInitial(p.name)}
+                </span>
+                <span className="manages-tab__person-name">{p.name}</span>
+                <button
+                  type="button"
+                  className="manages-tab__remove manages-tab__remove--person"
+                  aria-label={`Remove ${p.name}`}
+                  onClick={() => removePerson(p.id)}
+                >
+                  <X size={14} strokeWidth={2} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function nameInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || '?'
 }
 
 // ── Bulk edit ─────────────────────────────────────────────────────────────────
 
-type BulkFieldId = 'department' | 'delivery-team' | 'office' | 'group'
+type BulkFieldId = 'department' | 'delivery-team' | 'office' | 'group' | 'access-role'
 
 const BULK_FIELDS: { id: BulkFieldId; label: string }[] = [
   { id: 'department',    label: 'Department' },
   { id: 'delivery-team', label: 'Delivery team' },
   { id: 'office',        label: 'Office' },
   { id: 'group',         label: 'Group' },
+  { id: 'access-role',   label: 'Access role' },
 ]
 
 const BULK_FIELD_OPTIONS: Record<BulkFieldId, string[]> = {
@@ -372,6 +676,7 @@ const BULK_FIELD_OPTIONS: Record<BulkFieldId, string[]> = {
   'delivery-team': GEN_TEAMS,
   office:          GEN_OFFICES,
   group:           GEN_GROUPS,
+  'access-role':   [...ACCESS_ROLE_IDS],
 }
 
 interface BulkEditValues {
@@ -393,22 +698,25 @@ function BulkEditModal({
   const [field, setField] = useState<BulkFieldId | ''>('')
   const [fieldValue, setFieldValue] = useState('')
   const [roleValue, setRoleValue] = useState('')
-  const [accessValue, setAccessValue] = useState('')
 
   const fieldOptions = field ? BULK_FIELD_OPTIONS[field] : []
-  const canApply = (field !== '' && fieldValue !== '') || roleValue !== '' || accessValue !== ''
+  const canApply = (field !== '' && fieldValue !== '') || roleValue !== ''
 
   function handleFieldChange(f: BulkFieldId | '') {
     setField(f)
     setFieldValue('')
+    setRoleValue('')
   }
 
   function handleApply() {
     if (!canApply) return
     const patch: BulkEditValues = {}
-    if (field && fieldValue) { patch.field = field; patch.fieldValue = fieldValue }
-    if (roleValue)   patch.role = roleValue
-    if (accessValue) patch.accessRoleId = accessValue
+    if (field === 'access-role') {
+      if (roleValue) patch.accessRoleId = roleValue
+    } else {
+      if (field && fieldValue) { patch.field = field; patch.fieldValue = fieldValue }
+      if (roleValue) patch.role = roleValue
+    }
     onApply(patch)
     onClose()
   }
@@ -449,7 +757,7 @@ function BulkEditModal({
                 <option key={f.id} value={f.id}>{f.label}</option>
               ))}
             </select>
-            {field !== '' && (
+            {field !== '' && field !== 'access-role' && (
               <select
                 className="bulk-modal__select bulk-modal__select--value"
                 value={fieldValue}
@@ -464,9 +772,11 @@ function BulkEditModal({
             )}
           </div>
 
-          {/* Role */}
+          {/* Role / Access role */}
           <div className="bulk-modal__field-row">
-            <label className="bulk-modal__label" htmlFor="bulk-role-select">Role</label>
+            <label className="bulk-modal__label" htmlFor="bulk-role-select">
+              {field === 'access-role' ? 'Access role' : 'Role'}
+            </label>
             <select
               id="bulk-role-select"
               className="bulk-modal__select"
@@ -474,25 +784,14 @@ function BulkEditModal({
               onChange={(e) => setRoleValue(e.target.value)}
             >
               <option value=""></option>
-              {GEN_TITLES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Access role */}
-          <div className="bulk-modal__field-row">
-            <label className="bulk-modal__label" htmlFor="bulk-access-select">Access role</label>
-            <select
-              id="bulk-access-select"
-              className="bulk-modal__select"
-              value={accessValue}
-              onChange={(e) => setAccessValue(e.target.value)}
-            >
-              <option value=""></option>
-              {ACCESS_ROLE_IDS.map((id) => (
-                <option key={id} value={id}>{accessRoleLabel(id)}</option>
-              ))}
+              {field === 'access-role'
+                ? ACCESS_ROLE_IDS.map((id) => (
+                    <option key={id} value={id}>{accessRoleLabel(id)}</option>
+                  ))
+                : GEN_TITLES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))
+              }
             </select>
           </div>
 
@@ -535,17 +834,8 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, accessRoleId: roleId } : p)))
   }
 
-  function updatePeopleScope(id: string, scope: PeopleScope) {
-    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, peopleScope: scope } : p)))
-  }
 
-  function updatePeopleScopeEdit(id: string, scope: PeopleScope) {
-    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, peopleScopeEdit: scope } : p)))
-  }
 
-  function updateProjectAccess(id: string, level: ProjectAccessLevel) {
-    setPeople((prev) => prev.map((p) => p.id === id ? { ...p, projectAccess: level } : p))
-  }
 
   function toggleAdditionalPermission(id: string, permId: string) {
     setPeople((prev) =>
@@ -560,6 +850,22 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
         }
       }),
     )
+  }
+
+  function updateOwnedProjects(id: string, ids: string[]) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, ownedProjectIds: ids } : p)))
+  }
+
+  function updateContributorProjects(id: string, ids: string[]) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, contributorProjectIds: ids } : p)))
+  }
+
+  function updateManagedDepartments(id: string, depts: string[]) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, managedDepartments: depts } : p)))
+  }
+
+  function updateManagedPersonIds(id: string, ids: string[]) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, managedPersonIds: ids } : p)))
   }
 
   // ── Selection helpers ────────────────────────────────────────────────────
@@ -953,9 +1259,25 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                         <strong>Settings → Access rights</strong>.
                       </p>
                     </div>
-                  ) : (
-                    ADDITIONAL_PERM_CATEGORIES.map((cat) => {
-                      const catPerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter((p) => p.category === cat)
+                  ) : (() => {
+                    const roleEnabledIds = new Set(
+                      (ROLES.find((r) => r.id === selectedPerson.accessRoleId)?.configPerms ?? [])
+                        .filter((p) => p.enabled)
+                        .map((p) => p.id),
+                    )
+                    const availablePerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter(
+                      (p) => !roleEnabledIds.has(p.id),
+                    )
+                    if (availablePerms.length === 0) {
+                      return (
+                        <p className="person-panel__muted">
+                          This role already includes all additional permissions.
+                        </p>
+                      )
+                    }
+                    return ADDITIONAL_PERM_CATEGORIES.map((cat) => {
+                      const catPerms = availablePerms.filter((p) => p.category === cat)
+                      if (catPerms.length === 0) return null
                       return (
                         <div key={cat} className="person-panel__perm-category">
                           <p className="person-panel__perm-category-label">{cat}</p>
@@ -982,43 +1304,7 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                         </div>
                       )
                     })
-                  )}
-                </section>
-
-                <div className="person-panel__divider" />
-
-                {/* ── People scope ──────────────────────────────────────── */}
-                <PeopleScopeCard
-                  scopeView={selectedPerson.peopleScope}
-                  scopeEdit={selectedPerson.peopleScopeEdit}
-                  onScopeViewChange={(s) => updatePeopleScope(selectedPerson.id, s)}
-                  onScopeEditChange={(s) => updatePeopleScopeEdit(selectedPerson.id, s)}
-                />
-
-                <div className="person-panel__divider" />
-
-                {/* ── Project access ────────────────────────────────────── */}
-                <section className="person-panel__section" aria-labelledby="project-access-heading">
-                  <p id="project-access-heading" className="person-panel__section-label">
-                    Project access
-                  </p>
-                  <div className="proj-access-opts" role="group" aria-labelledby="project-access-heading">
-                    {PROJECT_ACCESS_OPTIONS.map((opt) => {
-                      const isActive = selectedPerson.projectAccess === opt.id
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className={`proj-access-opt${isActive ? ' proj-access-opt--active' : ''}`}
-                          aria-pressed={isActive}
-                          onClick={() => updateProjectAccess(selectedPerson.id, opt.id)}
-                        >
-                          <span className="proj-access-opt__label">{opt.label}</span>
-                          <span className="proj-access-opt__desc">{opt.description}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  })()}
                 </section>
 
               </div>
@@ -1045,15 +1331,21 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
             )}
 
             {personPanelTab === 'projects' && (
-              <div className="person-panel__placeholder">
-                <p className="person-panel__muted">All linked projects will appear here.</p>
-              </div>
+              <ProjectsTab
+                person={selectedPerson}
+                allProjects={SAMPLE_PROJECTS}
+                onOwnedChange={(ids) => updateOwnedProjects(selectedPerson.id, ids)}
+                onContributorChange={(ids) => updateContributorProjects(selectedPerson.id, ids)}
+              />
             )}
 
             {personPanelTab === 'manages' && (
-              <div className="person-panel__placeholder">
-                <p className="person-panel__muted">People and teams this person manages.</p>
-              </div>
+              <ManagesTab
+                person={selectedPerson}
+                allPeople={people}
+                onDepartmentsChange={(depts) => updateManagedDepartments(selectedPerson.id, depts)}
+                onPeopleChange={(ids) => updateManagedPersonIds(selectedPerson.id, ids)}
+              />
             )}
           </div>
 
