@@ -784,7 +784,7 @@ function AccessRightsPage({
   function startEdit(role: Role) {
     const base = savedPerms[role.id] ?? role.configPerms
     setDraftPerms((prev) => ({ ...prev, [role.id]: base.map((p) => ({ ...p })) }))
-    setDraftScope((prev) => ({ ...prev, [role.id]: savedScope[role.id] ?? role.scope }))
+    setDraftScope((prev) => ({ ...prev, [role.id]: savedScope[role.id] ?? [role.scope] }))
     const meta = savedMeta[role.id]
     setDraftLabel(meta?.label ?? role.label)
     setDraftDescription(meta?.description ?? role.description ?? '')
