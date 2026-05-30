@@ -3308,6 +3308,44 @@
   overflow: hidden;
 }
 
+/* ── Person modal: tighter role breakdown ────────────────────────────────── */
+.person-panel__role-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.person-panel__role-groups .role-section-card {
+  padding: 10px 14px;
+  gap: 6px;
+}
+
+.person-panel__role-groups .role-inline-scope {
+  padding: 6px 0;
+  gap: 4px;
+}
+
+.person-panel__role-groups .role-scope-sub {
+  gap: 3px;
+}
+
+.person-panel__role-groups .role-scope-divider {
+  margin: 2px 0;
+}
+
+.person-panel__role-groups .role-scope-selector {
+  gap: 4px;
+}
+
+.person-panel__role-groups .role-scope-selector__desc {
+  display: none;
+}
+
+.person-panel__role-groups .role-scope-opt {
+  padding: 2px 10px;
+  font-size: 11px;
+}
+
 .cfg-table__footer--standalone {
   border: 1px solid var(--border-panel);
   border-radius: 6px;
