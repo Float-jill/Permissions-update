@@ -3322,15 +3322,26 @@
 
 .person-panel__role-groups .role-inline-scope {
   padding: 6px 0;
-  gap: 4px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0;
 }
 
 .person-panel__role-groups .role-scope-sub {
+  flex: 1;
   gap: 3px;
+  padding: 0 10px;
+}
+
+.person-panel__role-groups .role-scope-sub:first-child {
+  padding-left: 0;
 }
 
 .person-panel__role-groups .role-scope-divider {
-  margin: 2px 0;
+  width: 1px;
+  height: auto;
+  align-self: stretch;
+  margin: 0;
 }
 
 .person-panel__role-groups .role-scope-selector {
