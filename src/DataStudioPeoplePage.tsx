@@ -317,7 +317,7 @@ function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
   const defaultProjectScope: ProjectScopeId = 'all'
   const defaultClientScope: ClientScopeId = 'all'
 
-  const groups = GROUP_ORDER.map((g) => ({
+  const groups = GROUP_ORDER.filter((g) => g !== 'Offices').map((g) => ({
     label: g,
     perms: role.configPerms.filter((p) => p.group === g),
   })).filter((g) => g.perms.length > 0)
