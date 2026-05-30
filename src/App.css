@@ -3322,7 +3322,7 @@
 
 .person-panel__role-groups .role-inline-scope {
   padding: 6px 0;
-  gap: 4px;
+  gap: 12px;
 }
 
 .person-panel__role-groups .role-scope-sub {
