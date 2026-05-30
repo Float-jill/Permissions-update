@@ -740,21 +740,21 @@ function AccessRightsPage({
   const [draftPerms, setDraftPerms] = useState<DraftPerms>({})
   const [savedScope, setSavedScope] = useState<Record<string, ScopeId[]>>({})
   const [draftScope, setDraftScope] = useState<Record<string, ScopeId[]>>({})
-  const [savedScopeEdit, setSavedScopeEdit] = useState<Record<string, ScopeId[]>>({})
+  const [savedScopeEdit, _setSavedScopeEdit] = useState<Record<string, ScopeId[]>>({})
   const [draftScopeEdit, setDraftScopeEdit] = useState<Record<string, ScopeId[]>>({})
   const [roleScopeDepts, setRoleScopeDepts] = useState<Record<string, string[]>>({})
   const [roleScopeEditDepts, setRoleScopeEditDepts] = useState<Record<string, string[]>>({})
-  const [savedProjectScope, setSavedProjectScope] = useState<Record<string, ProjectScopeId>>({})
+  const [savedProjectScope, _setSavedProjectScope] = useState<Record<string, ProjectScopeId>>({})
   const [draftProjectScope, setDraftProjectScope] = useState<Record<string, ProjectScopeId>>({})
-  const [savedProjectScopeEdit, setSavedProjectScopeEdit] = useState<Record<string, ProjectScopeId>>({})
+  const [savedProjectScopeEdit, _setSavedProjectScopeEdit] = useState<Record<string, ProjectScopeId>>({})
   const [draftProjectScopeEdit, setDraftProjectScopeEdit] = useState<Record<string, ProjectScopeId>>({})
-  const [savedClientScope, setSavedClientScope] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientScope, _setSavedClientScope] = useState<Record<string, ClientScopeId>>({})
   const [draftClientScope, setDraftClientScope] = useState<Record<string, ClientScopeId>>({})
-  const [savedClientScopeEdit, setSavedClientScopeEdit] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientScopeEdit, _setSavedClientScopeEdit] = useState<Record<string, ClientScopeId>>({})
   const [draftClientScopeEdit, setDraftClientScopeEdit] = useState<Record<string, ClientScopeId>>({})
-  const [savedClientRateView, setSavedClientRateView] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientRateView, _setSavedClientRateView] = useState<Record<string, ClientScopeId>>({})
   const [draftClientRateView, setDraftClientRateView] = useState<Record<string, ClientScopeId>>({})
-  const [savedClientRateEdit, setSavedClientRateEdit] = useState<Record<string, ClientScopeId>>({})
+  const [savedClientRateEdit, _setSavedClientRateEdit] = useState<Record<string, ClientScopeId>>({})
   const [draftClientRateEdit, setDraftClientRateEdit] = useState<Record<string, ClientScopeId>>({})
   const [confirmSaveRoleId, setConfirmSaveRoleId] = useState<string | null>(null)
   const [customRoles, setCustomRoles] = useState<Role[]>([])
@@ -889,7 +889,7 @@ function AccessRightsPage({
     }
     setCustomRoles((prev) => [...prev, newRole])
     setDraftPerms((prev) => ({ ...prev, [id]: basePerms.map((p) => ({ ...p })) }))
-    setDraftScope((prev) => ({ ...prev, [id]: baseScope }))
+    setDraftScope((prev) => ({ ...prev, [id]: [baseScope] }))
     setEditingId(id)
     closeAddModal()
   }
@@ -904,19 +904,19 @@ function AccessRightsPage({
     if (customRoles.length >= MAX_CUSTOM_ROLES) return
     const id = `custom-${Date.now()}`
     const perms = (savedPerms[role.id] ?? role.configPerms).map((p) => ({ ...p }))
-    const scope = savedScope[role.id] ?? role.scope
+    const scopeArr: ScopeId[] = savedScope[role.id] ?? [role.scope]
     const cloned: Role = {
       id,
       label: `${role.label} (copy)`,
       count: 0,
       description: role.description,
-      scope,
+      scope: scopeArr[0] ?? role.scope,
       configPerms: perms,
       isCustom: true,
     }
     setCustomRoles((prev) => [...prev, cloned])
     setDraftPerms((prev) => ({ ...prev, [id]: perms.map((p) => ({ ...p })) }))
-    setDraftScope((prev) => ({ ...prev, [id]: scope }))
+    setDraftScope((prev) => ({ ...prev, [id]: scopeArr }))
     setEditingId(id)
   }
 
@@ -1113,7 +1113,7 @@ function AccessRightsPage({
         const projectEditScopeLabel = PROJECT_SCOPE_OPTIONS.find((o) => o.id === effectiveProjectScopeEdit)?.label ?? effectiveProjectScopeEdit
         const resolvedPerms = (displayPerms ?? []).map((p) => ({
           ...p,
-          description: p.description
+          description: (p.description ?? '')
             .replace('{{people-view-scope}}', viewScopeLabel)
             .replace('{{people-edit-scope}}', editScopeLabel)
             .replace('project view scope', projectViewScopeLabel)
