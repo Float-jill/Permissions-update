@@ -3334,7 +3334,7 @@
 
 
 .person-panel__role-groups .role-scope-divider {
-  margin: 2px 0;
+  display: none;
 }
 
 .person-panel__role-groups .role-scope-selector {
