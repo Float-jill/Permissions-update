@@ -57,10 +57,11 @@ export type ScopeId =
   | 'self'
 
 export const SCOPE_OPTIONS: { id: ScopeId; label: string; description: string }[] = [
-  { id: 'everyone',      label: 'Everyone',       description: 'Can see all people in the organisation.' },
-  { id: 'departments',   label: 'Department(s)',   description: 'Can see people in the selected departments only.' },
-  { id: 'project-teams', label: 'Project teams',  description: 'Can see only members of projects they have access to. Designed for Project Managers — lets them plan and schedule within their projects, with Resource Planners staffing from the full people pool.' },
-  { id: 'self',          label: 'Self',            description: 'Can only see themselves.' },
+  { id: 'everyone',        label: 'Everyone',        description: 'Can see all people in the organisation.' },
+  { id: 'departments',     label: 'Department(s)',    description: 'Can see people in the selected departments only.' },
+  { id: 'direct-reports',  label: 'Direct reports',  description: 'Always includes people this user directly manages.' },
+  { id: 'project-teams',   label: 'Project teams',   description: 'Can see only members of projects they have access to. Designed for Project Managers — lets them plan and schedule within their projects, with Resource Planners staffing from the full people pool.' },
+  { id: 'self',            label: 'Self',             description: 'Can only see themselves.' },
 ]
 
 
@@ -449,15 +450,33 @@ export function RoleScopeSelector({
   onChange?: (v: ScopeId[]) => void
   readOnly?: boolean
 }) {
-  const selected = SCOPE_OPTIONS.filter((o) => value.includes(o.id))
+  const hasEveryone = value.includes('everyone')
+  // direct-reports is always locked-on unless everyone is selected
+  const effectiveValue: ScopeId[] = hasEveryone
+    ? value.filter((v) => v !== 'direct-reports')
+    : value.includes('direct-reports') ? value : [...value, 'direct-reports']
+
+  const selected = SCOPE_OPTIONS.filter((o) => effectiveValue.includes(o.id))
+  const toggleableOptions = SCOPE_OPTIONS.filter((o) => o.id !== 'direct-reports')
 
   function toggle(id: ScopeId) {
-    if (value.includes(id)) {
-      const next = value.filter((v) => v !== id)
-      onChange?.(next.length > 0 ? next : [id]) // keep at least one
+    let next: ScopeId[]
+    if (id === 'everyone') {
+      next = effectiveValue.includes('everyone')
+        ? ([...effectiveValue.filter((v) => v !== 'everyone' && v !== 'direct-reports'), 'direct-reports'] as ScopeId[])
+        : ['everyone']
     } else {
-      onChange?.([...value, id])
+      if (effectiveValue.includes(id)) {
+        const without = effectiveValue.filter((v) => v !== id && v !== 'direct-reports') as ScopeId[]
+        next = without.length > 0 ? ([...without, 'direct-reports'] as ScopeId[]) : [id]
+      } else {
+        next = [...effectiveValue.filter((v) => v !== 'everyone'), id] as ScopeId[]
+      }
     }
+    if (!next.includes('everyone') && !next.includes('direct-reports')) {
+      next = [...next, 'direct-reports'] as ScopeId[]
+    }
+    onChange?.(next)
   }
 
   if (readOnly) {
@@ -480,8 +499,8 @@ export function RoleScopeSelector({
   return (
     <div className="role-scope-selector">
       <div className="role-scope-selector__pills">
-        {SCOPE_OPTIONS.map((opt) => {
-          const isActive = value.includes(opt.id)
+        {toggleableOptions.map((opt) => {
+          const isActive = effectiveValue.includes(opt.id)
           return (
             <button
               key={opt.id}
@@ -494,6 +513,14 @@ export function RoleScopeSelector({
             </button>
           )
         })}
+        {!hasEveryone && (
+          <span
+            className="role-scope-opt role-scope-opt--active role-scope-opt--locked"
+            title="Direct reports are always included"
+          >
+            Direct reports
+          </span>
+        )}
       </div>
       {selected.map((opt) => (
         <p key={opt.id} className="role-scope-selector__desc">{opt.description}</p>
