@@ -3331,10 +3331,6 @@
   gap: 8px;
 }
 
-.person-panel__role-groups .role-scope-sub__label {
-  width: 90px;
-  flex-shrink: 0;
-}
 
 .person-panel__role-groups .role-scope-divider {
   margin: 2px 0;
