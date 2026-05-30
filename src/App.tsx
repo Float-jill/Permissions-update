@@ -56,7 +56,7 @@ export type ScopeId =
   | 'project-teams'
   | 'self'
 
-const SCOPE_OPTIONS: { id: ScopeId; label: string; description: string }[] = [
+export const SCOPE_OPTIONS: { id: ScopeId; label: string; description: string }[] = [
   { id: 'everyone',      label: 'Everyone',       description: 'Can see all people in the organisation.' },
   { id: 'departments',   label: 'Department(s)',   description: 'Can see people in the selected departments only.' },
   { id: 'project-teams', label: 'Project teams',  description: 'Can see only members of projects they have access to. Designed for Project Managers — lets them plan and schedule within their projects, with Resource Planners staffing from the full people pool.' },
@@ -440,7 +440,7 @@ type DraftPerms = Record<string, ConfigPerm[]>
 
 // ── RoleScopeSelector — standalone scope control for the role card ──────────
 
-function RoleScopeSelector({
+export function RoleScopeSelector({
   value,
   onChange,
   readOnly = false,
@@ -502,7 +502,7 @@ function RoleScopeSelector({
   )
 }
 
-function ProjectScopeSelector({
+export function ProjectScopeSelector({
   value,
   onChange,
   readOnly = false,
@@ -548,7 +548,7 @@ function ProjectScopeSelector({
   )
 }
 
-function ClientScopeSelector({
+export function ClientScopeSelector({
   value,
   onChange,
   readOnly = false,

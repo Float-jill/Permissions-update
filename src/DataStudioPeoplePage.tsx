@@ -11,7 +11,12 @@ import {
   X,
 } from 'lucide-react'
 import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRoles'
-import { ROLES, GROUP_ORDER, ReadOnlyPermGroup } from './App'
+import {
+  ROLES, GROUP_ORDER, ReadOnlyPermGroup,
+  RoleScopeSelector, ProjectScopeSelector, ClientScopeSelector,
+  SCOPE_OPTIONS,
+  type ScopeId, type ProjectScopeId, type ClientScopeId,
+} from './App'
 
 // ── Float custom icons (inline SVG, matched from Figma) ───────────────────────
 
@@ -308,31 +313,98 @@ function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
   const role = ROLES.find((r) => r.id === accessRoleId)
   if (!role) return null
 
+  const defaultScope: ScopeId[] = [role.scope]
+  const defaultProjectScope: ProjectScopeId = 'all'
+  const defaultClientScope: ClientScopeId = 'all'
+
   const groups = GROUP_ORDER.map((g) => ({
     label: g,
     perms: role.configPerms.filter((p) => p.group === g),
   })).filter((g) => g.perms.length > 0)
+
+  const viewScopeLabel = defaultScope.map((s) => SCOPE_OPTIONS.find((o) => o.id === s)?.label ?? s).join(', ')
+
+  const resolvedPerms = role.configPerms.map((p) => ({
+    ...p,
+    description: (p.description ?? '')
+      .replace('{{people-view-scope}}', viewScopeLabel)
+      .replace('{{people-edit-scope}}', viewScopeLabel)
+      .replace('project view scope', 'All projects')
+      .replace('project edit scope', 'All projects'),
+  }))
 
   return (
     <section className="person-panel__section" aria-labelledby="role-perms-heading">
       <p id="role-perms-heading" className="person-panel__section-label" style={{ marginBottom: 10 }}>
         {accessRoleLabel(accessRoleId)} permissions
       </p>
-      <div className="role-card__table-wrap">
-        <table className="cfg-table cfg-table--readonly">
-          <thead>
-            <tr>
-              <th className="cfg-table__th">Permission</th>
-            </tr>
-          </thead>
-          <tbody>
-            {groups.map((g) => (
-              <ReadOnlyPermGroup key={g.label} label={g.label} perms={g.perms} />
-            ))}
-          </tbody>
-        </table>
+      <div className="person-panel__role-groups">
+        {groups.map((g) => {
+          const resolvedGroupPerms = resolvedPerms.filter((p) => p.group === g.label)
+          return (
+            <div key={g.label} className="role-section-card">
+              <div className="role-section-card__header">
+                <span className="role-section-card__title">{g.label}</span>
+              </div>
+              {g.label === 'People' && (
+                <div className="role-inline-scope">
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can view</p>
+                    <RoleScopeSelector value={defaultScope} readOnly />
+                  </div>
+                  <div className="role-scope-divider" />
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can edit</p>
+                    <RoleScopeSelector value={defaultScope} readOnly />
+                  </div>
+                </div>
+              )}
+              {g.label === 'Projects' && (
+                <div className="role-inline-scope">
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can view</p>
+                    <ProjectScopeSelector value={defaultProjectScope} readOnly />
+                  </div>
+                  <div className="role-scope-divider" />
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can edit</p>
+                    <ProjectScopeSelector value={defaultProjectScope} readOnly />
+                  </div>
+                </div>
+              )}
+              {g.label === 'Clients' && (
+                <div className="role-inline-scope">
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can view</p>
+                    <ClientScopeSelector value={defaultClientScope} readOnly />
+                  </div>
+                  <div className="role-scope-divider" />
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can edit</p>
+                    <ClientScopeSelector value={defaultClientScope} readOnly />
+                  </div>
+                  <div className="role-scope-divider" />
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can view rate cards</p>
+                    <ClientScopeSelector value={defaultClientScope} readOnly />
+                  </div>
+                  <div className="role-scope-divider" />
+                  <div className="role-scope-sub">
+                    <p className="role-scope-sub__label">Can edit rate cards</p>
+                    <ClientScopeSelector value={defaultClientScope} readOnly />
+                  </div>
+                </div>
+              )}
+              <table className="cfg-table cfg-table--readonly role-perms-group-table">
+                <tbody>
+                  <ReadOnlyPermGroup label="Permissions" perms={resolvedGroupPerms} />
+                </tbody>
+              </table>
+            </div>
+          )
+        })}
         {role.footerNote && (
-          <div className="cfg-table__footer">{role.footerNote}</div>
+          <div className="cfg-table__footer cfg-table__footer--standalone">{role.footerNote}</div>
         )}
       </div>
     </section>
