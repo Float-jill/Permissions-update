@@ -359,26 +359,7 @@ export const ROLES: Role[] = [
     }),
   },
 
-  // ── 3. People manager — people & time off, scoped to depts/direct reports ─
-  {
-    id: 'people-manager',
-    label: ACCESS_ROLE_LABELS['people-manager'],
-    count: 15,
-    scope: 'departments',
-    description: 'Manages people records and time off. Scoped to their departments or direct reports.',
-    configPerms: makePerms({
-      'people.view': true, 'people.edit': true, 'people.schedule': true,
-      'people.create': true, 'people.request_time_off': true,
-      'people.approve_time_off': true, 'people.view_reports': true,
-      'people.log_time.view': true, 'people.log_time': true, 'people.log_time.edit': true,
-      'people.approve_log_time': true,
-      'project.view': true, 'project.view_reports': true, 'project.view_notes': true,
-      'client.view': true,
-      'office.view': true, 'office.home': true, 'office.additional_access': true,
-    }),
-  },
-
-  // ── 4. Project manager — projects & estimates, scoped to project teams ────
+  // ── 3. Project manager — projects & estimates, scoped to project teams ────
   {
     id: 'project-manager',
     label: ACCESS_ROLE_LABELS['project-manager'],
