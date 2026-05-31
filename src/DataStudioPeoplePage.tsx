@@ -92,7 +92,7 @@ export type PeopleScope = 'everyone' | 'departments' | 'project-teams' | 'self'
 /** Return the sensible default view scope for a given access role. */
 function defaultPeopleScope(roleId: AccessRoleId): PeopleScope {
   if (roleId === 'project-manager') return 'project-teams'
-  if (roleId === 'people-manager' || roleId === 'resource-planner') return 'departments'
+  if (roleId === 'resource-planner') return 'departments'
   if (roleId === 'member') return 'self'
   return 'everyone'
 }
@@ -203,9 +203,8 @@ const GEN_GROUPS = ['Leadership','Hiring committee','AI working group','Culture 
 const GEN_ROLES: AccessRoleId[] = [
   ...Array<AccessRoleId>(2).fill('account-owner'),
   ...Array<AccessRoleId>(5).fill('admin'),
-  ...Array<AccessRoleId>(15).fill('people-manager'),
   ...Array<AccessRoleId>(20).fill('project-manager'),
-  ...Array<AccessRoleId>(52).fill('resource-planner'),
+  ...Array<AccessRoleId>(67).fill('resource-planner'),
   ...Array<AccessRoleId>(149).fill('member'),
 ]
 
@@ -232,10 +231,10 @@ function generatePeople(count: number): PeopleRow[] {
       accessRoleId: roleId,
       peopleScope: defaultPeopleScope(roleId),
       peopleScopeDepartments: [dept],
-      directReportsCount: roleId === 'people-manager' ? 4 + (i % 6) : roleId === 'admin' ? 2 + (i % 4) : 0,
+      directReportsCount: roleId === 'admin' ? 2 + (i % 4) : 0,
       projectAccess: (roleId === 'account-owner' || roleId === 'admin') ? 'all' : roleId === 'member' ? 'assigned' : 'all',
       additionalPermissions: [],
-      managedDepartments: (roleId === 'people-manager' || roleId === 'admin') ? [dept] : [],
+      managedDepartments: roleId === 'admin' ? [dept] : [],
       managedPersonIds: [],
       ownedProjectIds: (roleId === 'project-manager' || roleId === 'admin')
         ? [SAMPLE_PROJECTS[i % 5].id, SAMPLE_PROJECTS[(i + 2) % 5].id]
