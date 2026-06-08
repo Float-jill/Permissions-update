@@ -785,7 +785,7 @@ function GrantOfficeModal({
   const available = OFFICES.filter(
     (o) => o.label !== homeOffice && !alreadyGrantedOfficeIds.includes(o.id),
   )
-  const [officeId, setOfficeId] = useState(available[0]?.id ?? '')
+  const [officeId, setOfficeId] = useState<string>(available[0]?.id ?? '')
   const [mode, setMode] = useState<OfficeGrant['mode']>('readonly')
   const [customPerms, setCustomPerms] = useState<string[]>([])
 
