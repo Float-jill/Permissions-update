@@ -4705,6 +4705,25 @@
   background: color-mix(in srgb, var(--accent-blue) 6%, transparent);
 }
 
+.dh-people__load-more {
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.07));
+  color: var(--accent-blue);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.15s ease;
+}
+
+.dh-people__load-more:hover {
+  color: #8faaff;
+}
+
 /* ── Bulk edit modal ──────────────────────────────────────────────────────── */
 .bulk-modal-backdrop {
   position: fixed;
@@ -5108,4 +5127,333 @@
   font-size: 12px;
   color: var(--text-muted);
   padding-top: 2px;
+}
+
+/* ── Load-more pagination button ─────────────────────────────────────────── */
+
+.role-panel-people__load-more {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+
+.role-panel-people__load-more:hover {
+  color: #8faaff;
+}
+
+.role-panel-people__load-more-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ── Future-state badge on roles table column headers ────────────────────── */
+
+.roles-table__future-badge {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* ── Grant office modal ───────────────────────────────────────────────────── */
+
+.grant-office-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.grant-office-modal {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-panel);
+  border-radius: 10px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.grant-office-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--border-panel);
+  flex-shrink: 0;
+}
+
+.grant-office-modal__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.grant-office-modal__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.grant-office-modal__close:hover { color: var(--text-primary); }
+
+.grant-office-modal__body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.grant-office-modal__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.grant-office-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grant-office-modal__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.grant-office-modal__select {
+  background: var(--bg-app);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.grant-office-modal__modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.grant-office-modal__mode {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  row-gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-panel);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.grant-office-modal__mode:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.grant-office-modal__mode--active {
+  border-color: var(--accent-blue);
+  background: rgba(110, 140, 240, 0.06);
+}
+
+.grant-office-modal__radio {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: center;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+  margin: 0;
+}
+
+.grant-office-modal__mode-label {
+  grid-row: 1;
+  grid-column: 2;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.grant-office-modal__mode-desc {
+  grid-row: 2;
+  grid-column: 2;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.grant-office-modal__custom-perms {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-panel);
+  border-radius: 7px;
+}
+
+.grant-office-modal__perm-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grant-office-modal__perm-group-label {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.grant-office-modal__perm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 3px 0;
+}
+
+.grant-office-modal__perm-check {
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+}
+
+.grant-office-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 14px;
+  border-top: 1px solid var(--border-panel);
+  flex-shrink: 0;
+}
+
+/* ── Office access section (person panel) ────────────────────────────────── */
+
+.office-access-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.office-access__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-panel);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.office-access__row--home {
+  background: rgba(110, 140, 240, 0.04);
+  border-color: rgba(110, 140, 240, 0.2);
+}
+
+.office-access__office-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.office-access__badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.office-access__badge--home {
+  color: var(--accent-blue);
+  background: rgba(110, 140, 240, 0.12);
+}
+
+.office-access__mode-select {
+  background: var(--bg-app);
+  border: 1px solid var(--border-panel);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 3px 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.office-access__remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.office-access__remove:hover { color: var(--text-primary); }
+
+.office-access__grant-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 7px;
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.office-access__grant-btn:hover {
+  border-color: var(--accent-blue);
+  background: rgba(110, 140, 240, 0.05);
 }

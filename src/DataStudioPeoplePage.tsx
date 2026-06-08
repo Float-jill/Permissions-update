@@ -14,8 +14,8 @@ import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRol
 import {
   ROLES, GROUP_ORDER, ReadOnlyPermGroup,
   RoleScopeSelector, ProjectScopeSelector, ClientScopeSelector,
-  SCOPE_OPTIONS,
-  type ScopeId, type ProjectScopeId, type ClientScopeId,
+  SCOPE_OPTIONS, OFFICES,
+  type ScopeId, type ProjectScopeId, type ClientScopeId, type OfficeModeId,
 } from './App'
 
 // ── Float custom icons (inline SVG, matched from Figma) ───────────────────────
@@ -100,6 +100,13 @@ function defaultPeopleScope(roleId: AccessRoleId): PeopleScope {
 
 export type ProjectAccessLevel = 'all' | 'assigned' | 'none'
 
+export interface OfficeGrant {
+  officeId: string
+  /** read-only = view-only in this office; inherit = full home-office role perms; custom = selected subset */
+  mode: 'readonly' | 'inherit' | 'custom'
+  /** Permission IDs selected when mode === 'custom'. */
+  customPermissions: string[]
+}
 
 export interface PeopleRow {
   id: string
@@ -131,6 +138,8 @@ export interface PeopleRow {
   ownedProjectIds: string[]
   /** Project IDs this person contributes to (not owner). */
   contributorProjectIds: string[]
+  /** Additional office access grants beyond the person's home office. */
+  additionalOfficeGrants: OfficeGrant[]
 }
 
 const PERSON_PANEL_TABS = [
@@ -240,6 +249,7 @@ function generatePeople(count: number): PeopleRow[] {
         ? [SAMPLE_PROJECTS[i % 5].id, SAMPLE_PROJECTS[(i + 2) % 5].id]
         : [],
       contributorProjectIds: SAMPLE_PROJECTS.slice(5, 5 + (i % 5) + 1).map((p) => p.id),
+      additionalOfficeGrants: [],
     }
   })
 }
@@ -730,6 +740,270 @@ function nameInitial(name: string) {
   return name.trim().charAt(0).toUpperCase() || '?'
 }
 
+// ── Office access ─────────────────────────────────────────────────────────────
+
+const OFFICE_GRANT_MODES: { id: OfficeGrant['mode']; label: string; description: string }[] = [
+  {
+    id: 'readonly',
+    label: 'Read only',
+    description: 'Can view people and projects in this office. No scheduling or edit access.',
+  },
+  {
+    id: 'inherit',
+    label: 'Inherit home office permissions',
+    description: 'All permissions from their assigned role apply in this office.',
+  },
+  {
+    id: 'custom',
+    label: 'Custom',
+    description: 'Choose which home-office permissions carry over to this office.',
+  },
+]
+
+const GRANTABLE_PERMISSIONS = [
+  { id: 'people.schedule',          label: 'Schedule people',              group: 'People' },
+  { id: 'people.create',            label: 'Add new people',               group: 'People' },
+  { id: 'people.approve_time_off',  label: 'Approve time off requests',    group: 'People' },
+  { id: 'people.view_reports',      label: 'View people reports',          group: 'People' },
+  { id: 'project.plan',             label: 'Plan unassigned roles',        group: 'Projects' },
+  { id: 'project.create',           label: 'Create new projects',          group: 'Projects' },
+  { id: 'project.view_budgets',     label: 'See budgets',                  group: 'Projects' },
+  { id: 'project.edit_budgets',     label: 'Set and edit project budgets', group: 'Projects' },
+]
+
+function GrantOfficeModal({
+  homeOffice,
+  alreadyGrantedOfficeIds,
+  onGrant,
+  onClose,
+}: {
+  homeOffice: string
+  alreadyGrantedOfficeIds: string[]
+  onGrant: (grant: OfficeGrant) => void
+  onClose: () => void
+}) {
+  const available = OFFICES.filter(
+    (o) => o.label !== homeOffice && !alreadyGrantedOfficeIds.includes(o.id),
+  )
+  const [officeId, setOfficeId] = useState(available[0]?.id ?? '')
+  const [mode, setMode] = useState<OfficeGrant['mode']>('readonly')
+  const [customPerms, setCustomPerms] = useState<string[]>([])
+
+  function toggleCustomPerm(id: string) {
+    setCustomPerms((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    )
+  }
+
+  function handleGrant() {
+    if (!officeId) return
+    onGrant({ officeId, mode, customPermissions: mode === 'custom' ? customPerms : [] })
+    onClose()
+  }
+
+  const customGroups = ['People', 'Projects']
+
+  return (
+    <div
+      className="grant-office-modal-backdrop"
+      role="presentation"
+      onClick={onClose}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
+    >
+      <div
+        className="grant-office-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="grant-office-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="grant-office-modal__header">
+          <h2 className="grant-office-modal__title" id="grant-office-title">
+            Grant access to another office
+          </h2>
+          <button type="button" className="grant-office-modal__close" aria-label="Close" onClick={onClose}>
+            <X size={18} strokeWidth={2} />
+          </button>
+        </div>
+
+        <div className="grant-office-modal__body">
+          {available.length === 0 ? (
+            <p className="grant-office-modal__empty">All available offices have already been granted.</p>
+          ) : (
+            <>
+              <div className="grant-office-modal__field">
+                <label className="grant-office-modal__label" htmlFor="grant-office-select">Office</label>
+                <select
+                  id="grant-office-select"
+                  className="grant-office-modal__select"
+                  value={officeId}
+                  onChange={(e) => setOfficeId(e.target.value)}
+                >
+                  {available.map((o) => (
+                    <option key={o.id} value={o.id}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grant-office-modal__field">
+                <p className="grant-office-modal__label">Access level</p>
+                <div className="grant-office-modal__modes">
+                  {OFFICE_GRANT_MODES.map((m) => (
+                    <label key={m.id} className={`grant-office-modal__mode${mode === m.id ? ' grant-office-modal__mode--active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="grant-mode"
+                        value={m.id}
+                        checked={mode === m.id}
+                        onChange={() => { setMode(m.id); setCustomPerms([]) }}
+                        className="grant-office-modal__radio"
+                      />
+                      <span className="grant-office-modal__mode-label">{m.label}</span>
+                      <span className="grant-office-modal__mode-desc">{m.description}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {mode === 'custom' && (
+                <div className="grant-office-modal__custom-perms">
+                  <p className="grant-office-modal__label">Select permissions to carry over</p>
+                  {customGroups.map((group) => {
+                    const perms = GRANTABLE_PERMISSIONS.filter((p) => p.group === group)
+                    return (
+                      <div key={group} className="grant-office-modal__perm-group">
+                        <p className="grant-office-modal__perm-group-label">{group}</p>
+                        {perms.map((perm) => (
+                          <label key={perm.id} className="grant-office-modal__perm-row">
+                            <input
+                              type="checkbox"
+                              className="grant-office-modal__perm-check"
+                              checked={customPerms.includes(perm.id)}
+                              onChange={() => toggleCustomPerm(perm.id)}
+                            />
+                            {perm.label}
+                          </label>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="grant-office-modal__footer">
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          {available.length > 0 && (
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={!officeId}
+              onClick={handleGrant}
+            >
+              Grant access
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OfficeAccessSection({
+  person,
+  officeMode,
+  onUpdateGrants,
+}: {
+  person: PeopleRow
+  officeMode: OfficeModeId
+  onUpdateGrants: (grants: OfficeGrant[]) => void
+}) {
+  const [showModal, setShowModal] = useState(false)
+
+  if (officeMode !== 'multi') return null
+
+  const alreadyGrantedIds = person.additionalOfficeGrants.map((g) => g.officeId)
+
+  function removeGrant(officeId: string) {
+    onUpdateGrants(person.additionalOfficeGrants.filter((g) => g.officeId !== officeId))
+  }
+
+  function addGrant(grant: OfficeGrant) {
+    onUpdateGrants([...person.additionalOfficeGrants, grant])
+  }
+
+  function updateGrantMode(officeId: string, mode: OfficeGrant['mode']) {
+    onUpdateGrants(
+      person.additionalOfficeGrants.map((g) =>
+        g.officeId === officeId ? { ...g, mode, customPermissions: [] } : g,
+      ),
+    )
+  }
+
+  const officeLabel = (id: string) =>
+    OFFICES.find((o) => o.id === id)?.label ?? id
+
+  return (
+    <section className="person-panel__section office-access-section" aria-labelledby="person-offices-heading">
+      <p id="person-offices-heading" className="person-panel__section-label">Office access</p>
+
+      {/* Home office */}
+      <div className="office-access__row office-access__row--home">
+        <span className="office-access__office-name">{person.office}</span>
+        <span className="office-access__badge office-access__badge--home">Home office · Full access</span>
+      </div>
+
+      {/* Additional offices */}
+      {person.additionalOfficeGrants.map((grant) => (
+        <div key={grant.officeId} className="office-access__row">
+          <span className="office-access__office-name">{officeLabel(grant.officeId)}</span>
+          <select
+            className="office-access__mode-select"
+            value={grant.mode}
+            onChange={(e) => updateGrantMode(grant.officeId, e.target.value as OfficeGrant['mode'])}
+            aria-label={`Access level for ${officeLabel(grant.officeId)}`}
+          >
+            {OFFICE_GRANT_MODES.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="office-access__remove"
+            aria-label={`Remove ${officeLabel(grant.officeId)} access`}
+            onClick={() => removeGrant(grant.officeId)}
+          >
+            <X size={14} strokeWidth={2} />
+          </button>
+        </div>
+      ))}
+
+      {/* Grant button */}
+      {alreadyGrantedIds.length < OFFICES.length - 1 && (
+        <button
+          type="button"
+          className="office-access__grant-btn"
+          onClick={() => setShowModal(true)}
+        >
+          <Plus size={13} strokeWidth={2} aria-hidden />
+          Grant access to another office
+        </button>
+      )}
+
+      {showModal && (
+        <GrantOfficeModal
+          homeOffice={person.office}
+          alreadyGrantedOfficeIds={alreadyGrantedIds}
+          onGrant={addGrant}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </section>
+  )
+}
+
 // ── Bulk edit ─────────────────────────────────────────────────────────────────
 
 type BulkFieldId = 'department' | 'delivery-team' | 'office' | 'group' | 'access-role'
@@ -883,10 +1157,11 @@ function BulkEditModal({
   )
 }
 
-export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: boolean }) {
+export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'single' }: { rbacEnforced?: boolean; officeMode?: import('./App').OfficeModeId }) {
   const [category, setCategory] = useState<CategoryId>('employees')
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('active')
   const [onlyWithAccess, setOnlyWithAccess] = useState(false)
+
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [personPanelTab, setPersonPanelTab] = useState<PersonPanelTabId>('access')
   const [people, setPeople] = useState<PeopleRow[]>(SAMPLE_PEOPLE)
@@ -937,6 +1212,10 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
 
   function updateManagedPersonIds(id: string, ids: string[]) {
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, managedPersonIds: ids } : p)))
+  }
+
+  function updateOfficeGrants(id: string, grants: OfficeGrant[]) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, additionalOfficeGrants: grants } : p)))
   }
 
   // ── Selection helpers ────────────────────────────────────────────────────
@@ -1377,6 +1656,17 @@ export function DataStudioPeoplePage({ rbacEnforced = false }: { rbacEnforced?: 
                     })
                   })()}
                 </section>
+
+                {officeMode === 'multi' && (
+                  <>
+                    <div className="person-panel__divider" />
+                    <OfficeAccessSection
+                      person={selectedPerson}
+                      officeMode={officeMode}
+                      onUpdateGrants={(grants) => updateOfficeGrants(selectedPerson.id, grants)}
+                    />
+                  </>
+                )}
 
               </div>
             )}

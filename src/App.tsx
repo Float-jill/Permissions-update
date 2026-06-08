@@ -212,14 +212,13 @@ type OfficeNavActive =
 
 const OFFICE_SUBITEMS = [
   { id: 'policies', label: 'Policies' },
-  { id: 'access', label: 'Access' },
   { id: 'work-schedule', label: 'Work schedule' },
   { id: 'currencies', label: 'Currencies' },
   { id: 'time-tracking', label: 'Time tracking' },
   { id: 'time-off', label: 'Time off' },
 ] as const
 
-const OFFICES = [
+export const OFFICES = [
   { id: 'beaverton', label: 'Beaverton HQ' },
   { id: 'hilversum', label: 'Hilversum' },
   { id: 'shanghai', label: 'Shanghai' },
@@ -769,6 +768,8 @@ function AccessRightsPage({
   const [draftLabel, setDraftLabel] = useState('')
   const [draftDescription, setDraftDescription] = useState('')
   const [peopleSectionOpen, setPeopleSectionOpen] = useState(true)
+  const [peoplePage, setPeoplePage] = useState(1)
+  const PEOPLE_PAGE_SIZE = 15
   const [savedMeta, setSavedMeta] = useState<Record<string, { label: string; description: string }>>({})
 
   const pendingSaveRole = useMemo(
@@ -787,6 +788,7 @@ function AccessRightsPage({
 
   useEffect(() => {
     setPeopleSectionOpen(true)
+    setPeoplePage(1)
   }, [viewingId, editingId])
 
   function startEdit(role: Role) {
@@ -1039,8 +1041,8 @@ function AccessRightsPage({
               <th className="roles-table__th">Description</th>
               <th className="roles-table__th">Type</th>
               <th className="roles-table__th roles-table__th--num">People</th>
-              <th className="roles-table__th">Last modified by</th>
-              <th className="roles-table__th">Last modified</th>
+              <th className="roles-table__th">Last modified by <span className="roles-table__future-badge" title="Backend will retain full history — UI display is scoped out of V1">Future state</span></th>
+              <th className="roles-table__th">Last modified <span className="roles-table__future-badge" title="Backend will retain full history — UI display is scoped out of V1">Future state</span></th>
               <th className="roles-table__th" />
             </tr>
           </thead>
@@ -1321,9 +1323,8 @@ function AccessRightsPage({
                 {/* ── People assigned this role ────────────────────────── */}
                 {(() => {
                   const assigned = SAMPLE_PEOPLE.filter((p) => p.accessRoleId === role.id)
-                  const SHOW_MAX = 12
-                  const visible = assigned.slice(0, SHOW_MAX)
-                  const overflow = assigned.length - SHOW_MAX
+                  const visible = assigned.slice(0, PEOPLE_PAGE_SIZE * peoplePage)
+                  const remaining = assigned.length - visible.length
                   if (assigned.length === 0) return null
                   return (
                     <div className="role-section-card">
@@ -1360,8 +1361,14 @@ function AccessRightsPage({
                               </li>
                             ))}
                           </ul>
-                          {overflow > 0 && (
-                            <p className="role-panel-people__more">+{overflow} more</p>
+                          {remaining > 0 && (
+                            <button
+                              type="button"
+                              className="role-panel-people__load-more"
+                              onClick={(e) => { e.stopPropagation(); setPeoplePage((p) => p + 1) }}
+                            >
+                              Load more
+                            </button>
                           )}
                         </>
                       )}
@@ -2028,7 +2035,7 @@ export default function App() {
       {!settingsOpen && (
         <main className="main">
           {dataStudioNavId === 'people' ? (
-            <DataStudioPeoplePage rbacEnforced={rbacEnforced} />
+            <DataStudioPeoplePage rbacEnforced={rbacEnforced} officeMode={officeMode} />
           ) : (
             <div className="shell-placeholder" role="status">
               <p className="shell-placeholder__text">
