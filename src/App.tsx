@@ -19,7 +19,9 @@ import {
   CreditCard,
   Database,
   DollarSign,
+  Eye,
   Folder,
+  Globe,
   GraduationCap,
   LayoutDashboard,
   Lock,
@@ -741,8 +743,131 @@ const GUESTS = [
   { id: '3', name: 'Sameet',      email: 'mail+samfloat99@sameet.com',     access: 'Admin', joined: 'Jan 13 2024' },
 ]
 
+const AVATAR_COLORS = ['#5b7e4a', '#4a6d8c', '#8c4a6d', '#6d4a8c', '#8c7a4a', '#4a8c7a']
+
+function avatarColor(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
+}
+
+type Guest = typeof GUESTS[number]
+
+function GuestPanel({ guest, onClose }: { guest: Guest; onClose: () => void }) {
+  const [panelTab, setPanelTab] = useState<'access' | 'manages'>('access')
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const initial = guest.name.charAt(0).toUpperCase()
+  const color = avatarColor(guest.name)
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
+    if (!actionsOpen) return
+    function onDoc(e: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setActionsOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [actionsOpen])
+
+  return (
+    <div className="guest-panel__backdrop" onClick={onClose}>
+      <div className="guest-panel" role="dialog" aria-modal aria-label="Update guest" onClick={(e) => e.stopPropagation()}>
+        <p className="guest-panel__heading">Update guest</p>
+
+        <div className="guest-panel__identity">
+          <span className="guest-panel__name">{guest.name}</span>
+          <span className="guest-panel__avatar" style={{ background: color }}>{initial}</span>
+        </div>
+
+        <div className="guest-panel__tabs">
+          <button
+            className={`guest-panel__tab${panelTab === 'access' ? ' guest-panel__tab--active' : ''}`}
+            onClick={() => setPanelTab('access')}
+          >Access</button>
+          <button
+            className={`guest-panel__tab${panelTab === 'manages' ? ' guest-panel__tab--active' : ''}`}
+            onClick={() => setPanelTab('manages')}
+          >Manages</button>
+        </div>
+
+        <div className="guest-panel__body">
+          {panelTab === 'access' && (
+            <>
+              <div className="guest-panel__email-card">
+                <label className="guest-panel__field-label">Email</label>
+                <input className="guest-panel__email-input" type="email" defaultValue={guest.email} readOnly />
+              </div>
+
+              <label className="guest-panel__field-label guest-panel__field-label--loose">Access</label>
+              <div className="guest-panel__select-wrap">
+                <select className="guest-panel__select" defaultValue={guest.access}>
+                  <option>Admin</option>
+                  <option>Member</option>
+                  <option>Viewer</option>
+                </select>
+                <ChevronDown size={16} className="guest-panel__select-chevron" aria-hidden />
+              </div>
+
+              <div className="guest-panel__perm-row">
+                <span className="guest-panel__perm-icon"><Eye size={16} strokeWidth={1.5} /></span>
+                <div className="guest-panel__perm-text">
+                  <span className="guest-panel__perm-title">Can view</span>
+                  <span className="guest-panel__perm-desc">Specify which People they can see</span>
+                </div>
+                <span className="guest-panel__perm-value">Everyone</span>
+              </div>
+
+              <div className="guest-panel__divider" />
+
+              <div className="guest-panel__perm-row">
+                <span className="guest-panel__perm-icon"><Globe size={16} strokeWidth={1.5} /></span>
+                <div className="guest-panel__perm-text">
+                  <span className="guest-panel__perm-title">Manages</span>
+                </div>
+                <span className="guest-panel__perm-value">All people, projects, and settings</span>
+              </div>
+
+              <div className="guest-panel__divider" />
+            </>
+          )}
+
+          {panelTab === 'manages' && (
+            <p className="guest-panel__empty">No manage settings configured.</p>
+          )}
+        </div>
+
+        <div className="guest-panel__footer">
+          <button type="button" className="btn btn--primary" onClick={onClose}>Update</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <div className="guest-panel__actions-wrap" ref={actionsRef}>
+            <button
+              type="button"
+              className="guest-panel__actions-btn"
+              onClick={() => setActionsOpen((o) => !o)}
+            >
+              Actions <ChevronDown size={14} />
+            </button>
+            {actionsOpen && (
+              <div className="guest-panel__actions-menu">
+                <button type="button" className="guest-panel__actions-item">Remove guest</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function GuestsPage() {
   const [activeTab, setActiveTab] = useState<'guests' | 'pending'>('guests')
+  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null)
 
   return (
     <div className="guests-page">
@@ -781,7 +906,11 @@ function GuestsPage() {
             </thead>
             <tbody>
               {GUESTS.map((guest) => (
-                <tr key={guest.id} className="guests-table__row">
+                <tr
+                  key={guest.id}
+                  className="guests-table__row guests-table__row--clickable"
+                  onClick={() => setSelectedGuest(guest)}
+                >
                   <td className="guests-table__td">
                     <span className="guests-table__name">{guest.name}</span>
                     <span className="guests-table__email">{guest.email}</span>
@@ -801,6 +930,10 @@ function GuestsPage() {
           </div>
         )}
       </div>
+
+      {selectedGuest && (
+        <GuestPanel guest={selectedGuest} onClose={() => setSelectedGuest(null)} />
+      )}
     </div>
   )
 }
