@@ -1160,7 +1160,6 @@ function teamMeta(i: number) {
 function DataStudioTeamPage() {
   const people = SAMPLE_PEOPLE.slice(0, 15)
   const [personType, setPersonType] = useState<'employees' | 'contractors'>('employees')
-  const [statusFilter, setStatusFilter] = useState<'active' | 'archived' | 'all'>('active')
 
   const PERSON_TYPES = [
     { id: 'employees' as const,   label: 'Employees' },
@@ -1214,22 +1213,6 @@ function DataStudioTeamPage() {
             {label}
           </button>
         ))}
-      </div>
-
-      {/* Row 3 — status filters + access toggle */}
-      <div className="ds-people-status-bar">
-        <div className="ds-people-status-filters">
-          {(['active', 'archived', 'all'] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              className={`ds-people-status-btn${statusFilter === s ? ' ds-people-status-btn--active' : ''}`}
-              onClick={() => setStatusFilter(s)}
-            >
-              {s === 'active' ? '243 Active' : s === 'archived' ? '0 Archived' : 'All'}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="ds-table-wrap">
