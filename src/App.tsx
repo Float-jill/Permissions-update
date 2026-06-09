@@ -198,7 +198,7 @@ const ADMIN_NAV = [
   { id: 'work-schedule', label: 'Work schedule',    Icon: Calendar,    description: 'Set working hours and days for your organisation.'                  },
   { id: 'currencies',    label: 'Currencies',       Icon: DollarSign,  description: 'Add currencies and set exchange rates for billing.'                 },
   { id: 'time-tracking', label: 'Time tracking',    Icon: Clock,       description: 'Configure how time is logged across projects.'                      },
-  { id: 'guests',        label: 'Guests',           Icon: Users,       description: 'Manage guest access and external collaborators.'                    },
+  { id: 'guests',        label: 'Guests',           Icon: Users,       description: 'Guests have account access but do not appear in the schedule. Guest access is free.' },
   { id: 'timeoff-org',   label: 'Time off',         Icon: Umbrella,    description: 'Set time-off types, policies, and approval workflows.'              },
   { id: 'projects',      label: 'Projects',         Icon: Folder,      description: 'Manage default project settings and templates.'                     },
   { id: 'statuses',      label: 'Statuses',         Icon: CheckSquare, description: 'Customise status options for people and projects.'                  },
