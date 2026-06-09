@@ -1245,7 +1245,7 @@ function DataStudioTeamPage() {
               <th className="ds-table__th">Time off</th>
               <th className="ds-table__th">Projects</th>
               <th className="ds-table__th">Burnout risk</th>
-              <th className="ds-table__th">Bill rate</th>
+              <th className="ds-table__th">Effective bill rate</th>
               <th className="ds-table__th">Cost rate</th>
             </tr>
           </thead>
