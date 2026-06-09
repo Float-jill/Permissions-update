@@ -1823,7 +1823,12 @@ function AccessRightsPage({
             {allRoles.map((role) => {
               const isActive = editingId === role.id || viewingId === role.id
               const effectiveLabel = savedMeta[role.id]?.label ?? role.label
-              const effectiveDescription = savedMeta[role.id]?.description ?? role.description
+              const rawDescription = savedMeta[role.id]?.description ?? role.description ?? ''
+              const effectiveDescription = officeMode !== 'multi'
+                ? rawDescription
+                    .replace('All permissions across all offices. ', '')
+                    .replace('scoped to managed offices. ', '')
+                : rawDescription
               return (
                 <tr
                   key={role.id}
