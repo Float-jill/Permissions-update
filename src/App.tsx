@@ -1517,6 +1517,7 @@ function DataStudioTeamPage() {
   const people = SAMPLE_PEOPLE.slice(0, 15)
   const [personType, setPersonType] = useState<'employees' | 'contractors'>('employees')
   const [selectedPerson, setSelectedPerson] = useState<{ person: typeof people[number]; meta: ReturnType<typeof teamMeta> } | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const PERSON_TYPES = [
     { id: 'employees' as const,   label: 'Employees',   count: SAMPLE_PEOPLE.length },
@@ -1524,6 +1525,26 @@ function DataStudioTeamPage() {
   ]
 
   const filtered = people
+
+  const allSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id))
+  const someSelected = filtered.some(p => selectedIds.has(p.id))
+
+  function toggleRow(id: string, e: React.MouseEvent) {
+    e.stopPropagation()
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map(p => p.id)))
+    }
+  }
 
   return (
     <div className="ds-team-page">
@@ -1573,10 +1594,47 @@ function DataStudioTeamPage() {
         ))}
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="ds-bulk-bar">
+          <span className="ds-bulk-bar__count">{selectedIds.size} selected</span>
+          <span style={{ color: 'var(--text-secondary)' }}>·</span>
+          <button type="button" className="ds-bulk-bar__action">
+            Edit <ChevronDown size={12} strokeWidth={2} aria-hidden />
+          </button>
+          <span style={{ color: 'var(--text-secondary)' }}>·</span>
+          <button type="button" className="ds-bulk-bar__action">
+            Assign to project
+          </button>
+          <span style={{ color: 'var(--text-secondary)' }}>·</span>
+          <button type="button" className="ds-bulk-bar__action" style={{ color: '#c0392b' }}>
+            Archive
+          </button>
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="ds-bulk-bar__clear"
+            aria-label="Clear selection"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X size={14} strokeWidth={2} aria-hidden />
+          </button>
+        </div>
+      )}
+
       <div className="ds-table-wrap">
         <table className="ds-table">
           <thead>
             <tr>
+              <th className="ds-table__th" style={{ width: 40 }}>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
+                  onChange={toggleAll}
+                  aria-label="Select all"
+                  style={{ cursor: 'pointer' }}
+                />
+              </th>
               <th className="ds-table__th">Name / Title</th>
               <th className="ds-table__th">Managed by</th>
               <th className="ds-table__th">Time off</th>
@@ -1594,7 +1652,17 @@ function DataStudioTeamPage() {
               const initial = person.name.charAt(0).toUpperCase()
               const color = avatarColor(person.name)
               return (
-                <tr key={person.id} className="ds-table__row ds-table__row--clickable" onClick={() => setSelectedPerson({ person, meta })}>
+                <tr key={person.id} className={`ds-table__row ds-table__row--clickable${selectedIds.has(person.id) ? ' ds-table__row--checked' : ''}`} onClick={() => setSelectedPerson({ person, meta })}>
+                  <td className="ds-table__td" style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(person.id)}
+                      onChange={() => {}}
+                      onClick={(e) => toggleRow(person.id, e)}
+                      style={{ cursor: 'pointer' }}
+                      aria-label={`Select ${person.name}`}
+                    />
+                  </td>
                   <td className="ds-table__td">
                     <div className="ds-name-cell">
                       <span className="ds-avatar" style={{ background: color }}>{initial}</span>

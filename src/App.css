@@ -5991,6 +5991,10 @@
   background: var(--nav-hover);
 }
 
+.ds-table__row--checked {
+  background: color-mix(in srgb, var(--accent-blue, #3b82f6) 8%, transparent);
+}
+
 .ds-table__td {
   padding: 11px 14px;
   font-size: 13px;
