@@ -2043,7 +2043,6 @@ const SINGLE_OFFICE_DATA_STUDIO = [
 ] as const
 
 const SO_DS_NAV = [
-  { id: 'users',        label: 'Users',        Icon: UserCog,   contentId: 'users' as DataStudioNavId },
   { id: 'schedule',     label: 'Schedule',     Icon: Calendar,  contentId: null },
   { id: 'project-plan', label: 'Project plan', Icon: Waypoints, contentId: null },
   { id: 'team',         label: 'Team',         Icon: Users,     contentId: 'team' as DataStudioNavId },
@@ -2263,6 +2262,17 @@ function AppRail({
                 <div className="app-rail__subnav">
                   <div className="app-rail__subnav-line" aria-hidden />
                   <div className="app-rail__subnav-rows">
+                    {officeMode === 'single-datastudio' && (
+                      <button
+                        type="button"
+                        className={`app-rail__subrow${dataStudioActive === 'users' ? ' app-rail__subrow--active' : ''}`}
+                        onClick={() => onDataStudioActiveChange('users')}
+                        aria-current={dataStudioActive === 'users' ? 'page' : undefined}
+                      >
+                        <UserCog size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                        <span className="app-rail__row-label">Users</span>
+                      </button>
+                    )}
                     {SINGLE_OFFICE_DATA_STUDIO.map(({ id, label, Icon }) => (
                       <button
                         key={id}
