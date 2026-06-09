@@ -743,9 +743,9 @@ export function ReadOnlyPermGroup({ label, perms }: { label: string; perms: Conf
 }
 
 const GUESTS = [
-  { id: '1', name: 'cam me',      email: 'cam@float.com',                  access: 'Admin', joined: 'Nov 07 2023' },
-  { id: '2', name: 'Omar Furrer', email: 'omar.furrer@float.com',          access: 'Admin', joined: 'Jan 29 2025' },
-  { id: '3', name: 'Sameet',      email: 'mail+samfloat99@sameet.com',     access: 'Admin', joined: 'Jan 13 2024' },
+  { id: '1', name: 'Jordan Blake',   email: 'jordan.blake@example.com',    access: 'Admin', joined: 'Nov 07 2023' },
+  { id: '2', name: 'Priya Nair',     email: 'priya.nair@example.com',      access: 'Admin', joined: 'Jan 29 2025' },
+  { id: '3', name: 'Marcus Osei',    email: 'marcus.osei@example.com',     access: 'Admin', joined: 'Jan 13 2024' },
 ]
 
 const AVATAR_COLORS = ['#5b7e4a', '#4a6d8c', '#8c4a6d', '#6d4a8c', '#8c7a4a', '#4a8c7a']
