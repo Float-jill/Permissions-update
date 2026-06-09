@@ -1,5 +1,5 @@
 import './App.css'
-import { ACCESS_ROLE_LABELS } from './accessRoles'
+import { ACCESS_ROLE_LABELS, ACCESS_ROLE_IDS } from './accessRoles'
 import { DataStudioPeoplePage, DeptTagPicker, SAMPLE_PEOPLE } from './DataStudioPeoplePage'
 import { useEffect, useRef, useMemo, useState } from 'react'
 import {
@@ -943,6 +943,153 @@ function GuestsPage() {
   )
 }
 
+// ── DSUserPanel ───────────────────────────────────────────────────────────────
+
+type DSUserPanelRow = {
+  id: string
+  name: string
+  email: string
+  accessRoleId: string
+  seat: 'schedule' | 'guest'
+  department: string
+  lastLogin: string
+  personType: 'Employee' | 'Contractor' | 'Placeholder'
+}
+
+function DSUserPanel({ user, onClose }: { user: DSUserPanelRow; onClose: () => void }) {
+  const [accessRoleId, setAccessRoleId] = useState(user.accessRoleId)
+  const [seat, setSeat] = useState(user.seat)
+  const [department, setDepartment] = useState(user.department)
+  const [personType, setPersonType] = useState(user.personType)
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const initial = user.name.charAt(0).toUpperCase()
+  const color = avatarColor(user.name)
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
+    if (!actionsOpen) return
+    function onDoc(e: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setActionsOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [actionsOpen])
+
+  return (
+    <div className="ds-person-backdrop" onClick={onClose}>
+      <div className="ds-person-panel" role="dialog" aria-modal aria-label="Edit user" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="ds-person-panel__header">
+          <div>
+            <span className="ds-person-panel__name">{user.name}</span>
+            <span className="ds-person-panel__sub-email">{user.email}</span>
+          </div>
+          <span className="ds-person-panel__avatar" style={{ background: color }}>{initial}</span>
+        </div>
+
+        {/* Body */}
+        <div className="ds-person-panel__body">
+
+          {user.seat !== 'guest' && (
+            <div className="ds-person-field">
+              <label className="ds-person-field__label">Person type</label>
+              <div className="ds-person-field__select-wrap">
+                <select
+                  className="ds-person-field__select"
+                  value={personType}
+                  onChange={e => setPersonType(e.target.value as typeof personType)}
+                >
+                  <option value="Employee">Employee</option>
+                  <option value="Contractor">Contractor</option>
+                  <option value="Placeholder">Placeholder</option>
+                </select>
+                <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+              </div>
+            </div>
+          )}
+
+          <div className="ds-person-field">
+            <label className="ds-person-field__label">Access role</label>
+            <div className="ds-person-field__select-wrap">
+              <select
+                className="ds-person-field__select"
+                value={accessRoleId}
+                onChange={e => setAccessRoleId(e.target.value)}
+              >
+                {ACCESS_ROLE_IDS.map(id => (
+                  <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
+                ))}
+              </select>
+              <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+            </div>
+          </div>
+
+          <div className="ds-person-field">
+            <label className="ds-person-field__label">Seat</label>
+            <div className="ds-person-field__select-wrap">
+              <select
+                className="ds-person-field__select"
+                value={seat}
+                onChange={e => setSeat(e.target.value as 'schedule' | 'guest')}
+              >
+                <option value="schedule">Schedule</option>
+                <option value="guest">Guest</option>
+              </select>
+              <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+            </div>
+          </div>
+
+          <div className="ds-person-field">
+            <label className="ds-person-field__label">Department</label>
+            <input
+              className="ds-person-field__input"
+              type="text"
+              value={department === '—' ? '' : department}
+              onChange={e => setDepartment(e.target.value)}
+              placeholder="No department"
+            />
+          </div>
+
+          <div className="ds-person-field">
+            <label className="ds-person-field__label">Last login</label>
+            <div className="ds-person-field__readonly ds-person-field__readonly--muted">{user.lastLogin}</div>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="ds-person-panel__footer">
+          <button type="button" className="btn btn--primary" onClick={onClose}>Update user</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <div className="ds-person-panel__actions-wrap" ref={actionsRef}>
+            <button
+              type="button"
+              className="ds-person-panel__actions-btn"
+              onClick={() => setActionsOpen(o => !o)}
+            >
+              Actions <ChevronDown size={14} />
+            </button>
+            {actionsOpen && (
+              <div className="ds-person-panel__actions-menu">
+                <button type="button" className="ds-person-panel__actions-item">Resend invite</button>
+                <button type="button" className="ds-person-panel__actions-item ds-person-panel__actions-item--danger">Remove user</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── DataStudioUsersPage ───────────────────────────────────────────────────────
 
 const LAST_LOGIN_SAMPLES = [
@@ -989,6 +1136,7 @@ function DataStudioUsersPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [seatTab, setSeatTab] = useState<'all' | 'schedule' | 'guest'>('all')
+  const [selectedUser, setSelectedUser] = useState<DSUserPanelRow | null>(null)
 
   const USER_TABS = [
     { id: 'all' as const,      label: 'All users',       count: rows.length },
@@ -1122,7 +1270,7 @@ function DataStudioUsersPage() {
                 <tr
                   key={row.id}
                   className="ds-table__row"
-                  onClick={() => toggleRow(row.id)}
+                  onClick={() => setSelectedUser(row)}
                   style={{ cursor: 'pointer' }}
                 >
                   <td className="ds-table__td" style={{ textAlign: 'center' }}>
@@ -1174,6 +1322,10 @@ function DataStudioUsersPage() {
           </tbody>
         </table>
       </div>
+
+      {selectedUser && (
+        <DSUserPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
+      )}
     </div>
   )
 }

@@ -6390,6 +6390,28 @@
   letter-spacing: -0.4px;
 }
 
+.ds-person-panel__sub-email {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.ds-person-field__input {
+  width: 100%;
+  background: var(--nav-hover);
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+.ds-person-field__input:focus {
+  border-color: rgba(255,255,255,0.3);
+}
+
 .ds-person-panel__avatar {
   width: 52px;
   height: 52px;
