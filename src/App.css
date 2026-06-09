@@ -6321,3 +6321,289 @@
   color: var(--text-secondary);
   border-color: var(--border-panel);
 }
+
+/* ── DS Person Panel ───────────────────────────────────────────────────── */
+.ds-person-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 340;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  background: rgba(9, 30, 66, 0.45);
+  backdrop-filter: blur(4px);
+  animation: guest-panel-fade 0.18s ease;
+}
+
+.ds-person-panel {
+  position: relative;
+  z-index: 350;
+  width: min(540px, 100%);
+  max-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--border-panel);
+  border-radius: 16px;
+  box-shadow: 0 0 1px rgba(95,106,126,0.2), 0 32px 64px rgba(9,30,66,0.28);
+  animation: guest-panel-scale 0.18s ease;
+  overflow: hidden;
+}
+
+.ds-person-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+}
+
+.ds-person-panel__name {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.ds-person-panel__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ds-person-panel__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-panel);
+  padding: 0 24px;
+  margin-top: 16px;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.ds-person-panel__tab {
+  padding: 10px 4px;
+  margin-right: 18px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s;
+}
+
+.ds-person-panel__tab:hover {
+  color: var(--text-primary);
+}
+
+.ds-person-panel__tab--active {
+  color: #2e5fe8;
+  border-bottom-color: #2e5fe8;
+}
+
+.ds-person-panel__body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ds-person-panel__empty {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 12px 0;
+}
+
+/* Fields */
+.ds-person-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ds-person-field__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ds-person-field__select-wrap {
+  position: relative;
+}
+
+.ds-person-field__select {
+  width: 100%;
+  appearance: none;
+  padding: 10px 36px 10px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--dropdown-bg);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  font-family: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.ds-person-field__chev {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.ds-person-field__readonly {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--nav-hover);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+}
+
+.ds-person-field__readonly--muted {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Rates card */
+.ds-person-rates-card {
+  background: var(--nav-hover);
+  border: 1px solid var(--border-panel);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ds-person-rates-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.ds-person-rates-row--top-border {
+  border-top: 1px solid var(--border-panel);
+}
+
+.ds-person-rates-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 160px;
+}
+
+.ds-person-rates-input__prefix,
+.ds-person-rates-input__suffix {
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.ds-person-rates-input__old {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  margin-right: 4px;
+}
+
+.ds-person-rates-input__field {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+  min-width: 0;
+}
+
+.ds-person-rates__view-changes {
+  display: block;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2e5fe8;
+  cursor: pointer;
+  padding: 0 16px 10px;
+  text-align: right;
+  width: 100%;
+}
+
+/* Footer */
+.ds-person-panel__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-panel);
+  flex-shrink: 0;
+}
+
+.ds-person-panel__actions-wrap {
+  position: relative;
+  margin-left: auto;
+}
+
+.ds-person-panel__actions-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2e5fe8;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.ds-person-panel__actions-btn:hover { opacity: 0.8; }
+
+.ds-person-panel__actions-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(9,30,66,0.16);
+  min-width: 150px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.ds-person-panel__actions-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.ds-person-panel__actions-item:hover { background: var(--nav-hover); }
+
+.ds-person-panel__actions-item--danger { color: #c0392b; }

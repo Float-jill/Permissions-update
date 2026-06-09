@@ -1134,6 +1134,171 @@ function DataStudioUsersPage() {
   )
 }
 
+// ── DSPersonPanel ─────────────────────────────────────────────────────────────
+
+type DSPersonPanelTab = 'info' | 'availability' | 'timeoff' | 'projects' | 'manages'
+
+function DSPersonPanel({ person, meta, onClose }: {
+  person: import('./DataStudioPeoplePage').PeopleRow
+  meta: ReturnType<typeof teamMeta>
+  onClose: () => void
+}) {
+  const [tab, setTab] = useState<DSPersonPanelTab>('info')
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const initial = person.name.charAt(0).toUpperCase()
+  const color = avatarColor(person.name)
+  const hasRateChange = person.id.charCodeAt(0) % 3 === 0
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
+    if (!actionsOpen) return
+    function onDoc(e: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setActionsOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [actionsOpen])
+
+  const TABS: { id: DSPersonPanelTab; label: string; count?: number }[] = [
+    { id: 'info',         label: 'Info' },
+    { id: 'availability', label: 'Availability' },
+    { id: 'timeoff',      label: 'Time off', count: meta.timeOff.used },
+    { id: 'projects',     label: 'Projects',  count: meta.projects.total },
+    { id: 'manages',      label: 'Manages' },
+  ]
+
+  return (
+    <div className="ds-person-backdrop" onClick={onClose}>
+      <div className="ds-person-panel" role="dialog" aria-modal aria-label="Update person" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="ds-person-panel__header">
+          <span className="ds-person-panel__name">{person.name}</span>
+          <span className="ds-person-panel__avatar" style={{ background: color }}>{initial}</span>
+        </div>
+
+        {/* Tabs */}
+        <div className="ds-person-panel__tabs">
+          {TABS.map(({ id, label, count }) => (
+            <button
+              key={id}
+              type="button"
+              className={`ds-person-panel__tab${tab === id ? ' ds-person-panel__tab--active' : ''}`}
+              onClick={() => setTab(id)}
+            >
+              {label}{count !== undefined && ` ${count}`}
+            </button>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div className="ds-person-panel__body">
+          {tab === 'info' && (
+            <>
+              <div className="ds-person-field">
+                <label className="ds-person-field__label">Role</label>
+                <div className="ds-person-field__select-wrap">
+                  <select className="ds-person-field__select" defaultValue={person.role}>
+                    <option>{person.role}</option>
+                  </select>
+                  <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+                </div>
+              </div>
+
+              <div className="ds-person-rates-card">
+                <div className="ds-person-rates-row">
+                  <span className="ds-person-field__label">Cost rate</span>
+                  <div className="ds-person-rates-input">
+                    <span className="ds-person-rates-input__prefix">$</span>
+                    {hasRateChange && (
+                      <span className="ds-person-rates-input__old">{meta.costRate + 70}</span>
+                    )}
+                    <input
+                      className="ds-person-rates-input__field"
+                      type="text"
+                      defaultValue={meta.costRate}
+                    />
+                    <span className="ds-person-rates-input__suffix">/hr</span>
+                  </div>
+                </div>
+                {hasRateChange && (
+                  <button type="button" className="ds-person-rates__view-changes">View changes</button>
+                )}
+                <div className="ds-person-rates-row ds-person-rates-row--top-border">
+                  <span className="ds-person-field__label">Bill rate</span>
+                  <div className="ds-person-rates-input">
+                    <span className="ds-person-rates-input__prefix">$</span>
+                    <input
+                      className="ds-person-rates-input__field"
+                      type="text"
+                      defaultValue={meta.billRate ?? '—'}
+                    />
+                    <span className="ds-person-rates-input__suffix">/hr</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="ds-person-field">
+                <label className="ds-person-field__label">Department</label>
+                <div className="ds-person-field__readonly">{person.department}</div>
+              </div>
+
+              <div className="ds-person-field">
+                <label className="ds-person-field__label">Tags</label>
+                <div className="ds-person-field__readonly ds-person-field__readonly--muted">No tags</div>
+              </div>
+
+              <div className="ds-person-field">
+                <label className="ds-person-field__label">Type</label>
+                <div className="ds-person-field__select-wrap">
+                  <select className="ds-person-field__select" defaultValue="Employee">
+                    <option>Employee</option>
+                    <option>Contractor</option>
+                  </select>
+                  <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab !== 'info' && (
+            <p className="ds-person-panel__empty">
+              {TABS.find(t => t.id === tab)?.label} details will appear here.
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="ds-person-panel__footer">
+          <button type="button" className="btn btn--primary" onClick={onClose}>Update person</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <div className="ds-person-panel__actions-wrap" ref={actionsRef}>
+            <button
+              type="button"
+              className="ds-person-panel__actions-btn"
+              onClick={() => setActionsOpen(o => !o)}
+            >
+              Actions <ChevronDown size={14} />
+            </button>
+            {actionsOpen && (
+              <div className="ds-person-panel__actions-menu">
+                <button type="button" className="ds-person-panel__actions-item">Archive person</button>
+                <button type="button" className="ds-person-panel__actions-item ds-person-panel__actions-item--danger">Delete person</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── DataStudioTeamPage ────────────────────────────────────────────────────────
 
 const SKILL_POOL = [
@@ -1160,6 +1325,7 @@ function teamMeta(i: number) {
 function DataStudioTeamPage() {
   const people = SAMPLE_PEOPLE.slice(0, 15)
   const [personType, setPersonType] = useState<'employees' | 'contractors'>('employees')
+  const [selectedPerson, setSelectedPerson] = useState<{ person: typeof people[number]; meta: ReturnType<typeof teamMeta> } | null>(null)
 
   const PERSON_TYPES = [
     { id: 'employees' as const,   label: 'Employees',   count: SAMPLE_PEOPLE.length },
@@ -1237,7 +1403,7 @@ function DataStudioTeamPage() {
               const initial = person.name.charAt(0).toUpperCase()
               const color = avatarColor(person.name)
               return (
-                <tr key={person.id} className="ds-table__row">
+                <tr key={person.id} className="ds-table__row ds-table__row--clickable" onClick={() => setSelectedPerson({ person, meta })}>
                   <td className="ds-table__td">
                     <div className="ds-name-cell">
                       <span className="ds-avatar" style={{ background: color }}>{initial}</span>
@@ -1289,6 +1455,14 @@ function DataStudioTeamPage() {
           </tbody>
         </table>
       </div>
+
+      {selectedPerson && (
+        <DSPersonPanel
+          person={selectedPerson.person}
+          meta={selectedPerson.meta}
+          onClose={() => setSelectedPerson(null)}
+        />
+      )}
     </div>
   )
 }
