@@ -982,20 +982,25 @@ function DSUserPanel({ user, onClose }: { user: DSUserPanelRow; onClose: () => v
   }, [actionsOpen])
 
   return (
-    <div className="ds-person-backdrop" onClick={onClose}>
-      <div className="ds-person-panel" role="dialog" aria-modal aria-label="Edit user" onClick={e => e.stopPropagation()}>
+    <div className="ds-user-drawer-backdrop" onClick={onClose}>
+      <aside className="ds-user-drawer" role="dialog" aria-modal aria-label="Edit user" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="ds-person-panel__header">
-          <div>
-            <span className="ds-person-panel__name">{user.name}</span>
-            <span className="ds-person-panel__sub-email">{user.email}</span>
+        <div className="ds-user-drawer__header">
+          <div className="ds-user-drawer__header-identity">
+            <span className="ds-user-drawer__avatar" style={{ background: color }}>{initial}</span>
+            <div>
+              <span className="ds-user-drawer__name">{user.name}</span>
+              <span className="ds-user-drawer__email">{user.email}</span>
+            </div>
           </div>
-          <span className="ds-person-panel__avatar" style={{ background: color }}>{initial}</span>
+          <button type="button" className="ds-user-drawer__close" aria-label="Close" onClick={onClose}>
+            <X size={18} strokeWidth={2} aria-hidden />
+          </button>
         </div>
 
         {/* Body */}
-        <div className="ds-person-panel__body">
+        <div className="ds-user-drawer__body">
 
           {user.seat !== 'guest' && (
             <div className="ds-person-field">
@@ -1065,7 +1070,7 @@ function DSUserPanel({ user, onClose }: { user: DSUserPanelRow; onClose: () => v
         </div>
 
         {/* Footer */}
-        <div className="ds-person-panel__footer">
+        <div className="ds-user-drawer__footer">
           <button type="button" className="btn btn--primary" onClick={onClose}>Update user</button>
           <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
           <div className="ds-person-panel__actions-wrap" ref={actionsRef}>
@@ -1085,7 +1090,7 @@ function DSUserPanel({ user, onClose }: { user: DSUserPanelRow; onClose: () => v
           </div>
         </div>
 
-      </div>
+      </aside>
     </div>
   )
 }
