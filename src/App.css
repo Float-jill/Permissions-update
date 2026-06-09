@@ -5870,8 +5870,9 @@
 
 .ds-users-page,
 .ds-team-page {
-  width: 100%;
-  padding: 0 16px 48px;
+  margin-left: -20px;
+  margin-right: -20px;
+  padding: 0 0 48px;
   box-sizing: border-box;
 }
 
