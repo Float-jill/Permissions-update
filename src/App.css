@@ -6266,8 +6266,9 @@
 }
 
 .ds-people-status-btn--active {
-  background: var(--text-primary);
-  color: var(--bg-panel);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .ds-people-access-toggle {
