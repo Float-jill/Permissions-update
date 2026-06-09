@@ -2428,6 +2428,8 @@ export default function App() {
     setOfficeMode(mode)
     if (mode === 'single-datastudio') {
       setDataStudioNavId('users')
+    } else if (mode === 'single') {
+      setDataStudioNavId('people')
     }
     // If currently viewing an office section, reset to the primary office
     if (activeOrgId === null) {
