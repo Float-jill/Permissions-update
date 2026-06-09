@@ -938,6 +938,297 @@ function GuestsPage() {
   )
 }
 
+// ── DataStudioUsersPage ───────────────────────────────────────────────────────
+
+const LAST_LOGIN_SAMPLES = [
+  'Today, 9:14 AM', '2 days ago', 'Jun 5, 2026', 'Jun 3, 2026', 'Today, 11:02 AM',
+  'Jun 1, 2026', '3 days ago', 'Jun 7, 2026', 'May 30, 2026', 'Today, 8:47 AM',
+  'Jun 4, 2026', '5 days ago', 'Jun 6, 2026', 'May 28, 2026', 'Jun 2, 2026',
+]
+
+function DataStudioUsersPage() {
+  const schedulePeople = SAMPLE_PEOPLE.slice(0, 15)
+  type UserRow = {
+    id: string
+    name: string
+    email: string
+    accessRoleId: string
+    seat: 'schedule' | 'guest'
+    department: string
+    lastLogin: string
+  }
+  const rows: UserRow[] = [
+    ...schedulePeople.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      accessRoleId: p.accessRoleId,
+      seat: 'schedule' as const,
+      department: p.department,
+      lastLogin: LAST_LOGIN_SAMPLES[i % LAST_LOGIN_SAMPLES.length],
+    })),
+    ...GUESTS.map((g) => ({
+      id: `guest-${g.id}`,
+      name: g.name,
+      email: g.email,
+      accessRoleId: 'admin',
+      seat: 'guest' as const,
+      department: '—',
+      lastLogin: 'Invite pending',
+    })),
+  ]
+
+  const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  const filtered = search
+    ? rows.filter(
+        (r) =>
+          r.name.toLowerCase().includes(search.toLowerCase()) ||
+          r.email.toLowerCase().includes(search.toLowerCase()),
+      )
+    : rows
+
+  function toggleAll() {
+    if (selected.size === filtered.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map((r) => r.id)))
+    }
+  }
+
+  function toggleRow(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const allChecked = filtered.length > 0 && selected.size === filtered.length
+  const someChecked = selected.size > 0
+
+  return (
+    <div className="ds-users-page">
+      <div className="ds-users-toolbar">
+        <input
+          className="ds-users-search"
+          type="search"
+          placeholder="Search users…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div style={{ flex: 1 }} />
+        <button type="button" className="btn btn--primary" style={{ fontSize: 13, padding: '6px 14px' }}>
+          Add user
+        </button>
+      </div>
+
+      {someChecked && (
+        <div className="ds-bulk-bar">
+          <span className="ds-bulk-bar__count">{selected.size} selected</span>
+          <span style={{ color: 'var(--text-secondary)' }}>·</span>
+          <button type="button" className="ds-bulk-bar__action">
+            Change role <ChevronDown size={12} strokeWidth={2} aria-hidden />
+          </button>
+          <span style={{ color: 'var(--text-secondary)' }}>·</span>
+          <button type="button" className="ds-bulk-bar__action" style={{ color: '#c0392b' }}>
+            Remove
+          </button>
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="ds-bulk-bar__clear"
+            aria-label="Clear selection"
+            onClick={() => setSelected(new Set())}
+          >
+            <X size={14} strokeWidth={2} aria-hidden />
+          </button>
+        </div>
+      )}
+
+      <div className="ds-table-wrap">
+        <table className="ds-table">
+          <thead>
+            <tr>
+              <th className="ds-table__th" style={{ width: 40 }}>
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  onChange={toggleAll}
+                  aria-label="Select all"
+                  style={{ cursor: 'pointer' }}
+                />
+              </th>
+              <th className="ds-table__th">Name / Email</th>
+              <th className="ds-table__th">Access role</th>
+              <th className="ds-table__th">Seat</th>
+              <th className="ds-table__th">Department</th>
+              <th className="ds-table__th">Last login</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((row) => {
+              const initial = row.name.charAt(0).toUpperCase()
+              const color = avatarColor(row.name)
+              const roleLabel =
+                row.seat === 'guest'
+                  ? 'Admin'
+                  : ACCESS_ROLE_LABELS[row.accessRoleId as keyof typeof ACCESS_ROLE_LABELS] ?? row.accessRoleId
+              return (
+                <tr
+                  key={row.id}
+                  className="ds-table__row"
+                  onClick={() => toggleRow(row.id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td className="ds-table__td" style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(row.id)}
+                      onChange={() => toggleRow(row.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </td>
+                  <td className="ds-table__td">
+                    <div className="ds-name-cell">
+                      <span className="ds-avatar" style={{ background: color }}>{initial}</span>
+                      <div className="ds-name-cell__text">
+                        <span className="ds-name-cell__name">{row.name}</span>
+                        <span className="ds-name-cell__sub">{row.email}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="ds-table__td">
+                    <span className="ds-role-badge">{roleLabel}</span>
+                  </td>
+                  <td className="ds-table__td">
+                    {row.seat === 'schedule' ? (
+                      <span className="ds-seat-pill ds-seat-pill--schedule">Schedule</span>
+                    ) : (
+                      <span className="ds-seat-pill ds-seat-pill--guest">Guest</span>
+                    )}
+                  </td>
+                  <td className="ds-table__td ds-table__td--muted">{row.department}</td>
+                  <td className="ds-table__td">
+                    {row.lastLogin === 'Invite pending' ? (
+                      <span className="ds-login-pending">{row.lastLogin}</span>
+                    ) : (
+                      <span className="ds-table__td--muted" style={{ fontSize: 13 }}>{row.lastLogin}</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── DataStudioTeamPage ────────────────────────────────────────────────────────
+
+function teamMeta(i: number) {
+  const managers = ['Sarah Chen', 'Marcus Webb', '—']
+  return {
+    managedBy: managers[i % 3],
+    timeOff: { used: i % 12, total: 20 },
+    projects: { total: 2 + (i % 6), active: 1 + (i % 3) },
+    burnoutRisk: i % 7 === 0 ? 'high' : i % 4 === 0 ? 'medium' : null,
+    billRate: SAMPLE_PEOPLE[i].accessRoleId === 'member' ? null : 100 + (i % 5) * 25,
+    costRate: 55 + (i % 4) * 15,
+  }
+}
+
+function DataStudioTeamPage() {
+  const people = SAMPLE_PEOPLE.slice(0, 15)
+  const [search, setSearch] = useState('')
+
+  const filtered = search
+    ? people.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+    : people
+
+  return (
+    <div className="ds-team-page">
+      <div className="ds-team-toolbar">
+        <input
+          className="ds-team-search"
+          type="search"
+          placeholder="Search team…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <div className="ds-table-wrap">
+        <table className="ds-table">
+          <thead>
+            <tr>
+              <th className="ds-table__th">Name / Title</th>
+              <th className="ds-table__th">Managed by</th>
+              <th className="ds-table__th">Time off</th>
+              <th className="ds-table__th">Projects</th>
+              <th className="ds-table__th">Burnout risk</th>
+              <th className="ds-table__th">Bill rate</th>
+              <th className="ds-table__th">Cost rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((person) => {
+              const i = SAMPLE_PEOPLE.indexOf(person)
+              const meta = teamMeta(i)
+              const initial = person.name.charAt(0).toUpperCase()
+              const color = avatarColor(person.name)
+              return (
+                <tr key={person.id} className="ds-table__row">
+                  <td className="ds-table__td">
+                    <div className="ds-name-cell">
+                      <span className="ds-avatar" style={{ background: color }}>{initial}</span>
+                      <div className="ds-name-cell__text">
+                        <span className="ds-name-cell__name">{person.name}</span>
+                        <span className="ds-name-cell__sub">{person.role}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="ds-table__td ds-table__td--muted">{meta.managedBy}</td>
+                  <td className="ds-table__td ds-table__td--muted">
+                    {meta.timeOff.used} / {meta.timeOff.total} days
+                  </td>
+                  <td className="ds-table__td ds-table__td--muted">
+                    {meta.projects.total} total · {meta.projects.active} active
+                  </td>
+                  <td className="ds-table__td">
+                    {meta.burnoutRisk === 'high' ? (
+                      <span className="ds-risk-badge ds-risk-badge--high">
+                        <span className="ds-risk-dot" />High
+                      </span>
+                    ) : meta.burnoutRisk === 'medium' ? (
+                      <span className="ds-risk-badge ds-risk-badge--medium">
+                        <span className="ds-risk-dot" />Medium
+                      </span>
+                    ) : (
+                      <span className="ds-table__td--muted" style={{ fontSize: 13 }}>—</span>
+                    )}
+                  </td>
+                  <td className="ds-table__td ds-table__td--muted">
+                    {meta.billRate !== null ? `$${meta.billRate}/hr` : '—'}
+                  </td>
+                  <td className="ds-table__td ds-table__td--muted">
+                    ${meta.costRate}/hr
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function AccessRightsPage({
   plan,
   rbacEnforced,
@@ -1718,6 +2009,8 @@ export type DataStudioNavId =
   | 'clients'
   | 'rate-cards'
   | 'activity'
+  | 'users'
+  | 'team'
 
 const DATA_STUDIO_PLACEHOLDER: Record<DataStudioNavId, string> = {
   offices: 'Offices',
@@ -1727,6 +2020,8 @@ const DATA_STUDIO_PLACEHOLDER: Record<DataStudioNavId, string> = {
   clients: 'Clients',
   'rate-cards': 'Rate cards',
   activity: 'Activity log',
+  users: 'Users',
+  team: 'Team',
 }
 
 const SINGLE_OFFICE_NAV = [
@@ -1745,6 +2040,17 @@ const SINGLE_OFFICE_DATA_STUDIO = [
   { id: 'clients',     label: 'Clients',     Icon: Building2 },
   { id: 'rate-cards',  label: 'Rate cards',  Icon: DollarSign },
   { id: 'activity',    label: 'Activity',    Icon: Activity },
+] as const
+
+const SO_DS_NAV = [
+  { id: 'users',        label: 'Users',        Icon: UserCog,   contentId: 'users' as DataStudioNavId },
+  { id: 'schedule',     label: 'Schedule',     Icon: Calendar,  contentId: null },
+  { id: 'project-plan', label: 'Project plan', Icon: Waypoints, contentId: null },
+  { id: 'team',         label: 'Team',         Icon: Users,     contentId: 'team' as DataStudioNavId },
+  { id: 'projects',     label: 'Projects',     Icon: Folder,    contentId: null },
+  { id: 'report',       label: 'Report',       Icon: BarChart3, contentId: null },
+  { id: 'log-team',     label: 'Log team',     Icon: Clock,     contentId: null },
+  { id: 'log-my-time',  label: 'Log my time',  Icon: Timer,     contentId: null },
 ] as const
 
 function AppRail({
@@ -1887,25 +2193,56 @@ function AppRail({
       <nav className="app-rail__scroll" aria-label="Primary">
         {officeMode === 'single' || officeMode === 'single-datastudio' ? (
           <>
-            {/* ── Single office nav ─────────────────────────────────────── */}
+            {officeMode === 'single' ? (
+              <>
+                {/* ── Single office nav ───────────────────────────────── */}
+                <div className="app-rail__block">
+                  {SINGLE_OFFICE_NAV.map(({ id, label, Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`app-rail__row${soNavActive === id ? ' app-rail__row--active' : ''}`}
+                      onClick={() => setSoNavActive(id)}
+                      aria-current={soNavActive === id ? 'page' : undefined}
+                    >
+                      <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                      <span className="app-rail__row-label">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {/* ── Single office + data studio nav ─────────────────── */}
+                <div className="app-rail__block">
+                  {SO_DS_NAV.map((item) => {
+                    const isActive = item.contentId !== null
+                      ? dataStudioActive === item.contentId
+                      : soNavActive === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`app-rail__row${isActive ? ' app-rail__row--active' : ''}`}
+                        onClick={() => {
+                          if (item.contentId !== null) {
+                            onDataStudioActiveChange(item.contentId)
+                          } else {
+                            setSoNavActive(item.id)
+                          }
+                        }}
+                        aria-current={isActive ? 'page' : undefined}
+                      >
+                        <item.Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
+                        <span className="app-rail__row-label">{item.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
 
-            {/* Main nav items — flat, no section header */}
-            <div className="app-rail__block">
-              {SINGLE_OFFICE_NAV.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`app-rail__row${soNavActive === id ? ' app-rail__row--active' : ''}`}
-                  onClick={() => setSoNavActive(id)}
-                  aria-current={soNavActive === id ? 'page' : undefined}
-                >
-                  <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-                  <span className="app-rail__row-label">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Data studio */}
+            {/* Data studio sub-nav */}
             <div className="app-rail__block app-rail__block--so-ds">
               <button
                 type="button"
@@ -2079,6 +2416,9 @@ export default function App() {
 
   function handleOfficeModeChange(mode: OfficeModeId) {
     setOfficeMode(mode)
+    if (mode === 'single-datastudio') {
+      setDataStudioNavId('users')
+    }
     // If currently viewing an office section, reset to the primary office
     if (activeOrgId === null) {
       setActive({ mode: 'section', officeId: 'beaverton', childId: 'policies' })
@@ -2246,6 +2586,10 @@ export default function App() {
         <main className="main">
           {dataStudioNavId === 'people' ? (
             <DataStudioPeoplePage rbacEnforced={rbacEnforced} officeMode={officeMode} />
+          ) : dataStudioNavId === 'users' ? (
+            <DataStudioUsersPage />
+          ) : dataStudioNavId === 'team' ? (
+            <DataStudioTeamPage />
           ) : (
             <div className="shell-placeholder" role="status">
               <p className="shell-placeholder__text">

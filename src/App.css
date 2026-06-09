@@ -5865,3 +5865,233 @@
 .guests-table__row--clickable {
   cursor: pointer;
 }
+
+/* ── DataStudioUsersPage / DataStudioTeamPage ─────────────────────────────── */
+
+.ds-users-page,
+.ds-team-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.ds-users-toolbar,
+.ds-team-toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ds-users-search,
+.ds-team-search {
+  height: 34px;
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13px;
+  flex: 1;
+  max-width: 280px;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.ds-users-search:focus,
+.ds-team-search:focus {
+  border-color: var(--focus-ring);
+}
+
+.ds-bulk-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  background: var(--nav-hover);
+  border: 1px solid var(--border-panel);
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.ds-bulk-bar__count {
+  font-weight: 600;
+}
+
+.ds-bulk-bar__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: #2e5fe8;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ds-bulk-bar__action:hover {
+  text-decoration: underline;
+}
+
+.ds-bulk-bar__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.ds-bulk-bar__clear:hover {
+  background: var(--border-panel);
+  color: var(--text-primary);
+}
+
+.ds-table-wrap {
+  border: 1px solid var(--border-panel);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-panel);
+}
+
+.ds-table__th {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: left;
+  background: var(--nav-hover);
+  border-bottom: 1px solid var(--border-panel);
+}
+
+.ds-table__row {
+  border-bottom: 1px solid var(--border-panel);
+  cursor: default;
+  transition: background 0.1s;
+}
+
+.ds-table__row:last-child {
+  border-bottom: none;
+}
+
+.ds-table__row:hover {
+  background: var(--nav-hover);
+}
+
+.ds-table__td {
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.ds-table__td--muted {
+  color: var(--text-secondary);
+}
+
+.ds-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ds-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ds-name-cell__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-name-cell__name {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ds-name-cell__sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ds-role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--nav-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-panel);
+}
+
+.ds-seat-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ds-seat-pill--schedule {
+  background: rgba(46, 95, 232, 0.1);
+  color: #2e5fe8;
+}
+
+.ds-seat-pill--guest {
+  background: var(--nav-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-panel);
+}
+
+.ds-login-pending {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.ds-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ds-risk-badge--high {
+  color: #c0392b;
+}
+
+.ds-risk-badge--medium {
+  color: #e6a817;
+}
+
+.ds-risk-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
