@@ -983,22 +983,20 @@ function DataStudioUsersPage() {
     })),
   ]
 
-  const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [seatTab, setSeatTab] = useState<'all' | 'schedule' | 'guest'>('all')
 
-  const filtered = search
-    ? rows.filter(
-        (r) =>
-          r.name.toLowerCase().includes(search.toLowerCase()) ||
-          r.email.toLowerCase().includes(search.toLowerCase()),
-      )
-    : rows
+  const USER_TABS = [
+    { id: 'all' as const,      label: 'All users',       count: rows.length },
+    { id: 'schedule' as const, label: 'Schedule seats',  count: schedulePeople.length },
+    { id: 'guest' as const,    label: 'Guests',          count: GUESTS.length },
+  ]
 
   function toggleAll() {
-    if (selected.size === filtered.length) {
+    if (selected.size === displayRows.length) {
       setSelected(new Set())
     } else {
-      setSelected(new Set(filtered.map((r) => r.id)))
+      setSelected(new Set(displayRows.map((r) => r.id)))
     }
   }
 
@@ -1011,23 +1009,57 @@ function DataStudioUsersPage() {
     })
   }
 
-  const allChecked = filtered.length > 0 && selected.size === filtered.length
+  const displayRows = seatTab === 'all' ? rows : rows.filter(r => r.seat === seatTab)
+
+  const allChecked = displayRows.length > 0 && selected.size === displayRows.length
   const someChecked = selected.size > 0
 
   return (
     <div className="ds-users-page">
-      <div className="ds-users-toolbar">
-        <input
-          className="ds-users-search"
-          type="search"
-          placeholder="Search users…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div style={{ flex: 1 }} />
-        <button type="button" className="btn btn--primary" style={{ fontSize: 13, padding: '6px 14px' }}>
-          Add user
-        </button>
+      {/* Row 1 — title + actions */}
+      <div className="ds-people-header">
+        <div className="ds-people-header__left">
+          <h1 className="ds-people-header__title">Users</h1>
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Customise columns">
+            <ArrowLeftRight size={14} strokeWidth={1.75} />
+          </button>
+          <button type="button" className="ds-people-header__filter-btn">
+            <ListFilter size={14} strokeWidth={1.75} />
+            Filter
+            <ChevronDown size={13} strokeWidth={1.75} />
+          </button>
+        </div>
+        <div className="ds-people-header__right">
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Display options">
+            <SlidersHorizontal size={15} strokeWidth={1.75} />
+          </button>
+          <button type="button" className="ds-people-header__action-btn">
+            <Download size={14} strokeWidth={1.75} />
+            Import
+          </button>
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Export">
+            <ExternalLink size={14} strokeWidth={1.75} />
+          </button>
+          <button type="button" className="btn btn--primary ds-people-header__add-btn" aria-label="Add user">
+            <Plus size={16} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2 — seat type tabs */}
+      <div className="ds-people-types">
+        {USER_TABS.map(({ id, label, count }) => (
+          <button
+            key={id}
+            type="button"
+            className={`ds-people-type${seatTab === id ? ' ds-people-type--active' : ''}`}
+            onClick={() => setSeatTab(id)}
+          >
+            {seatTab === id && <span className="ds-people-type__dot" aria-hidden />}
+            {label}
+            <span className="ds-people-type__count">{count}</span>
+          </button>
+        ))}
       </div>
 
       {someChecked && (
@@ -1074,7 +1106,7 @@ function DataStudioUsersPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row) => {
+            {displayRows.map((row) => {
               const initial = row.name.charAt(0).toUpperCase()
               const color = avatarColor(row.name)
               const roleLabel =
