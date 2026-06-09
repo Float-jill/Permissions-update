@@ -6073,6 +6073,31 @@
   font-size: 12px;
 }
 
+.ds-person-type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ds-person-type-pill--employee {
+  background: rgba(52, 152, 219, 0.15);
+  color: #7ec8e3;
+  border: 1px solid rgba(52, 152, 219, 0.25);
+}
+.ds-person-type-pill--contractor {
+  background: rgba(230, 126, 34, 0.15);
+  color: #f0a070;
+  border: 1px solid rgba(230, 126, 34, 0.25);
+}
+.ds-person-type-pill--placeholder {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .ds-risk-badge {
   display: inline-flex;
   align-items: center;

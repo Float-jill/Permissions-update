@@ -953,6 +953,7 @@ const LAST_LOGIN_SAMPLES = [
 
 function DataStudioUsersPage() {
   const schedulePeople = SAMPLE_PEOPLE.slice(0, 15)
+  type PersonType = 'Employee' | 'Contractor' | 'Placeholder'
   type UserRow = {
     id: string
     name: string
@@ -961,6 +962,7 @@ function DataStudioUsersPage() {
     seat: 'schedule' | 'guest'
     department: string
     lastLogin: string
+    personType: PersonType
   }
   const rows: UserRow[] = [
     ...schedulePeople.map((p, i) => ({
@@ -971,6 +973,7 @@ function DataStudioUsersPage() {
       seat: 'schedule' as const,
       department: p.department,
       lastLogin: LAST_LOGIN_SAMPLES[i % LAST_LOGIN_SAMPLES.length],
+      personType: (i % 5 === 0 ? 'Placeholder' : i % 3 === 0 ? 'Contractor' : 'Employee') as PersonType,
     })),
     ...GUESTS.map((g) => ({
       id: `guest-${g.id}`,
@@ -980,6 +983,7 @@ function DataStudioUsersPage() {
       seat: 'guest' as const,
       department: '—',
       lastLogin: 'Invite pending',
+      personType: 'Employee' as PersonType,
     })),
   ]
 
@@ -1099,6 +1103,7 @@ function DataStudioUsersPage() {
                 />
               </th>
               <th className="ds-table__th">Name / Email</th>
+              <th className="ds-table__th">Person type</th>
               <th className="ds-table__th">Access role</th>
               <th className="ds-table__th">Seat</th>
               <th className="ds-table__th">Department</th>
@@ -1137,6 +1142,11 @@ function DataStudioUsersPage() {
                         <span className="ds-name-cell__sub">{row.email}</span>
                       </div>
                     </div>
+                  </td>
+                  <td className="ds-table__td">
+                    <span className={`ds-person-type-pill ds-person-type-pill--${row.personType.toLowerCase()}`}>
+                      {row.personType}
+                    </span>
                   </td>
                   <td className="ds-table__td">
                     <span className="ds-role-badge">{roleLabel}</span>
