@@ -6095,3 +6095,194 @@
   background: currentColor;
   flex-shrink: 0;
 }
+
+/* ── DataStudioTeamPage header ─────────────────────────────────────────── */
+.ds-people-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ds-people-header__left,
+.ds-people-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-people-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.3px;
+  margin-right: 4px;
+}
+
+.ds-people-header__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: 1px solid var(--border-panel);
+  border-radius: 7px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ds-people-header__icon-btn:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+
+.ds-people-header__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  background: none;
+  border: 1px solid var(--border-panel);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ds-people-header__filter-btn:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+
+.ds-people-header__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  background: none;
+  border: 1px solid var(--border-panel);
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ds-people-header__action-btn:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+
+.ds-people-header__add-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+/* Row 2 — type tabs */
+.ds-people-types {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-bottom: 1px solid var(--border-panel);
+  margin-bottom: 12px;
+}
+
+.ds-people-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.ds-people-type:hover {
+  color: var(--text-primary);
+}
+
+.ds-people-type--active {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+}
+
+.ds-people-type__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  flex-shrink: 0;
+}
+
+/* Row 3 — status filters */
+.ds-people-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ds-people-status-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ds-people-status-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.ds-people-status-btn:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+
+.ds-people-status-btn--active {
+  background: var(--text-primary);
+  color: var(--bg-panel);
+}
+
+.ds-people-access-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ds-people-access-toggle__check {
+  width: 14px;
+  height: 14px;
+  accent-color: #2e5fe8;
+  cursor: pointer;
+}

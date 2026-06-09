@@ -5,6 +5,11 @@ import { useEffect, useRef, useMemo, useState } from 'react'
 import {
   Activity,
   ArrowLeft,
+  ArrowLeftRight,
+  Download,
+  ExternalLink,
+  ListFilter,
+  SlidersHorizontal,
   BarChart3,
   Bell,
   BookOpen,
@@ -1145,22 +1150,90 @@ function teamMeta(i: number) {
 
 function DataStudioTeamPage() {
   const people = SAMPLE_PEOPLE.slice(0, 15)
-  const [search, setSearch] = useState('')
+  const [personType, setPersonType] = useState<'employees' | 'contractors' | 'departments' | 'delivery-teams' | 'groups'>('employees')
+  const [statusFilter, setStatusFilter] = useState<'active' | 'archived' | 'all'>('active')
+  const [onlyWithAccess, setOnlyWithAccess] = useState(false)
 
-  const filtered = search
-    ? people.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
-    : people
+  const PERSON_TYPES = [
+    { id: 'employees' as const,      label: 'Employees' },
+    { id: 'contractors' as const,    label: 'Contractors' },
+    { id: 'departments' as const,    label: 'Departments' },
+    { id: 'delivery-teams' as const, label: 'Delivery teams' },
+    { id: 'groups' as const,         label: 'Groups' },
+  ]
+
+  const filtered = people
 
   return (
     <div className="ds-team-page">
-      <div className="ds-team-toolbar">
-        <input
-          className="ds-team-search"
-          type="search"
-          placeholder="Search team…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Row 1 — title + actions */}
+      <div className="ds-people-header">
+        <div className="ds-people-header__left">
+          <h1 className="ds-people-header__title">People</h1>
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Customise columns">
+            <ArrowLeftRight size={14} strokeWidth={1.75} />
+          </button>
+          <button type="button" className="ds-people-header__filter-btn">
+            <ListFilter size={14} strokeWidth={1.75} />
+            Filter
+            <ChevronDown size={13} strokeWidth={1.75} />
+          </button>
+        </div>
+        <div className="ds-people-header__right">
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Display options">
+            <SlidersHorizontal size={15} strokeWidth={1.75} />
+          </button>
+          <button type="button" className="ds-people-header__action-btn">
+            <Download size={14} strokeWidth={1.75} />
+            Import
+          </button>
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Export">
+            <ExternalLink size={14} strokeWidth={1.75} />
+          </button>
+          <button type="button" className="btn btn--primary ds-people-header__add-btn" aria-label="Add person">
+            <Plus size={16} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2 — type tabs */}
+      <div className="ds-people-types">
+        {PERSON_TYPES.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            className={`ds-people-type${personType === id ? ' ds-people-type--active' : ''}`}
+            onClick={() => setPersonType(id)}
+          >
+            {personType === id && <span className="ds-people-type__dot" aria-hidden />}
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Row 3 — status filters + access toggle */}
+      <div className="ds-people-status-bar">
+        <div className="ds-people-status-filters">
+          {(['active', 'archived', 'all'] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`ds-people-status-btn${statusFilter === s ? ' ds-people-status-btn--active' : ''}`}
+              onClick={() => setStatusFilter(s)}
+            >
+              {s === 'active' ? '243 Active' : s === 'archived' ? '0 Archived' : 'All'}
+            </button>
+          ))}
+        </div>
+        <label className="ds-people-access-toggle">
+          <input
+            type="checkbox"
+            className="ds-people-access-toggle__check"
+            checked={onlyWithAccess}
+            onChange={(e) => setOnlyWithAccess(e.target.checked)}
+          />
+          Only show people with access rights
+        </label>
       </div>
 
       <div className="ds-table-wrap">
