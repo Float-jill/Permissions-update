@@ -1041,6 +1041,8 @@ function AccessRightsPage({
               <th className="roles-table__th">Description</th>
               <th className="roles-table__th">Type</th>
               <th className="roles-table__th roles-table__th--num">People</th>
+              {officeMode === 'multi' && <th className="roles-table__th">Last modified by <span className="roles-table__future-badge" title="Backend will retain full history — UI display is scoped out of V1">Future state</span></th>}
+              {officeMode === 'multi' && <th className="roles-table__th">Last modified <span className="roles-table__future-badge" title="Backend will retain full history — UI display is scoped out of V1">Future state</span></th>}
               <th className="roles-table__th" />
             </tr>
           </thead>
@@ -1072,6 +1074,8 @@ function AccessRightsPage({
                   <td className="roles-table__td roles-table__td--num">
                     <span className="roles-table__people-count">{role.count}</span>
                   </td>
+                  {officeMode === 'multi' && <td className="roles-table__td roles-table__td--meta">Float</td>}
+                  {officeMode === 'multi' && <td className="roles-table__td roles-table__td--meta">May 26, 2026</td>}
                   <td className="roles-table__td roles-table__td--actions">
                     <div className="roles-table__row-actions">
                       {canEdit && !role.isCustom && role.id !== 'account-owner' && (
