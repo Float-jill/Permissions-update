@@ -735,6 +735,76 @@ export function ReadOnlyPermGroup({ label, perms }: { label: string; perms: Conf
   )
 }
 
+const GUESTS = [
+  { id: '1', name: 'cam me',      email: 'cam@float.com',                  access: 'Admin', joined: 'Nov 07 2023' },
+  { id: '2', name: 'Omar Furrer', email: 'omar.furrer@float.com',          access: 'Admin', joined: 'Jan 29 2025' },
+  { id: '3', name: 'Sameet',      email: 'mail+samfloat99@sameet.com',     access: 'Admin', joined: 'Jan 13 2024' },
+]
+
+function GuestsPage() {
+  const [activeTab, setActiveTab] = useState<'guests' | 'pending'>('guests')
+
+  return (
+    <div className="guests-page">
+      <div className="guests-card">
+        <div className="guests-card__header">
+          <div className="guests-tabs" role="tablist">
+            <button
+              role="tab"
+              aria-selected={activeTab === 'guests'}
+              className={`guests-tab${activeTab === 'guests' ? ' guests-tab--active' : ''}`}
+              onClick={() => setActiveTab('guests')}
+            >
+              Guests <span className="guests-tab__count">{GUESTS.length}</span>
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'pending'}
+              className={`guests-tab${activeTab === 'pending' ? ' guests-tab--active' : ''}`}
+              onClick={() => setActiveTab('pending')}
+            >
+              Pending invites <span className="guests-tab__count">0</span>
+            </button>
+          </div>
+          <button type="button" className="btn btn--primary">Invite</button>
+        </div>
+
+        {activeTab === 'guests' && (
+          <table className="guests-table">
+            <thead>
+              <tr>
+                <th className="guests-table__th">Name</th>
+                <th className="guests-table__th">Access</th>
+                <th className="guests-table__th">Manages</th>
+                <th className="guests-table__th">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {GUESTS.map((guest) => (
+                <tr key={guest.id} className="guests-table__row">
+                  <td className="guests-table__td">
+                    <span className="guests-table__name">{guest.name}</span>
+                    <span className="guests-table__email">{guest.email}</span>
+                  </td>
+                  <td className="guests-table__td guests-table__td--muted">{guest.access}</td>
+                  <td className="guests-table__td" />
+                  <td className="guests-table__td guests-table__td--muted">{guest.joined}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {activeTab === 'pending' && (
+          <div className="guests-empty">
+            <p className="guests-empty__text">No pending invites.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function AccessRightsPage({
   plan,
   rbacEnforced,
@@ -2228,6 +2298,8 @@ export default function App() {
                   onUpgradeToPro={() => setPricingPlan('pro')}
                   officeMode={officeMode}
                 />
+              ) : activeOrgId === 'guests' ? (
+                <GuestsPage />
               ) : (
                 <div className="empty-panel" role="status" aria-live="polite">
                   <p className="empty-panel__text">{emptyPanelMessage}</p>

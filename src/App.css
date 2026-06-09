@@ -5457,3 +5457,118 @@
   border-color: var(--accent-blue);
   background: rgba(110, 140, 240, 0.05);
 }
+
+/* ── Guests page ───────────────────────────────────────────────────────── */
+.guests-page {
+  padding: 0;
+}
+
+.guests-card {
+  border: 1px solid var(--border-panel);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+
+.guests-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 0 4px;
+  border-bottom: 1px solid var(--border-panel);
+}
+
+.guests-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.guests-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.15s ease;
+}
+
+.guests-tab:hover {
+  color: var(--text-primary);
+}
+
+.guests-tab--active {
+  color: #2e5fe8;
+  border-bottom-color: #2e5fe8;
+}
+
+.guests-tab__count {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.guests-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.guests-table__th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-panel);
+}
+
+.guests-table__row {
+  border-bottom: 1px solid var(--border-panel);
+}
+
+.guests-table__row:last-child {
+  border-bottom: none;
+}
+
+.guests-table__row:nth-child(odd) {
+  background: var(--nav-hover);
+}
+
+.guests-table__td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.guests-table__td--muted {
+  color: var(--text-secondary);
+}
+
+.guests-table__name {
+  display: block;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.guests-table__email {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.guests-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.guests-empty__text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
