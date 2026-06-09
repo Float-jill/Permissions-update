@@ -1144,9 +1144,11 @@ function DataStudioUsersPage() {
                     </div>
                   </td>
                   <td className="ds-table__td">
-                    <span className={`ds-person-type-pill ds-person-type-pill--${row.personType.toLowerCase()}`}>
-                      {row.personType}
-                    </span>
+                    {row.seat !== 'guest' && (
+                      <span className={`ds-person-type-pill ds-person-type-pill--${row.personType.toLowerCase()}`}>
+                        {row.personType}
+                      </span>
+                    )}
                   </td>
                   <td className="ds-table__td">
                     <span className="ds-role-badge">{roleLabel}</span>
