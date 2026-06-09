@@ -1162,8 +1162,8 @@ function DataStudioTeamPage() {
   const [personType, setPersonType] = useState<'employees' | 'contractors'>('employees')
 
   const PERSON_TYPES = [
-    { id: 'employees' as const,   label: 'Employees' },
-    { id: 'contractors' as const, label: 'Contractors' },
+    { id: 'employees' as const,   label: 'Employees',   count: SAMPLE_PEOPLE.length },
+    { id: 'contractors' as const, label: 'Contractors', count: 12 },
   ]
 
   const filtered = people
@@ -1202,7 +1202,7 @@ function DataStudioTeamPage() {
 
       {/* Row 2 — type tabs */}
       <div className="ds-people-types">
-        {PERSON_TYPES.map(({ id, label }) => (
+        {PERSON_TYPES.map(({ id, label, count }) => (
           <button
             key={id}
             type="button"
@@ -1211,6 +1211,7 @@ function DataStudioTeamPage() {
           >
             {personType === id && <span className="ds-people-type__dot" aria-hidden />}
             {label}
+            <span className="ds-people-type__count">{count}</span>
           </button>
         ))}
       </div>

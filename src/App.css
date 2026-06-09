@@ -6232,6 +6232,13 @@
   flex-shrink: 0;
 }
 
+.ds-people-type__count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
 /* Row 3 — status filters */
 .ds-people-status-bar {
   display: flex;
