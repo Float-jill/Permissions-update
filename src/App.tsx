@@ -1159,16 +1159,12 @@ function teamMeta(i: number) {
 
 function DataStudioTeamPage() {
   const people = SAMPLE_PEOPLE.slice(0, 15)
-  const [personType, setPersonType] = useState<'employees' | 'contractors' | 'departments' | 'delivery-teams' | 'groups'>('employees')
+  const [personType, setPersonType] = useState<'employees' | 'contractors'>('employees')
   const [statusFilter, setStatusFilter] = useState<'active' | 'archived' | 'all'>('active')
-  const [onlyWithAccess, setOnlyWithAccess] = useState(false)
 
   const PERSON_TYPES = [
-    { id: 'employees' as const,      label: 'Employees' },
-    { id: 'contractors' as const,    label: 'Contractors' },
-    { id: 'departments' as const,    label: 'Departments' },
-    { id: 'delivery-teams' as const, label: 'Delivery teams' },
-    { id: 'groups' as const,         label: 'Groups' },
+    { id: 'employees' as const,   label: 'Employees' },
+    { id: 'contractors' as const, label: 'Contractors' },
   ]
 
   const filtered = people
@@ -1234,15 +1230,6 @@ function DataStudioTeamPage() {
             </button>
           ))}
         </div>
-        <label className="ds-people-access-toggle">
-          <input
-            type="checkbox"
-            className="ds-people-access-toggle__check"
-            checked={onlyWithAccess}
-            onChange={(e) => setOnlyWithAccess(e.target.checked)}
-          />
-          Only show people with access rights
-        </label>
       </div>
 
       <div className="ds-table-wrap">
