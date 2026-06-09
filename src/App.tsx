@@ -45,7 +45,7 @@ import {
 
 
 export type PricingPlanId = 'starter' | 'pro' | 'enterprise'
-export type OfficeModeId = 'single' | 'multi'
+export type OfficeModeId = 'single' | 'single-datastudio' | 'multi'
 
 // ── Scope ────────────────────────────────────────────────────────────────────
 
@@ -164,7 +164,14 @@ function OfficeModeControl({
         className={`office-mode-ctrl__btn${value === 'single' ? ' office-mode-ctrl__btn--active' : ''}`}
         onClick={() => onChange('single')}
       >
-        Single office
+        Single office current
+      </button>
+      <button
+        type="button"
+        className={`office-mode-ctrl__btn${value === 'single-datastudio' ? ' office-mode-ctrl__btn--active' : ''}`}
+        onClick={() => onChange('single-datastudio')}
+      >
+        Single office data studio
       </button>
       <button
         type="button"
@@ -1675,7 +1682,7 @@ function AppRail({
       </header>
 
       <nav className="app-rail__scroll" aria-label="Primary">
-        {officeMode === 'single' ? (
+        {officeMode === 'single' || officeMode === 'single-datastudio' ? (
           <>
             {/* ── Single office nav ─────────────────────────────────────── */}
 
@@ -2110,7 +2117,7 @@ export default function App() {
               </div>
 
               <div>
-                {pricingPlan === 'starter' ? null : officeMode === 'single' ? null : (
+                {pricingPlan === 'starter' ? null : (officeMode === 'single' || officeMode === 'single-datastudio') ? null : (
                   <>
                     <div className="sidebar__section-label-row">
                       <p className="sidebar__section-label sidebar__section-label--inline">Offices</p>
