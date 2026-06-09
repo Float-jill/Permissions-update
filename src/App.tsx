@@ -1254,16 +1254,6 @@ function DSPersonPanel({ person, meta, onClose }: {
                 <div className="ds-person-field__readonly ds-person-field__readonly--muted">No tags</div>
               </div>
 
-              <div className="ds-person-field">
-                <label className="ds-person-field__label">Type</label>
-                <div className="ds-person-field__select-wrap">
-                  <select className="ds-person-field__select" defaultValue="Employee">
-                    <option>Employee</option>
-                    <option>Contractor</option>
-                  </select>
-                  <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
-                </div>
-              </div>
             </>
           )}
 
