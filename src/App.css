@@ -6287,3 +6287,29 @@
   accent-color: #2e5fe8;
   cursor: pointer;
 }
+
+/* ── Skills tags ──────────────────────────────────────────────────────── */
+.ds-skills-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.ds-skill-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(110, 140, 240, 0.12);
+  color: #7a9ef5;
+  border: 1px solid rgba(110, 140, 240, 0.2);
+  white-space: nowrap;
+}
+
+.ds-skill-tag--more {
+  background: var(--nav-hover);
+  color: var(--text-secondary);
+  border-color: var(--border-panel);
+}

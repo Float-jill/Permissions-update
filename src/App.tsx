@@ -1136,8 +1136,16 @@ function DataStudioUsersPage() {
 
 // ── DataStudioTeamPage ────────────────────────────────────────────────────────
 
+const SKILL_POOL = [
+  'Figma','React','TypeScript','Python','SQL','Leadership','Agile','Sketch',
+  'After Effects','Copywriting','Analytics','CSS','Node.js','Brand strategy',
+  'UX research','Illustration',
+]
+
 function teamMeta(i: number) {
   const managers = ['Sarah Chen', 'Marcus Webb', '—']
+  const skillCount = 1 + (i % 5)
+  const skills = Array.from({ length: skillCount }, (_, k) => SKILL_POOL[(i + k * 3) % SKILL_POOL.length])
   return {
     managedBy: managers[i % 3],
     timeOff: { used: i % 12, total: 20 },
@@ -1145,6 +1153,7 @@ function teamMeta(i: number) {
     burnoutRisk: i % 7 === 0 ? 'high' : i % 4 === 0 ? 'medium' : null,
     billRate: SAMPLE_PEOPLE[i].accessRoleId === 'member' ? null : 100 + (i % 5) * 25,
     costRate: 55 + (i % 4) * 15,
+    skills,
   }
 }
 
@@ -1245,6 +1254,7 @@ function DataStudioTeamPage() {
               <th className="ds-table__th">Time off</th>
               <th className="ds-table__th">Projects</th>
               <th className="ds-table__th">Burnout risk</th>
+              <th className="ds-table__th">Skills</th>
               <th className="ds-table__th">Effective bill rate</th>
               <th className="ds-table__th">Cost rate</th>
             </tr>
@@ -1285,6 +1295,16 @@ function DataStudioTeamPage() {
                     ) : (
                       <span className="ds-table__td--muted" style={{ fontSize: 13 }}>—</span>
                     )}
+                  </td>
+                  <td className="ds-table__td">
+                    <div className="ds-skills-cell">
+                      {meta.skills.slice(0, 2).map((skill) => (
+                        <span key={skill} className="ds-skill-tag">{skill}</span>
+                      ))}
+                      {meta.skills.length > 2 && (
+                        <span className="ds-skill-tag ds-skill-tag--more">+{meta.skills.length - 2}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="ds-table__td ds-table__td--muted">
                     {meta.billRate !== null ? `$${meta.billRate}/hr` : '—'}
