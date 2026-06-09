@@ -1318,10 +1318,12 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
 
       {/* ── Office selector + category tabs ───────────────────────────────── */}
       <div className="dh-people__catbar">
-        <button type="button" className="dh-people__office-btn">
-          All offices
-          <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
-        </button>
+        {officeMode === 'multi' && (
+          <button type="button" className="dh-people__office-btn">
+            All offices
+            <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
+          </button>
+        )}
         <div className="dh-people__cattabs" role="tablist" aria-label="People categories">
           {CATEGORY_TABS.map((tab) => {
             const isActive = category === tab.id
@@ -1438,7 +1440,7 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                 </button>
               </th>
               <th className="dh-people__th" scope="col">Group</th>
-              <th className="dh-people__th" scope="col">Office</th>
+              {officeMode === 'multi' && <th className="dh-people__th" scope="col">Office</th>}
             </tr>
           </thead>
           <tbody>
@@ -1488,7 +1490,7 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                     ))}
                   </div>
                 </td>
-                <td className="dh-people__td">{row.office}</td>
+                {officeMode === 'multi' && <td className="dh-people__td">{row.office}</td>}
               </tr>
             )})}
           </tbody>
