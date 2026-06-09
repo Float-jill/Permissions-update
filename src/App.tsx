@@ -2045,7 +2045,7 @@ const SINGLE_OFFICE_DATA_STUDIO = [
 const SO_DS_NAV = [
   { id: 'schedule',     label: 'Schedule',     Icon: Calendar,  contentId: null },
   { id: 'project-plan', label: 'Project plan', Icon: Waypoints, contentId: null },
-  { id: 'team',         label: 'Team',         Icon: Users,     contentId: 'team' as DataStudioNavId },
+  { id: 'team',         label: 'People',       Icon: Users,     contentId: 'team' as DataStudioNavId },
   { id: 'projects',     label: 'Projects',     Icon: Folder,    contentId: null },
   { id: 'report',       label: 'Report',       Icon: BarChart3, contentId: null },
   { id: 'log-team',     label: 'Log team',     Icon: Clock,     contentId: null },
