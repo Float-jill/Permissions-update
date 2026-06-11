@@ -1,6 +1,6 @@
 import './App.css'
-import { ACCESS_ROLE_LABELS, ACCESS_ROLE_IDS } from './accessRoles'
-import { DataStudioPeoplePage, DeptTagPicker, SAMPLE_PEOPLE } from './DataStudioPeoplePage'
+import { ACCESS_ROLE_LABELS, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRoles'
+import { DataStudioPeoplePage, DeptTagPicker, SAMPLE_PEOPLE, AVAILABLE_ADDITIONAL_PERMISSIONS, ADDITIONAL_PERM_CATEGORIES, RolePermissionsCard } from './DataStudioPeoplePage'
 import { useEffect, useRef, useMemo, useState } from 'react'
 import {
   Activity,
@@ -44,7 +44,13 @@ import {
   Timer,
   Trash2,
   Umbrella,
+  CalendarPlus,
+  FileDown,
+  FolderPlus,
+  LayoutGrid,
+  Paperclip,
   UserCog,
+  UserPlus,
   Users,
   Waypoints,
   X,
@@ -52,7 +58,7 @@ import {
 
 
 export type PricingPlanId = 'starter' | 'pro' | 'enterprise'
-export type OfficeModeId = 'single' | 'single-datastudio' | 'multi'
+export type OfficeModeId = 'single' | 'single-dsv1' | 'single-datastudio' | 'multi'
 
 // ── Scope ────────────────────────────────────────────────────────────────────
 
@@ -172,6 +178,13 @@ function OfficeModeControl({
         onClick={() => onChange('single')}
       >
         Single office current
+      </button>
+      <button
+        type="button"
+        className={`office-mode-ctrl__btn${value === 'single-dsv1' ? ' office-mode-ctrl__btn--active' : ''}`}
+        onClick={() => onChange('single-dsv1')}
+      >
+        Single office DS V1
       </button>
       <button
         type="button"
@@ -1090,6 +1103,896 @@ function DSUserPanel({ user, onClose }: { user: DSUserPanelRow; onClose: () => v
           </div>
         </div>
 
+      </aside>
+    </div>
+  )
+}
+
+// ── DSV1UsersPage ────────────────────────────────────────────────────────────
+
+const DSV1_LAST_LOGIN = [
+  'Today, 9:14 AM', '2 days ago', 'Jun 5, 2026', 'Jun 3, 2026', 'Today, 11:02 AM',
+  'Jun 1, 2026', '3 days ago', 'Jun 7, 2026', 'May 30, 2026', 'Today, 8:47 AM',
+  'Jun 4, 2026', '5 days ago', 'Jun 6, 2026', 'May 28, 2026', 'Jun 2, 2026',
+]
+
+function ManageAccessModal({ count, onClose }: { count: number; onClose: () => void }) {
+  const [accessRoleId, setAccessRoleId] = useState<AccessRoleId | ''>('')
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="manage-access-backdrop" onClick={onClose}>
+      <div
+        className="manage-access-modal"
+        role="dialog"
+        aria-modal
+        aria-labelledby="manage-access-title"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="manage-access-modal__header">
+          <h2 className="manage-access-modal__title" id="manage-access-title">
+            Manage access
+          </h2>
+          <p className="manage-access-modal__subtitle">
+            Update access role for {count} selected {count === 1 ? 'user' : 'users'}
+          </p>
+        </div>
+
+        <div className="manage-access-modal__body">
+          <label className="manage-access-modal__label" htmlFor="manage-access-role">Access role</label>
+          <select
+            id="manage-access-role"
+            className="manage-access-modal__select"
+            value={accessRoleId}
+            onChange={e => setAccessRoleId(e.target.value as AccessRoleId | '')}
+          >
+            <option value="">No change</option>
+            {ACCESS_ROLE_IDS.map(id => (
+              <option key={id} value={id}>{accessRoleLabel(id)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="manage-access-modal__footer">
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={!accessRoleId}
+            onClick={onClose}
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function ImportPeopleModal({ onClose }: { onClose: () => void }) {
+  const [prepopulate, setPrepopulate] = useState(false)
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="import-modal-backdrop" onClick={onClose}>
+      <div
+        className="import-modal"
+        role="dialog"
+        aria-modal
+        aria-labelledby="import-modal-title"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="import-modal__title" id="import-modal-title">Import people</h2>
+
+        {/* Step 1 */}
+        <section className="import-modal__step">
+          <h3 className="import-modal__step-heading">1. Build your list</h3>
+          <p className="import-modal__step-desc">
+            This template provides all the fields you'll need.{' '}
+            <button type="button" className="import-modal__link" onClick={e => e.stopPropagation()}>
+              See the guide
+            </button>
+            {' '}for help.
+          </p>
+          <label className="import-modal__checkbox-row">
+            <input
+              type="checkbox"
+              className="import-modal__checkbox"
+              checked={prepopulate}
+              onChange={e => setPrepopulate(e.target.checked)}
+            />
+            Pre-populate with existing team to update people
+          </label>
+          <button type="button" className="import-modal__action-btn">
+            <FileDown size={17} strokeWidth={1.5} aria-hidden />
+            Download people template
+          </button>
+        </section>
+
+        {/* Step 2 */}
+        <section className="import-modal__step">
+          <h3 className="import-modal__step-heading">2. Upload your CSV</h3>
+          <button type="button" className="import-modal__action-btn">
+            <Paperclip size={17} strokeWidth={1.5} aria-hidden />
+            Upload CSV file
+          </button>
+        </section>
+
+        <div className="import-modal__footer">
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const ADD_PERSON_TABS = [
+  { id: 'info' as const,         label: 'Info' },
+  { id: 'access' as const,       label: 'Access' },
+  { id: 'availability' as const, label: 'Availability' },
+  { id: 'timeoff' as const,      label: 'Time off', badge: 8 },
+  { id: 'projects' as const,     label: 'Projects' },
+]
+
+const GEN_ROLES_LIST = [
+  'Designer','Senior Designer','Lead Designer','UX Designer','Product Designer',
+  'Developer','Senior Developer','Software Engineer','Frontend Developer','Backend Developer',
+  'Engineering Manager','Product Manager','Project Manager','Data Analyst','Operations Lead',
+]
+
+const GEN_DEPTS_LIST = [
+  'Design','Engineering','Product','Marketing','Operations','Finance','HR','Sales','Research',
+]
+
+export function AddPersonModal({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<'info'|'access'|'availability'|'timeoff'|'projects'>('info')
+  const [role, setRole] = useState('')
+  const [costRate, setCostRate] = useState('')
+  const [billRate, setBillRate] = useState('')
+  const [department, setDepartment] = useState('')
+  const [tags, setTags] = useState('')
+  const [personType, setPersonType] = useState('Employee')
+  const [email, setEmail] = useState('')
+  const [accessRoleId, setAccessRoleId] = useState('')
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="add-person-backdrop" onClick={onClose}>
+      <div
+        className="add-person-modal"
+        role="dialog"
+        aria-modal
+        aria-labelledby="add-person-title"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Identity row */}
+        <div className="add-person-modal__identity">
+          <span className="add-person-modal__name-placeholder" id="add-person-title">Name</span>
+          <span className="add-person-modal__avatar-placeholder" aria-hidden />
+        </div>
+
+        {/* Tabs */}
+        <div className="add-person-modal__tabs">
+          {ADD_PERSON_TABS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              className={`add-person-modal__tab${tab === t.id ? ' add-person-modal__tab--active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}{'badge' in t && <span className="add-person-modal__tab-badge">{t.badge}</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Body */}
+        <div className="add-person-modal__body">
+          {tab === 'info' && (
+            <>
+              {/* Role / rates card */}
+              <div className="add-person-modal__card">
+                <div className="add-person-modal__field">
+                  <label className="add-person-modal__field-label" htmlFor="ap-role">Role</label>
+                  <div className="add-person-modal__select-wrap">
+                    <select id="ap-role" className="add-person-modal__select" value={role} onChange={e => setRole(e.target.value)}>
+                      <option value="">No role</option>
+                      {GEN_ROLES_LIST.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
+                  </div>
+                </div>
+
+                <div className="add-person-modal__rate-row">
+                  <label className="add-person-modal__field-label">Cost rate</label>
+                  <div className="add-person-modal__rate-input-wrap">
+                    <span className="add-person-modal__rate-prefix">$</span>
+                    <input
+                      type="number"
+                      className="add-person-modal__rate-input"
+                      value={costRate}
+                      onChange={e => setCostRate(e.target.value)}
+                      placeholder="0"
+                      min="0"
+                    />
+                    <span className="add-person-modal__rate-suffix">/hr</span>
+                  </div>
+                </div>
+
+                <div className="add-person-modal__rate-row">
+                  <label className="add-person-modal__field-label">Bill rate</label>
+                  <div className="add-person-modal__rate-input-wrap">
+                    <span className="add-person-modal__rate-prefix">$</span>
+                    <input
+                      type="number"
+                      className="add-person-modal__rate-input"
+                      value={billRate}
+                      onChange={e => setBillRate(e.target.value)}
+                      placeholder="0"
+                      min="0"
+                    />
+                    <span className="add-person-modal__rate-suffix">/hr</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Department */}
+              <div className="add-person-modal__field">
+                <label className="add-person-modal__field-label" htmlFor="ap-dept">Department</label>
+                <div className="add-person-modal__select-wrap">
+                  <select id="ap-dept" className="add-person-modal__select" value={department} onChange={e => setDepartment(e.target.value)}>
+                    <option value="">No department</option>
+                    {GEN_DEPTS_LIST.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div className="add-person-modal__field">
+                <label className="add-person-modal__field-label" htmlFor="ap-tags">Tags</label>
+                <input
+                  id="ap-tags"
+                  type="text"
+                  className="add-person-modal__text-input"
+                  placeholder="No tags"
+                  value={tags}
+                  onChange={e => setTags(e.target.value)}
+                />
+              </div>
+
+              {/* Type */}
+              <div className="add-person-modal__field">
+                <label className="add-person-modal__field-label" htmlFor="ap-type">Type</label>
+                <div className="add-person-modal__select-wrap">
+                  <select id="ap-type" className="add-person-modal__select" value={personType} onChange={e => setPersonType(e.target.value)}>
+                    <option value="Employee">Employee</option>
+                    <option value="Contractor">Contractor</option>
+                    <option value="Placeholder">Placeholder</option>
+                  </select>
+                  <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === 'access' && (
+            <>
+              {/* Email card */}
+              <div className="add-person-modal__card">
+                <div className="add-person-modal__field">
+                  <label className="add-person-modal__field-label" htmlFor="ap-email">Email</label>
+                  <input
+                    id="ap-email"
+                    type="email"
+                    className="add-person-modal__email-input"
+                    placeholder="email@example.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Access role */}
+              <div className="add-person-modal__field">
+                <label className="add-person-modal__field-label" htmlFor="ap-access">Access</label>
+                <div className="add-person-modal__select-wrap">
+                  <select
+                    id="ap-access"
+                    className="add-person-modal__select"
+                    value={accessRoleId}
+                    onChange={e => setAccessRoleId(e.target.value)}
+                  >
+                    <option value="">No access rights</option>
+                    {ACCESS_ROLE_IDS.map(id => (
+                      <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab !== 'info' && tab !== 'access' && (
+            <p className="add-person-modal__placeholder-text">
+              {ADD_PERSON_TABS.find(t => t.id === tab)?.label} settings will appear here.
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="add-person-modal__footer">
+          <button type="button" className="btn btn--primary add-person-modal__submit-btn" onClick={onClose}>
+            Add person
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InviteGuestModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState('')
+  const [accessRoleId, setAccessRoleId] = useState('')
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="invite-guest-backdrop" onClick={onClose}>
+      <div
+        className="invite-guest-modal"
+        role="dialog"
+        aria-modal
+        aria-labelledby="invite-guest-title"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="invite-guest-modal__title" id="invite-guest-title">Invite guest</h2>
+
+        {/* Identity row */}
+        <div className="invite-guest-modal__identity">
+          <span className="invite-guest-modal__name-placeholder">Name</span>
+          <span className="invite-guest-modal__avatar-placeholder" aria-hidden />
+        </div>
+
+        {/* Tab */}
+        <div className="invite-guest-modal__tabs">
+          <span className="invite-guest-modal__tab invite-guest-modal__tab--active">Access</span>
+        </div>
+
+        {/* Email card */}
+        <div className="invite-guest-modal__email-card">
+          <label className="invite-guest-modal__field-label" htmlFor="invite-email">Email</label>
+          <input
+            id="invite-email"
+            type="email"
+            className="invite-guest-modal__email-input"
+            placeholder="email@example.com"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        {/* Access role */}
+        <div className="invite-guest-modal__field">
+          <label className="invite-guest-modal__field-label" htmlFor="invite-role">Access</label>
+          <div className="invite-guest-modal__select-wrap">
+            <select
+              id="invite-role"
+              className="invite-guest-modal__select"
+              value={accessRoleId}
+              onChange={e => setAccessRoleId(e.target.value)}
+            >
+              <option value="">Select a role</option>
+              {ACCESS_ROLE_IDS.map(id => (
+                <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
+              ))}
+            </select>
+            <ChevronDown size={15} className="invite-guest-modal__select-chev" aria-hidden />
+          </div>
+        </div>
+
+        <div className="invite-guest-modal__divider" />
+
+        {/* Message */}
+        <div className="invite-guest-modal__field">
+          <label className="invite-guest-modal__field-label" htmlFor="invite-message">Message</label>
+          <textarea
+            id="invite-message"
+            className="invite-guest-modal__textarea"
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            rows={3}
+          />
+          <p className="invite-guest-modal__hint">When you invite them we'll send an email with login details.</p>
+        </div>
+
+        {/* Footer */}
+        <div className="invite-guest-modal__footer">
+          <button type="button" className="btn btn--primary invite-guest-modal__invite-btn" onClick={onClose}>
+            Invite
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DSV1UsersPage() {
+  const schedulePeople = SAMPLE_PEOPLE.slice(0, 15)
+
+  type V1UserRow = {
+    id: string
+    name: string
+    email: string
+    accessRoleId: string
+    seat: 'schedule' | 'guest'
+    lastActivity: string
+  }
+
+  const rows: V1UserRow[] = [
+    ...schedulePeople.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      accessRoleId: p.accessRoleId,
+      seat: 'schedule' as const,
+      lastActivity: DSV1_LAST_LOGIN[i % DSV1_LAST_LOGIN.length],
+    })),
+    ...GUESTS.map((g) => ({
+      id: `guest-${g.id}`,
+      name: g.name,
+      email: g.email,
+      accessRoleId: 'admin',
+      seat: 'guest' as const,
+      lastActivity: 'Invite pending',
+    })),
+  ]
+
+  const [seatTab, setSeatTab] = useState<'schedule' | 'guest'>('schedule')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selectedUser, setSelectedUser] = useState<V1UserRow | null>(null)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showAddPersonModal, setShowAddPersonModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [showManageAccessModal, setShowManageAccessModal] = useState(false)
+  const [showAddMenu, setShowAddMenu] = useState(false)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showAddMenu) return
+    function onDoc(e: MouseEvent) {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) setShowAddMenu(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [showAddMenu])
+
+  const displayRows = rows.filter(r => r.seat === seatTab)
+  const allChecked = displayRows.length > 0 && displayRows.every(r => selected.has(r.id))
+  const someChecked = displayRows.some(r => selected.has(r.id))
+
+  function toggleAll() {
+    if (allChecked) { setSelected(new Set()) }
+    else { setSelected(new Set(displayRows.map(r => r.id))) }
+  }
+  function toggleRow(id: string) {
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  const TABS = [
+    { id: 'schedule' as const, label: 'Schedule seats', count: schedulePeople.length },
+    { id: 'guest' as const,    label: 'Guests',         count: GUESTS.length },
+  ]
+
+  return (
+    <div className="ds-users-page">
+      {/* Header */}
+      <div className="ds-people-header">
+        <div className="ds-people-header__left">
+          <h1 className="ds-people-header__title">Users</h1>
+          <button type="button" className="ds-people-header__filter-btn">
+            <ListFilter size={14} strokeWidth={1.75} />
+            Filter
+            <ChevronDown size={13} strokeWidth={1.75} />
+          </button>
+        </div>
+        <div className="ds-people-header__right">
+          <button type="button" className="ds-people-header__action-btn" onClick={() => setShowImportModal(true)}>
+            <Download size={14} strokeWidth={1.75} />
+            Import
+          </button>
+          <button type="button" className="ds-people-header__icon-btn" aria-label="Export">
+            <ExternalLink size={14} strokeWidth={1.75} />
+          </button>
+          <div className="ds-add-menu-wrap" ref={addMenuRef}>
+            <button
+              type="button"
+              className="btn btn--primary ds-people-header__add-btn"
+              aria-label="Add"
+              aria-haspopup="true"
+              aria-expanded={showAddMenu}
+              onClick={() => setShowAddMenu(o => !o)}
+            >
+              <Plus size={16} strokeWidth={2} />
+            </button>
+            {showAddMenu && (
+              <div className="ds-add-menu" role="menu">
+                {([
+                  { label: 'Allocate time', shortcut: 'T', Icon: LayoutGrid },
+                  { label: 'Log time',      shortcut: 'G', Icon: Clock },
+                  { label: 'Add time off',  shortcut: 'I', Icon: CalendarPlus },
+                  { label: 'Add project',   shortcut: 'P', Icon: FolderPlus },
+                  { label: 'Add person',    shortcut: 'E', Icon: UserPlus },
+                ] as const).map(({ label, shortcut, Icon }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    role="menuitem"
+                    className="ds-add-menu__item"
+                    onClick={() => { setShowAddMenu(false); if (label === 'Add person') setShowAddPersonModal(true) }}
+                  >
+                    <Icon size={18} strokeWidth={1.5} className="ds-add-menu__icon" aria-hidden />
+                    <span className="ds-add-menu__label">{label}</span>
+                    <span className="ds-add-menu__shortcut">{shortcut}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="ds-people-types">
+        {TABS.map(({ id, label, count }) => (
+          <button
+            key={id}
+            type="button"
+            className={`ds-people-type${seatTab === id ? ' ds-people-type--active' : ''}`}
+            onClick={() => setSeatTab(id)}
+          >
+            {seatTab === id && <span className="ds-people-type__dot" aria-hidden />}
+            {label}
+            <span className="ds-people-type__count">{count}</span>
+          </button>
+        ))}
+      </div>
+
+      {seatTab === 'guest' && (
+        <div className="ds-guest-tab-bar">
+          <p className="ds-guest-tab-desc">
+            Guests have account access but do not appear in the schedule. Guest access is free.
+          </p>
+          <button type="button" className="ds-invite-guest-btn" onClick={() => setShowInviteModal(true)}>
+            <UserPlus size={14} strokeWidth={1.75} aria-hidden />
+            Invite guest
+          </button>
+        </div>
+      )}
+
+      {/* Bulk bar */}
+      {selected.size > 0 && (
+        <div className="ds-bulk-bar">
+          <span className="ds-bulk-bar__count">{selected.size} selected</span>
+          <button type="button" className="btn btn--primary ds-bulk-bar__action-btn" onClick={() => setShowManageAccessModal(true)}>
+            Manage access
+          </button>
+          <span style={{ color: 'var(--text-secondary)' }}>·</span>
+          <button type="button" className="ds-bulk-bar__action" style={{ color: '#c0392b' }}>Remove</button>
+          <div style={{ flex: 1 }} />
+          <button type="button" className="ds-bulk-bar__clear" onClick={() => setSelected(new Set())} aria-label="Clear">
+            <X size={14} strokeWidth={2} />
+          </button>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="ds-table-wrap">
+        <table className="ds-table">
+          <thead>
+            <tr>
+              <th className="ds-table__th" style={{ width: 40 }}>
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked }}
+                  onChange={toggleAll}
+                  aria-label="Select all"
+                  style={{ cursor: 'pointer' }}
+                />
+              </th>
+              <th className="ds-table__th">Name / Email</th>
+              <th className="ds-table__th">Access role</th>
+              <th className="ds-table__th">Seat</th>
+              <th className="ds-table__th">Last activity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayRows.map((row) => {
+              const initial = row.name.charAt(0).toUpperCase()
+              const color = avatarColor(row.name)
+              const roleLabel = ACCESS_ROLE_LABELS[row.accessRoleId as keyof typeof ACCESS_ROLE_LABELS] ?? row.accessRoleId
+              return (
+                <tr
+                  key={row.id}
+                  className={`ds-table__row${selected.has(row.id) ? ' ds-table__row--checked' : ''}`}
+                  onClick={() => setSelectedUser(row)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td className="ds-table__td" style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(row.id)}
+                      onChange={() => toggleRow(row.id)}
+                      onClick={e => e.stopPropagation()}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </td>
+                  <td className="ds-table__td">
+                    <div className="ds-name-cell">
+                      <span className="ds-avatar" style={{ background: color }}>{initial}</span>
+                      <div className="ds-name-cell__text">
+                        <span className="ds-name-cell__name">{row.name}</span>
+                        <span className="ds-name-cell__sub">{row.email}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="ds-table__td">
+                    <span className="ds-role-badge">{roleLabel}</span>
+                  </td>
+                  <td className="ds-table__td">
+                    {row.seat === 'schedule'
+                      ? <span className="ds-seat-pill ds-seat-pill--schedule">Schedule</span>
+                      : <span className="ds-seat-pill ds-seat-pill--guest">Guest</span>
+                    }
+                  </td>
+                  <td className="ds-table__td">
+                    {row.lastActivity === 'Invite pending'
+                      ? <span className="ds-login-pending">{row.lastActivity}</span>
+                      : <span className="ds-table__td--muted" style={{ fontSize: 13 }}>{row.lastActivity}</span>
+                    }
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Side panel */}
+      {selectedUser && (
+        <DSV1UserPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
+      )}
+
+      {showInviteModal && (
+        <InviteGuestModal onClose={() => setShowInviteModal(false)} />
+      )}
+
+      {showAddPersonModal && (
+        <AddPersonModal onClose={() => setShowAddPersonModal(false)} />
+      )}
+
+      {showImportModal && (
+        <ImportPeopleModal onClose={() => setShowImportModal(false)} />
+      )}
+
+      {showManageAccessModal && (
+        <ManageAccessModal count={selected.size} onClose={() => setShowManageAccessModal(false)} />
+      )}
+    </div>
+  )
+}
+
+function DSV1UserPanel({ user, onClose }: { user: { id: string; name: string; email: string; accessRoleId: string; seat: 'schedule' | 'guest'; lastActivity: string }; onClose: () => void }) {
+  const [accessRoleId, setAccessRoleId] = useState(user.accessRoleId)
+  const [seat, setSeat] = useState(user.seat)
+  const [additionalPermissions, setAdditionalPermissions] = useState<string[]>([])
+  const [accessOpen, setAccessOpen] = useState(true)
+  const [seatOpen, setSeatOpen] = useState(true)
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const initial = user.name.charAt(0).toUpperCase()
+  const color = avatarColor(user.name)
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
+    if (!actionsOpen) return
+    function onDoc(e: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) setActionsOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [actionsOpen])
+
+  return (
+    <div className="ds-user-drawer-backdrop" onClick={onClose}>
+      <aside className="ds-user-drawer" role="dialog" aria-modal aria-label="Edit user" onClick={e => e.stopPropagation()}>
+        <div className="ds-user-drawer__header">
+          <div className="ds-user-drawer__header-identity">
+            <span className="ds-user-drawer__avatar" style={{ background: color }}>{initial}</span>
+            <div>
+              <span className="ds-user-drawer__name">{user.name}</span>
+              <span className="ds-user-drawer__email">{user.email}</span>
+            </div>
+          </div>
+          <button type="button" className="ds-user-drawer__close" aria-label="Close" onClick={onClose}>
+            <X size={18} strokeWidth={2} aria-hidden />
+          </button>
+        </div>
+        <div className="ds-user-drawer__body">
+
+          {/* ── Access section ── */}
+          <div className="ds-drawer-section">
+            <button
+              type="button"
+              className="ds-drawer-section__toggle"
+              onClick={() => setAccessOpen(o => !o)}
+              aria-expanded={accessOpen}
+            >
+              <span>Access</span>
+              {accessOpen
+                ? <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
+                : <ChevronDown size={14} strokeWidth={1.75} aria-hidden />}
+            </button>
+            {accessOpen && (
+              <div className="ds-drawer-section__body">
+                <div className="ds-person-field">
+                  <label className="ds-person-field__label">Access role</label>
+                  <div className="ds-person-field__select-wrap">
+                    <select className="ds-person-field__select" value={accessRoleId} onChange={e => setAccessRoleId(e.target.value)}>
+                      {ACCESS_ROLE_IDS.map(id => (
+                        <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+                  </div>
+                </div>
+
+                <div className="person-panel__divider" />
+                <RolePermissionsCard accessRoleId={accessRoleId as AccessRoleId} />
+                <div className="person-panel__divider" />
+
+                <div className="ds-person-field ds-person-field--section">
+                  <div className="person-panel__section-header-row" style={{ marginBottom: 8 }}>
+                    <p className="ds-person-field__label" style={{ marginBottom: 0 }}>Additional permissions</p>
+                    <span className="person-panel__additive-pill">Additive only</span>
+                  </div>
+                  {(() => {
+                    const roleEnabledIds = new Set(
+                      (ROLES.find((r) => r.id === accessRoleId)?.configPerms ?? [])
+                        .filter((p) => p.enabled)
+                        .map((p) => p.id),
+                    )
+                    const availablePerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter(
+                      (p) => !roleEnabledIds.has(p.id),
+                    )
+                    if (availablePerms.length === 0) {
+                      return (
+                        <p className="person-panel__muted" style={{ fontSize: 13 }}>
+                          This role already includes all additional permissions.
+                        </p>
+                      )
+                    }
+                    return ADDITIONAL_PERM_CATEGORIES.map((cat) => {
+                      const catPerms = availablePerms.filter((p) => p.category === cat)
+                      if (catPerms.length === 0) return null
+                      return (
+                        <div key={cat} className="person-panel__perm-category">
+                          <p className="person-panel__perm-category-label">{cat}</p>
+                          <ul className="person-panel__perm-list">
+                            {catPerms.map((perm) => {
+                              const checked = additionalPermissions.includes(perm.id)
+                              return (
+                                <li key={perm.id} className="person-panel__perm-item">
+                                  <label className={`person-panel__perm-label${checked ? ' person-panel__perm-label--checked' : ''}`}>
+                                    <input
+                                      type="checkbox"
+                                      className="person-panel__perm-checkbox"
+                                      checked={checked}
+                                      onChange={() =>
+                                        setAdditionalPermissions((prev) =>
+                                          prev.includes(perm.id)
+                                            ? prev.filter((x) => x !== perm.id)
+                                            : [...prev, perm.id],
+                                        )
+                                      }
+                                    />
+                                    {perm.label}
+                                  </label>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Seat section ── */}
+          <div className="ds-drawer-section">
+            <button
+              type="button"
+              className="ds-drawer-section__toggle"
+              onClick={() => setSeatOpen(o => !o)}
+              aria-expanded={seatOpen}
+            >
+              <span>Seat</span>
+              {seatOpen
+                ? <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
+                : <ChevronDown size={14} strokeWidth={1.75} aria-hidden />}
+            </button>
+            {seatOpen && (
+              <div className="ds-drawer-section__body">
+                <div className="ds-person-field">
+                  <label className="ds-person-field__label">Seat</label>
+                  <div className="ds-person-field__select-wrap">
+                    <select className="ds-person-field__select" value={seat} onChange={e => setSeat(e.target.value as 'schedule' | 'guest')}>
+                      <option value="schedule">Schedule</option>
+                      <option value="guest">Guest</option>
+                    </select>
+                    <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+                  </div>
+                </div>
+                <div className="ds-person-field">
+                  <label className="ds-person-field__label">Last activity</label>
+                  <div className="ds-person-field__readonly ds-person-field__readonly--muted">{user.lastActivity}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="ds-user-drawer__footer">
+          <button type="button" className="btn btn--primary" onClick={onClose}>Update user</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <div className="ds-person-panel__actions-wrap" ref={actionsRef}>
+            <button type="button" className="ds-person-panel__actions-btn" onClick={() => setActionsOpen(o => !o)}>
+              Actions <ChevronDown size={14} />
+            </button>
+            {actionsOpen && (
+              <div className="ds-person-panel__actions-menu">
+                <button type="button" className="ds-person-panel__actions-item">Resend invite</button>
+                <button type="button" className="ds-person-panel__actions-item ds-person-panel__actions-item--danger">Remove user</button>
+              </div>
+            )}
+          </div>
+        </div>
       </aside>
     </div>
   )
@@ -2692,9 +3595,9 @@ function AppRail({
       </header>
 
       <nav className="app-rail__scroll" aria-label="Primary">
-        {officeMode === 'single' || officeMode === 'single-datastudio' ? (
+        {officeMode === 'single' || officeMode === 'single-dsv1' || officeMode === 'single-datastudio' ? (
           <>
-            {officeMode === 'single' ? (
+            {officeMode === 'single' || officeMode === 'single-dsv1' ? (
               <>
                 {/* ── Single office nav ───────────────────────────────── */}
                 <div className="app-rail__block">
@@ -2703,7 +3606,12 @@ function AppRail({
                       key={id}
                       type="button"
                       className={`app-rail__row${soNavActive === id ? ' app-rail__row--active' : ''}`}
-                      onClick={() => setSoNavActive(id)}
+                      onClick={() => {
+                        setSoNavActive(id)
+                        if (officeMode === 'single-dsv1' && id === 'people') {
+                          onDataStudioActiveChange('people')
+                        }
+                      }}
                       aria-current={soNavActive === id ? 'page' : undefined}
                     >
                       <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
@@ -2764,11 +3672,11 @@ function AppRail({
                 <div className="app-rail__subnav">
                   <div className="app-rail__subnav-line" aria-hidden />
                   <div className="app-rail__subnav-rows">
-                    {officeMode === 'single-datastudio' && (
+                    {(officeMode === 'single-datastudio' || officeMode === 'single-dsv1') && (
                       <button
                         type="button"
                         className={`app-rail__subrow${dataStudioActive === 'users' ? ' app-rail__subrow--active' : ''}`}
-                        onClick={() => onDataStudioActiveChange('users')}
+                        onClick={() => { onDataStudioActiveChange('users'); setSoNavActive('') }}
                         aria-current={dataStudioActive === 'users' ? 'page' : undefined}
                       >
                         <UserCog size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
@@ -2780,7 +3688,7 @@ function AppRail({
                         key={id}
                         type="button"
                         className={`app-rail__subrow${dataStudioActive === id ? ' app-rail__subrow--active' : ''}`}
-                        onClick={() => onDataStudioActiveChange(id as DataStudioNavId)}
+                        onClick={() => { onDataStudioActiveChange(id as DataStudioNavId); setSoNavActive('') }}
                         aria-current={dataStudioActive === id ? 'page' : undefined}
                       >
                         <Icon size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
@@ -2930,7 +3838,7 @@ export default function App() {
     setOfficeMode(mode)
     if (mode === 'single-datastudio') {
       setDataStudioNavId('users')
-    } else if (mode === 'single') {
+    } else if (mode === 'single' || mode === 'single-dsv1') {
       setDataStudioNavId('people')
     }
     // If currently viewing an office section, reset to the primary office
@@ -3099,7 +4007,13 @@ export default function App() {
       {!settingsOpen && (
         <main className="main">
           {dataStudioNavId === 'people' ? (
-            <DataStudioPeoplePage rbacEnforced={rbacEnforced} officeMode={officeMode} />
+            <DataStudioPeoplePage
+              rbacEnforced={rbacEnforced}
+              officeMode={officeMode}
+              onNavigateToUsers={officeMode === 'single-dsv1' ? () => setDataStudioNavId('users') : undefined}
+            />
+          ) : dataStudioNavId === 'users' && officeMode === 'single-dsv1' ? (
+            <DSV1UsersPage />
           ) : dataStudioNavId === 'users' ? (
             <DataStudioUsersPage />
           ) : dataStudioNavId === 'team' ? (
@@ -3159,26 +4073,28 @@ export default function App() {
               <div>
                 <p className="sidebar__section-label">Admin</p>
                 <nav className="sidebar__nav" aria-label="Admin settings">
-                  {adminNavItems.map((item) => {
-                    const isActive = activeOrgId === item.id
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className={`nav-row${isActive ? ' nav-row--active' : ''}`}
-                        aria-current={isActive ? 'page' : undefined}
-                        onClick={() => selectOrgItem(item.id)}
-                      >
-                        <NavItemIcon Icon={item.Icon} active={isActive} />
-                        <span className="nav-row__label">{item.label}</span>
-                      </button>
-                    )
-                  })}
+                  {adminNavItems
+                    .filter(item => !(officeMode === 'single-dsv1' && item.id === 'guests'))
+                    .map((item) => {
+                      const isActive = activeOrgId === item.id
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`nav-row${isActive ? ' nav-row--active' : ''}`}
+                          aria-current={isActive ? 'page' : undefined}
+                          onClick={() => selectOrgItem(item.id)}
+                        >
+                          <NavItemIcon Icon={item.Icon} active={isActive} />
+                          <span className="nav-row__label">{item.label}</span>
+                        </button>
+                      )
+                    })}
                 </nav>
               </div>
 
               <div>
-                {pricingPlan === 'starter' ? null : (officeMode === 'single' || officeMode === 'single-datastudio') ? null : (
+                {pricingPlan === 'starter' ? null : (officeMode === 'single' || officeMode === 'single-dsv1' || officeMode === 'single-datastudio') ? null : (
                   <>
                     <div className="sidebar__section-label-row">
                       <p className="sidebar__section-label sidebar__section-label--inline">Offices</p>
@@ -3289,7 +4205,7 @@ export default function App() {
                   onUpgradeToPro={() => setPricingPlan('pro')}
                   officeMode={officeMode}
                 />
-              ) : activeOrgId === 'guests' ? (
+              ) : activeOrgId === 'guests' && officeMode !== 'single-dsv1' ? (
                 <GuestsPage />
               ) : (
                 <div className="empty-panel" role="status" aria-live="polite">

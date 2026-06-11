@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Archive,
+  CalendarPlus,
   ChevronDown,
+  Clock,
   Download,
   ExternalLink,
+  FolderPlus,
+  LayoutGrid,
   Pencil,
   Plus,
   SlidersHorizontal,
@@ -14,7 +18,7 @@ import { accessRoleLabel, ACCESS_ROLE_IDS, type AccessRoleId } from './accessRol
 import {
   ROLES, GROUP_ORDER, ReadOnlyPermGroup,
   RoleScopeSelector, ProjectScopeSelector, ClientScopeSelector,
-  SCOPE_OPTIONS, OFFICES,
+  SCOPE_OPTIONS, OFFICES, AddPersonModal, ImportPeopleModal,
   type ScopeId, type ProjectScopeId, type ClientScopeId, type OfficeModeId,
 } from './App'
 
@@ -48,7 +52,7 @@ function IconSearchFilter({ size = 16 }: { size?: number }) {
  * Per-user additive permission overrides (V1: additive only — these can only
  * grant permissions beyond what the assigned role already provides, never remove them).
  */
-const AVAILABLE_ADDITIONAL_PERMISSIONS = [
+export const AVAILABLE_ADDITIONAL_PERMISSIONS = [
   // People
   { id: 'people.view_cost_rates',    label: 'View cost rates',              category: 'People' },
   { id: 'people.view_bill_rates',    label: 'View bill rates',              category: 'People' },
@@ -64,7 +68,7 @@ const AVAILABLE_ADDITIONAL_PERMISSIONS = [
   { id: 'settings.manage_access_rights', label: 'Manage access rights',     category: 'Settings' },
 ]
 
-const ADDITIONAL_PERM_CATEGORIES = ['People', 'Projects', 'Settings'] as const
+export const ADDITIONAL_PERM_CATEGORIES = ['People', 'Projects', 'Settings'] as const
 
 const CATEGORY_TABS = [
   { id: 'employees',  label: 'Employees' },
@@ -318,7 +322,7 @@ export function DeptTagPicker({
 }
 
 
-function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
+export function RolePermissionsCard({ accessRoleId }: { accessRoleId: AccessRoleId }) {
   const role = ROLES.find((r) => r.id === accessRoleId)
   if (!role) return null
 
@@ -1006,14 +1010,13 @@ function OfficeAccessSection({
 
 // ── Bulk edit ─────────────────────────────────────────────────────────────────
 
-type BulkFieldId = 'department' | 'delivery-team' | 'office' | 'group' | 'access-role'
+type BulkFieldId = 'department' | 'delivery-team' | 'office' | 'group'
 
 const BULK_FIELDS: { id: BulkFieldId; label: string }[] = [
   { id: 'department',    label: 'Department' },
   { id: 'delivery-team', label: 'Delivery team' },
   { id: 'office',        label: 'Office' },
   { id: 'group',         label: 'Group' },
-  { id: 'access-role',   label: 'Access role' },
 ]
 
 const BULK_FIELD_OPTIONS: Record<BulkFieldId, string[]> = {
@@ -1021,7 +1024,6 @@ const BULK_FIELD_OPTIONS: Record<BulkFieldId, string[]> = {
   'delivery-team': GEN_TEAMS,
   office:          GEN_OFFICES,
   group:           GEN_GROUPS,
-  'access-role':   [...ACCESS_ROLE_IDS],
 }
 
 interface BulkEditValues {
@@ -1035,12 +1037,14 @@ function BulkEditModal({
   count,
   onApply,
   onClose,
+  initialField = '',
 }: {
   count: number
   onApply: (values: BulkEditValues) => void
   onClose: () => void
+  initialField?: BulkFieldId | ''
 }) {
-  const [field, setField] = useState<BulkFieldId | ''>('')
+  const [field, setField] = useState<BulkFieldId | ''>(initialField)
   const [fieldValue, setFieldValue] = useState('')
   const [roleValue, setRoleValue] = useState('')
 
@@ -1056,12 +1060,8 @@ function BulkEditModal({
   function handleApply() {
     if (!canApply) return
     const patch: BulkEditValues = {}
-    if (field === 'access-role') {
-      if (roleValue) patch.accessRoleId = roleValue
-    } else {
-      if (field && fieldValue) { patch.field = field; patch.fieldValue = fieldValue }
-      if (roleValue) patch.role = roleValue
-    }
+    if (field && fieldValue) { patch.field = field; patch.fieldValue = fieldValue }
+    if (roleValue) patch.role = roleValue
     onApply(patch)
     onClose()
   }
@@ -1102,7 +1102,7 @@ function BulkEditModal({
                 <option key={f.id} value={f.id}>{f.label}</option>
               ))}
             </select>
-            {field !== '' && field !== 'access-role' && (
+            {field !== '' && (
               <select
                 className="bulk-modal__select bulk-modal__select--value"
                 value={fieldValue}
@@ -1117,11 +1117,9 @@ function BulkEditModal({
             )}
           </div>
 
-          {/* Role / Access role */}
+          {/* Role */}
           <div className="bulk-modal__field-row">
-            <label className="bulk-modal__label" htmlFor="bulk-role-select">
-              {field === 'access-role' ? 'Access role' : 'Role'}
-            </label>
+            <label className="bulk-modal__label" htmlFor="bulk-role-select">Role</label>
             <select
               id="bulk-role-select"
               className="bulk-modal__select"
@@ -1129,14 +1127,9 @@ function BulkEditModal({
               onChange={(e) => setRoleValue(e.target.value)}
             >
               <option value=""></option>
-              {field === 'access-role'
-                ? ACCESS_ROLE_IDS.map((id) => (
-                    <option key={id} value={id}>{accessRoleLabel(id)}</option>
-                  ))
-                : GEN_TITLES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))
-              }
+              {GEN_TITLES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
           </div>
 
@@ -1157,7 +1150,7 @@ function BulkEditModal({
   )
 }
 
-export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'single' }: { rbacEnforced?: boolean; officeMode?: import('./App').OfficeModeId }) {
+export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'single', onNavigateToUsers }: { rbacEnforced?: boolean; officeMode?: import('./App').OfficeModeId; onNavigateToUsers?: () => void }) {
   const [category, setCategory] = useState<CategoryId>('employees')
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('active')
   const [onlyWithAccess, setOnlyWithAccess] = useState(false)
@@ -1167,6 +1160,20 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
   const [people, setPeople] = useState<PeopleRow[]>(SAMPLE_PEOPLE)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showBulkModal, setShowBulkModal] = useState(false)
+  const [bulkInitField, setBulkInitField] = useState<BulkFieldId | ''>('')
+  const [showAddMenu, setShowAddMenu] = useState(false)
+  const [showAddPersonModal, setShowAddPersonModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showAddMenu) return
+    function onDoc(e: MouseEvent) {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) setShowAddMenu(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [showAddMenu])
 
   const visiblePeople = onlyWithAccess
     ? people.filter((p) => p.accessRoleId !== 'member')
@@ -1303,46 +1310,80 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
           <button type="button" className="dh-people__hdr-icon-btn" aria-label="Column settings">
             <SlidersHorizontal size={15} strokeWidth={1.75} aria-hidden />
           </button>
-          <button type="button" className="dh-people__import-btn">
+          <button type="button" className="dh-people__import-btn" onClick={() => setShowImportModal(true)}>
             <Download size={14} strokeWidth={1.75} aria-hidden />
             Import
           </button>
           <button type="button" className="dh-people__hdr-icon-btn" aria-label="Open in new tab">
             <ExternalLink size={15} strokeWidth={1.75} aria-hidden />
           </button>
-          <button type="button" className="dh-people__add-btn" aria-label="Add person">
-            <Plus size={16} strokeWidth={2} aria-hidden />
-          </button>
+          <div className="ds-add-menu-wrap" ref={addMenuRef}>
+            <button
+              type="button"
+              className="dh-people__add-btn"
+              aria-label="Add"
+              aria-haspopup="true"
+              aria-expanded={showAddMenu}
+              onClick={() => setShowAddMenu(o => !o)}
+            >
+              <Plus size={16} strokeWidth={2} aria-hidden />
+            </button>
+            {showAddMenu && (
+              <div className="ds-add-menu" role="menu">
+                {([
+                  { label: 'Allocate time', shortcut: 'T', Icon: LayoutGrid },
+                  { label: 'Log time',      shortcut: 'G', Icon: Clock },
+                  { label: 'Add time off',  shortcut: 'I', Icon: CalendarPlus },
+                  { label: 'Add project',   shortcut: 'P', Icon: FolderPlus },
+                  { label: 'Add person',    shortcut: 'E', Icon: UserPlus },
+                ] as const).map(({ label, shortcut, Icon }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    role="menuitem"
+                    className="ds-add-menu__item"
+                    onClick={() => { setShowAddMenu(false); if (label === 'Add person') setShowAddPersonModal(true) }}
+                  >
+                    <Icon size={18} strokeWidth={1.5} className="ds-add-menu__icon" aria-hidden />
+                    <span className="ds-add-menu__label">{label}</span>
+                    <span className="ds-add-menu__shortcut">{shortcut}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* ── Office selector + category tabs ───────────────────────────────── */}
-      <div className="dh-people__catbar">
-        {officeMode === 'multi' && (
-          <button type="button" className="dh-people__office-btn">
-            All offices
-            <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
-          </button>
-        )}
-        <div className="dh-people__cattabs" role="tablist" aria-label="People categories">
-          {CATEGORY_TABS.map((tab) => {
-            const isActive = category === tab.id
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                className={`dh-people__cattab${isActive ? ' dh-people__cattab--active' : ''}`}
-                onClick={() => setCategory(tab.id)}
-              >
-                {isActive && <span className="dh-people__cattab-dot" aria-hidden>•</span>}
-                {tab.label}
-              </button>
-            )
-          })}
+      {officeMode !== 'single-dsv1' && (
+        <div className="dh-people__catbar">
+          {officeMode === 'multi' && (
+            <button type="button" className="dh-people__office-btn">
+              All offices
+              <ChevronDown size={13} strokeWidth={1.75} aria-hidden />
+            </button>
+          )}
+          <div className="dh-people__cattabs" role="tablist" aria-label="People categories">
+            {CATEGORY_TABS.map((tab) => {
+              const isActive = category === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`dh-people__cattab${isActive ? ' dh-people__cattab--active' : ''}`}
+                  onClick={() => setCategory(tab.id)}
+                >
+                  {isActive && <span className="dh-people__cattab-dot" aria-hidden>•</span>}
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Status tabs + access filter ────────────────────────────────── */}
       <div className="dh-people__statusbar">
@@ -1374,14 +1415,25 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
       {selectedIds.size > 0 && (
         <div className="dh-people__bulk-bar">
           <span className="dh-people__bulk-count">{selectedIds.size} selected</span>
-          <button
-            type="button"
-            className="btn btn--primary dh-people__bulk-btn"
-            onClick={() => setShowBulkModal(true)}
-          >
-            <Pencil size={13} strokeWidth={2} aria-hidden />
-            Edit
-          </button>
+          {officeMode === 'single-dsv1' ? (
+            <button
+              type="button"
+              className="btn btn--primary dh-people__bulk-btn"
+              onClick={() => { setBulkInitField(''); setShowBulkModal(true) }}
+            >
+              <Pencil size={14} strokeWidth={1.75} aria-hidden />
+              Edit
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--primary dh-people__bulk-btn"
+              onClick={() => { setBulkInitField(''); setShowBulkModal(true) }}
+            >
+              <Pencil size={13} strokeWidth={2} aria-hidden />
+              Edit
+            </button>
+          )}
           <button
             type="button"
             className="btn btn--primary dh-people__bulk-btn"
@@ -1428,24 +1480,34 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                   Role <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
-              <th className="dh-people__th" scope="col">Access</th>
               <th className="dh-people__th" scope="col">
                 <button type="button" className="dh-people__th-btn">
                   Department <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
                 </button>
               </th>
-              <th className="dh-people__th" scope="col">
-                <button type="button" className="dh-people__th-btn">
-                  Delivery Team <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
-                </button>
-              </th>
-              <th className="dh-people__th" scope="col">Group</th>
+              <th className="dh-people__th" scope="col">Access</th>
+              {officeMode !== 'single-dsv1' && (
+                <th className="dh-people__th" scope="col">
+                  <button type="button" className="dh-people__th-btn">
+                    Delivery Team <ChevronDown size={14} strokeWidth={1.5} aria-hidden />
+                  </button>
+                </th>
+              )}
+              {officeMode !== 'single-dsv1' && (
+                <th className="dh-people__th" scope="col">Group</th>
+              )}
+              {officeMode === 'single-dsv1' && <th className="dh-people__th" scope="col">Manages</th>}
+              {officeMode === 'single-dsv1' && <th className="dh-people__th" scope="col">Tags</th>}
+              {officeMode === 'single-dsv1' && <th className="dh-people__th" scope="col">Type</th>}
               {officeMode === 'multi' && <th className="dh-people__th" scope="col">Office</th>}
             </tr>
           </thead>
           <tbody>
             {visiblePeople.map((row) => {
               const isChecked = selectedIds.has(row.id)
+              const idNum = parseInt(row.id, 10) || 0
+              const dsv1Tags = idNum % 5 === 1 ? ['New tag'] : idNum % 5 === 2 ? ['Remote'] : idNum % 5 === 3 ? ['Senior'] : []
+              const dsv1Type = idNum % 7 === 0 ? 'Part-time' : idNum % 7 === 3 ? 'Contractor' : 'Full-time'
               return (
               <tr
                 key={row.id}
@@ -1466,6 +1528,7 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                   <span className="dh-people__name-cell">{row.name}</span>
                 </td>
                 <td className="dh-people__td">{row.role}</td>
+                <td className="dh-people__td">{row.department}</td>
                 <td className="dh-people__td dh-people__td--access">
                   <span className="dh-people__access-cell">
                     {accessRoleLabel(row.accessRoleId)}
@@ -1479,17 +1542,31 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                     )}
                   </span>
                 </td>
-                <td className="dh-people__td">{row.department}</td>
-                <td className="dh-people__td">{row.deliveryTeam}</td>
-                <td className="dh-people__td">
-                  <div className="dh-people__group-pills">
-                    {row.groups.map((g) => (
-                      <span key={g} className="dh-people__pill">
-                        {g}
-                      </span>
-                    ))}
-                  </div>
-                </td>
+                {officeMode !== 'single-dsv1' && <td className="dh-people__td">{row.deliveryTeam}</td>}
+                {officeMode !== 'single-dsv1' && (
+                  <td className="dh-people__td">
+                    <div className="dh-people__group-pills">
+                      {row.groups.map((g) => (
+                        <span key={g} className="dh-people__pill">{g}</span>
+                      ))}
+                    </div>
+                  </td>
+                )}
+                {officeMode === 'single-dsv1' && (
+                  <td className="dh-people__td dh-people__td--muted">
+                    {row.directReportsCount > 0 ? `${row.directReportsCount} people` : '—'}
+                  </td>
+                )}
+                {officeMode === 'single-dsv1' && (
+                  <td className="dh-people__td">
+                    <div className="dh-people__group-pills">
+                      {dsv1Tags.map(t => <span key={t} className="dh-people__pill">{t}</span>)}
+                    </div>
+                  </td>
+                )}
+                {officeMode === 'single-dsv1' && (
+                  <td className="dh-people__td dh-people__td--muted">{dsv1Type}</td>
+                )}
                 {officeMode === 'multi' && <td className="dh-people__td">{row.office}</td>}
               </tr>
             )})}
@@ -1564,25 +1641,40 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                     <p id="person-access-role-heading" className="person-panel__section-label">
                       Access role
                     </p>
-                    <select
-                      className="person-panel__role-select"
-                      value={selectedPerson.accessRoleId}
-                      onChange={(e) =>
-                        updatePersonRole(selectedPerson.id, e.target.value as AccessRoleId)
-                      }
-                      aria-label="Access role"
-                    >
-                      {ACCESS_ROLE_IDS.map((roleId) => (
-                        <option key={roleId} value={roleId}>
-                          {accessRoleLabel(roleId)}
-                        </option>
-                      ))}
-                    </select>
+                    {onNavigateToUsers ? (
+                      <span className="person-panel__role-readonly">
+                        {accessRoleLabel(selectedPerson.accessRoleId)}
+                      </span>
+                    ) : (
+                      <select
+                        className="person-panel__role-select"
+                        value={selectedPerson.accessRoleId}
+                        onChange={(e) =>
+                          updatePersonRole(selectedPerson.id, e.target.value as AccessRoleId)
+                        }
+                        aria-label="Access role"
+                      >
+                        {ACCESS_ROLE_IDS.map((roleId) => (
+                          <option key={roleId} value={roleId}>
+                            {accessRoleLabel(roleId)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   {!rbacEnforced && selectedPerson.additionalPermissions.length > 0 && (
                     <p className="person-panel__role-addl">
                       +{selectedPerson.additionalPermissions.length} additional permission{selectedPerson.additionalPermissions.length === 1 ? '' : 's'} beyond this role
                     </p>
+                  )}
+                  {onNavigateToUsers && (
+                    <button
+                      type="button"
+                      className="person-panel__manage-access-link"
+                      onClick={() => { closePersonPanel(); onNavigateToUsers() }}
+                    >
+                      Manage access in Users →
+                    </button>
                   )}
                 </section>
 
@@ -1591,73 +1683,77 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
                 {/* ── Role permissions ──────────────────────────────────── */}
                 <RolePermissionsCard accessRoleId={selectedPerson.accessRoleId} />
 
-                <div className="person-panel__divider" />
+                {!onNavigateToUsers && (
+                  <>
+                    <div className="person-panel__divider" />
 
-                {/* ── Additional permissions ────────────────────────────── */}
-                <section className="person-panel__section" aria-labelledby="person-addl-perms-heading">
-                  <div className="person-panel__section-header-row">
-                    <p id="person-addl-perms-heading" className="person-panel__section-label">
-                      Additional permissions
-                    </p>
-                    {!rbacEnforced && (
-                      <span className="person-panel__additive-pill">Additive only</span>
-                    )}
-                  </div>
-                  {rbacEnforced ? (
-                    <div className="person-panel__rbac-locked">
-                      <p className="person-panel__rbac-locked__msg">
-                        Per-user overrides are disabled. Role-based access controls are enforced
-                        for this organisation — change the setting in{' '}
-                        <strong>Settings → Access rights</strong>.
-                      </p>
-                    </div>
-                  ) : (() => {
-                    const roleEnabledIds = new Set(
-                      (ROLES.find((r) => r.id === selectedPerson.accessRoleId)?.configPerms ?? [])
-                        .filter((p) => p.enabled)
-                        .map((p) => p.id),
-                    )
-                    const availablePerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter(
-                      (p) => !roleEnabledIds.has(p.id),
-                    )
-                    if (availablePerms.length === 0) {
-                      return (
-                        <p className="person-panel__muted">
-                          This role already includes all additional permissions.
+                    {/* ── Additional permissions ──────────────────────────── */}
+                    <section className="person-panel__section" aria-labelledby="person-addl-perms-heading">
+                      <div className="person-panel__section-header-row">
+                        <p id="person-addl-perms-heading" className="person-panel__section-label">
+                          Additional permissions
                         </p>
-                      )
-                    }
-                    return ADDITIONAL_PERM_CATEGORIES.map((cat) => {
-                      const catPerms = availablePerms.filter((p) => p.category === cat)
-                      if (catPerms.length === 0) return null
-                      return (
-                        <div key={cat} className="person-panel__perm-category">
-                          <p className="person-panel__perm-category-label">{cat}</p>
-                          <ul className="person-panel__perm-list">
-                            {catPerms.map((perm) => {
-                              const checked = selectedPerson.additionalPermissions.includes(perm.id)
-                              return (
-                                <li key={perm.id} className="person-panel__perm-item">
-                                  <label className={`person-panel__perm-label${checked ? ' person-panel__perm-label--checked' : ''}`}>
-                                    <input
-                                      type="checkbox"
-                                      className="person-panel__perm-checkbox"
-                                      checked={checked}
-                                      onChange={() =>
-                                        toggleAdditionalPermission(selectedPerson.id, perm.id)
-                                      }
-                                    />
-                                    {perm.label}
-                                  </label>
-                                </li>
-                              )
-                            })}
-                          </ul>
+                        {!rbacEnforced && (
+                          <span className="person-panel__additive-pill">Additive only</span>
+                        )}
+                      </div>
+                      {rbacEnforced ? (
+                        <div className="person-panel__rbac-locked">
+                          <p className="person-panel__rbac-locked__msg">
+                            Per-user overrides are disabled. Role-based access controls are enforced
+                            for this organisation — change the setting in{' '}
+                            <strong>Settings → Access rights</strong>.
+                          </p>
                         </div>
-                      )
-                    })
-                  })()}
-                </section>
+                      ) : (() => {
+                        const roleEnabledIds = new Set(
+                          (ROLES.find((r) => r.id === selectedPerson.accessRoleId)?.configPerms ?? [])
+                            .filter((p) => p.enabled)
+                            .map((p) => p.id),
+                        )
+                        const availablePerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter(
+                          (p) => !roleEnabledIds.has(p.id),
+                        )
+                        if (availablePerms.length === 0) {
+                          return (
+                            <p className="person-panel__muted">
+                              This role already includes all additional permissions.
+                            </p>
+                          )
+                        }
+                        return ADDITIONAL_PERM_CATEGORIES.map((cat) => {
+                          const catPerms = availablePerms.filter((p) => p.category === cat)
+                          if (catPerms.length === 0) return null
+                          return (
+                            <div key={cat} className="person-panel__perm-category">
+                              <p className="person-panel__perm-category-label">{cat}</p>
+                              <ul className="person-panel__perm-list">
+                                {catPerms.map((perm) => {
+                                  const checked = selectedPerson.additionalPermissions.includes(perm.id)
+                                  return (
+                                    <li key={perm.id} className="person-panel__perm-item">
+                                      <label className={`person-panel__perm-label${checked ? ' person-panel__perm-label--checked' : ''}`}>
+                                        <input
+                                          type="checkbox"
+                                          className="person-panel__perm-checkbox"
+                                          checked={checked}
+                                          onChange={() =>
+                                            toggleAdditionalPermission(selectedPerson.id, perm.id)
+                                          }
+                                        />
+                                        {perm.label}
+                                      </label>
+                                    </li>
+                                  )
+                                })}
+                              </ul>
+                            </div>
+                          )
+                        })
+                      })()}
+                    </section>
+                  </>
+                )}
 
                 {officeMode === 'multi' && (
                   <>
@@ -1734,8 +1830,17 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
       <BulkEditModal
         count={selectedIds.size}
         onApply={applyBulkEdit}
-        onClose={() => setShowBulkModal(false)}
+        onClose={() => { setShowBulkModal(false); setBulkInitField('') }}
+        initialField={bulkInitField}
       />
+    )}
+
+    {showAddPersonModal && (
+      <AddPersonModal onClose={() => setShowAddPersonModal(false)} />
+    )}
+
+    {showImportModal && (
+      <ImportPeopleModal onClose={() => setShowImportModal(false)} />
     )}
     </>
   )
