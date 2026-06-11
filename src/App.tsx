@@ -1236,14 +1236,6 @@ export function ImportPeopleModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-const ADD_PERSON_TABS = [
-  { id: 'info' as const,         label: 'Info' },
-  { id: 'access' as const,       label: 'Access' },
-  { id: 'availability' as const, label: 'Availability' },
-  { id: 'timeoff' as const,      label: 'Time off', badge: 8 },
-  { id: 'projects' as const,     label: 'Projects' },
-]
-
 const GEN_ROLES_LIST = [
   'Designer','Senior Designer','Lead Designer','UX Designer','Product Designer',
   'Developer','Senior Developer','Software Engineer','Frontend Developer','Backend Developer',
@@ -1255,7 +1247,8 @@ const GEN_DEPTS_LIST = [
 ]
 
 export function AddPersonModal({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<'info'|'access'|'availability'|'timeoff'|'projects'>('info')
+  const [step, setStep] = useState<1 | 2>(1)
+  const [name, setName] = useState('')
   const [role, setRole] = useState('')
   const [costRate, setCostRate] = useState('')
   const [billRate, setBillRate] = useState('')
@@ -1280,30 +1273,28 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
         aria-labelledby="add-person-title"
         onClick={e => e.stopPropagation()}
       >
-        {/* Identity row */}
-        <div className="add-person-modal__identity">
-          <span className="add-person-modal__name-placeholder" id="add-person-title">Name</span>
-          <span className="add-person-modal__avatar-placeholder" aria-hidden />
-        </div>
+        {step === 1 ? (
+          <>
+            {/* Step 1: Create person */}
+            <div className="add-person-modal__header">
+              <h2 className="add-person-modal__title" id="add-person-title">Add person</h2>
+            </div>
 
-        {/* Tabs */}
-        <div className="add-person-modal__tabs">
-          {ADD_PERSON_TABS.map(t => (
-            <button
-              key={t.id}
-              type="button"
-              className={`add-person-modal__tab${tab === t.id ? ' add-person-modal__tab--active' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}{'badge' in t && <span className="add-person-modal__tab-badge">{t.badge}</span>}
-            </button>
-          ))}
-        </div>
+            <div className="add-person-modal__body">
+              {/* Name */}
+              <div className="add-person-modal__field">
+                <label className="add-person-modal__field-label" htmlFor="ap-name">Name</label>
+                <input
+                  id="ap-name"
+                  type="text"
+                  className="add-person-modal__text-input"
+                  placeholder="Full name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  autoFocus
+                />
+              </div>
 
-        {/* Body */}
-        <div className="add-person-modal__body">
-          {tab === 'info' && (
-            <>
               {/* Role / rates card */}
               <div className="add-person-modal__card">
                 <div className="add-person-modal__field">
@@ -1321,14 +1312,7 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                   <label className="add-person-modal__field-label">Cost rate</label>
                   <div className="add-person-modal__rate-input-wrap">
                     <span className="add-person-modal__rate-prefix">$</span>
-                    <input
-                      type="number"
-                      className="add-person-modal__rate-input"
-                      value={costRate}
-                      onChange={e => setCostRate(e.target.value)}
-                      placeholder="0"
-                      min="0"
-                    />
+                    <input type="number" className="add-person-modal__rate-input" value={costRate} onChange={e => setCostRate(e.target.value)} placeholder="0" min="0" />
                     <span className="add-person-modal__rate-suffix">/hr</span>
                   </div>
                 </div>
@@ -1337,14 +1321,7 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                   <label className="add-person-modal__field-label">Bill rate</label>
                   <div className="add-person-modal__rate-input-wrap">
                     <span className="add-person-modal__rate-prefix">$</span>
-                    <input
-                      type="number"
-                      className="add-person-modal__rate-input"
-                      value={billRate}
-                      onChange={e => setBillRate(e.target.value)}
-                      placeholder="0"
-                      min="0"
-                    />
+                    <input type="number" className="add-person-modal__rate-input" value={billRate} onChange={e => setBillRate(e.target.value)} placeholder="0" min="0" />
                     <span className="add-person-modal__rate-suffix">/hr</span>
                   </div>
                 </div>
@@ -1365,14 +1342,7 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
               {/* Tags */}
               <div className="add-person-modal__field">
                 <label className="add-person-modal__field-label" htmlFor="ap-tags">Tags</label>
-                <input
-                  id="ap-tags"
-                  type="text"
-                  className="add-person-modal__text-input"
-                  placeholder="No tags"
-                  value={tags}
-                  onChange={e => setTags(e.target.value)}
-                />
+                <input id="ap-tags" type="text" className="add-person-modal__text-input" placeholder="No tags" value={tags} onChange={e => setTags(e.target.value)} />
               </div>
 
               {/* Type */}
@@ -1387,38 +1357,46 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                   <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
                 </div>
               </div>
-            </>
-          )}
+            </div>
 
-          {tab === 'access' && (
-            <>
-              {/* Email card */}
-              <div className="add-person-modal__card">
-                <div className="add-person-modal__field">
-                  <label className="add-person-modal__field-label" htmlFor="ap-email">Email</label>
-                  <input
-                    id="ap-email"
-                    type="email"
-                    className="add-person-modal__email-input"
-                    placeholder="email@example.com"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    autoFocus
-                  />
-                </div>
+            <div className="add-person-modal__footer">
+              <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+              <button type="button" className="btn btn--primary" onClick={() => setStep(2)}>
+                Add person
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Step 2: Invite (optional) */}
+            <div className="add-person-modal__header">
+              <h2 className="add-person-modal__title" id="add-person-title">
+                {name || 'Person'} added
+              </h2>
+              <p className="add-person-modal__subtitle">
+                Send them an invite to access Float. You can always do this later from their profile.
+              </p>
+            </div>
+
+            <div className="add-person-modal__body">
+              <div className="add-person-modal__field">
+                <label className="add-person-modal__field-label" htmlFor="ap-email">Email</label>
+                <input
+                  id="ap-email"
+                  type="email"
+                  className="add-person-modal__text-input"
+                  placeholder="email@example.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  autoFocus
+                />
               </div>
 
-              {/* Access role */}
               <div className="add-person-modal__field">
-                <label className="add-person-modal__field-label" htmlFor="ap-access">Access</label>
+                <label className="add-person-modal__field-label" htmlFor="ap-access">Access role</label>
                 <div className="add-person-modal__select-wrap">
-                  <select
-                    id="ap-access"
-                    className="add-person-modal__select"
-                    value={accessRoleId}
-                    onChange={e => setAccessRoleId(e.target.value)}
-                  >
-                    <option value="">No access rights</option>
+                  <select id="ap-access" className="add-person-modal__select" value={accessRoleId} onChange={e => setAccessRoleId(e.target.value)}>
+                    <option value="">Select a role</option>
                     {ACCESS_ROLE_IDS.map(id => (
                       <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
                     ))}
@@ -1426,25 +1404,16 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                   <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
                 </div>
               </div>
-            </>
-          )}
+            </div>
 
-          {tab !== 'info' && tab !== 'access' && (
-            <p className="add-person-modal__placeholder-text">
-              {ADD_PERSON_TABS.find(t => t.id === tab)?.label} settings will appear here.
-            </p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="add-person-modal__footer">
-          <button type="button" className="btn btn--primary add-person-modal__submit-btn" onClick={onClose}>
-            Add person
-          </button>
-          <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Cancel
-          </button>
-        </div>
+            <div className="add-person-modal__footer">
+              <button type="button" className="btn btn--ghost" onClick={onClose}>Skip for now</button>
+              <button type="button" className="btn btn--primary" disabled={!email || !accessRoleId} onClick={onClose}>
+                Send invite
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
