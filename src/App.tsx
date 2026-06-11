@@ -1698,16 +1698,15 @@ function DSV1UsersPage() {
                   style={{ cursor: 'pointer' }}
                 />
               </th>
-              <th className="ds-table__th">Name / Email</th>
-              <th className="ds-table__th">Access role</th>
+              <th className="ds-table__th">Name</th>
+              <th className="ds-table__th">Email</th>
+              <th className="ds-table__th">Access</th>
               <th className="ds-table__th">Seat</th>
-              <th className="ds-table__th">Last activity</th>
+              <th className="ds-table__th">Last login</th>
             </tr>
           </thead>
           <tbody>
             {displayRows.map((row) => {
-              const initial = row.name.charAt(0).toUpperCase()
-              const color = avatarColor(row.name)
               const roleLabel = ACCESS_ROLE_LABELS[row.accessRoleId as keyof typeof ACCESS_ROLE_LABELS] ?? row.accessRoleId
               return (
                 <tr
@@ -1726,13 +1725,10 @@ function DSV1UsersPage() {
                     />
                   </td>
                   <td className="ds-table__td">
-                    <div className="ds-name-cell">
-                      <span className="ds-avatar" style={{ background: color }}>{initial}</span>
-                      <div className="ds-name-cell__text">
-                        <span className="ds-name-cell__name">{row.name}</span>
-                        <span className="ds-name-cell__sub">{row.email}</span>
-                      </div>
-                    </div>
+                    <span className="ds-name-cell__name">{row.name}</span>
+                  </td>
+                  <td className="ds-table__td">
+                    <span className="ds-name-cell__sub">{row.email}</span>
                   </td>
                   <td className="ds-table__td">
                     <span className="ds-role-badge">{roleLabel}</span>
@@ -3909,8 +3905,10 @@ export default function App() {
     setExpandedOfficeId(officeId)
   }
 
+  const isDsv1UsersView = dataStudioNavId === 'users' && officeMode === 'single-dsv1'
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isDsv1UsersView ? ' ds-v1-light' : ''}`}>
       <AppRail
         onOpenSettings={() => setSettingsOpen(true)}
         officeMode={officeMode}

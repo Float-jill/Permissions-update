@@ -7520,7 +7520,7 @@
 
 .ds-v1-light {
   --bg-app:         #ffffff;
-  --bg-sidebar:     #ffffff;
+  --bg-sidebar:     #fafbfc;
   --bg-main:        #ffffff;
   --border:         #e6e8ee;
   --border-panel:   #e6e8ee;
@@ -7533,6 +7533,77 @@
   background: #ffffff;
   color: var(--text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Main content area + sidebar in light mode */
+.ds-v1-light .main {
+  background: #ffffff;
+  color: var(--text-primary);
+}
+
+.ds-v1-light .app-rail {
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-sidebar);
+  color: var(--text-primary);
+}
+
+.ds-v1-light .app-rail__row,
+.ds-v1-light .app-rail__subrow,
+.ds-v1-light .app-rail__section-head {
+  color: var(--text-secondary);
+  background: transparent;
+}
+
+.ds-v1-light .app-rail__row:hover,
+.ds-v1-light .app-rail__subrow:hover,
+.ds-v1-light .app-rail__section-head:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+
+.ds-v1-light .app-rail__row--active,
+.ds-v1-light .app-rail__subrow--active {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+  font-weight: 450;
+}
+
+.ds-v1-light .app-rail__ico,
+.ds-v1-light .app-rail__chev {
+  color: var(--text-secondary);
+}
+
+.ds-v1-light .app-rail__row--active .app-rail__ico,
+.ds-v1-light .app-rail__subrow--active .app-rail__ico {
+  color: var(--text-primary);
+}
+
+.ds-v1-light .app-rail__brand,
+.ds-v1-light .app-rail__brand-mark {
+  color: var(--text-primary);
+}
+
+.ds-v1-light .app-rail__brand:hover { background: var(--nav-hover); }
+
+.ds-v1-light .app-rail__section-label,
+.ds-v1-light .app-rail__row-label {
+  color: inherit;
+}
+
+.ds-v1-light .app-rail__subnav-line {
+  background: var(--border);
+}
+
+.ds-v1-light .app-rail__notif,
+.ds-v1-light .app-rail__collapse-btn {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.ds-v1-light .app-rail__notif:hover,
+.ds-v1-light .app-rail__collapse-btn:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
 }
 
 .ds-v1-light .ds-people-header__title {
