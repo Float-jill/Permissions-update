@@ -1582,7 +1582,7 @@ function DSV1UsersPage() {
   ]
 
   return (
-    <div className="ds-users-page">
+    <div className="ds-users-page ds-v1-light">
       {/* Header */}
       <div className="ds-people-header">
         <div className="ds-people-header__left">

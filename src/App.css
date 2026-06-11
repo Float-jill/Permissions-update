@@ -7512,3 +7512,234 @@
   padding-top: 4px;
   border-top: 1px solid var(--border);
 }
+
+/* ── DS V1 Light Theme ─────────────────────────────────────────────────────
+   Scoped light-mode tokens + new Figma patterns (pill tabs, quick-input
+   cells, data-link role pill). Tokens sourced from Figma file
+   Access-rights node 124:3296. Scope is the .ds-v1-light wrapper. */
+
+.ds-v1-light {
+  --bg-app:         #ffffff;
+  --bg-sidebar:     #ffffff;
+  --bg-main:        #ffffff;
+  --border:         #e6e8ee;
+  --border-panel:   #e6e8ee;
+  --border-sidebar: #e6e8ee;
+  --nav-hover:      #f3f2f5;
+  --text-primary:   #0b0c10;
+  --text-secondary: #344765;
+  --accent-blue:    #2e5fe8;
+
+  background: #ffffff;
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ds-v1-light .ds-people-header__title {
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.ds-v1-light .ds-people-header__filter-btn,
+.ds-v1-light .ds-people-header__action-btn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 450;
+}
+
+.ds-v1-light .ds-people-header__filter-btn:hover,
+.ds-v1-light .ds-people-header__action-btn:hover {
+  background: var(--nav-hover);
+}
+
+.ds-v1-light .ds-people-header__icon-btn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.ds-v1-light .ds-people-header__icon-btn:hover { background: var(--nav-hover); }
+
+/* Pill tabs */
+.ds-v1-light .ds-people-types { gap: 8px; }
+
+.ds-v1-light .ds-people-type {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 16px;
+}
+
+.ds-v1-light .ds-people-type:hover { background: var(--nav-hover); }
+
+.ds-v1-light .ds-people-type--active {
+  background: var(--nav-hover);
+  border-color: var(--nav-hover);
+  color: var(--text-primary);
+  font-weight: 450;
+}
+
+.ds-v1-light .ds-people-type__dot { display: none; }
+
+.ds-v1-light .ds-people-type__count {
+  color: inherit;
+  margin-left: 4px;
+}
+
+/* Table */
+.ds-v1-light .ds-table-wrap { background: #ffffff; border: none; }
+
+.ds-v1-light .ds-table { background: #ffffff; }
+
+.ds-v1-light .ds-table thead tr { border-bottom: 1px solid var(--border); }
+
+.ds-v1-light .ds-table__th {
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  padding: 8px 8px;
+  text-align: left;
+  border: none;
+}
+
+.ds-v1-light .ds-table__row {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.ds-v1-light .ds-table__row:hover { background: #fafbfc; }
+
+.ds-v1-light .ds-table__row--checked { background: #f5f8ff; }
+
+.ds-v1-light .ds-table__td {
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 16px;
+  padding: 12px 8px;
+  border: none;
+}
+
+.ds-v1-light .ds-table__td--muted {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+/* Name cell — quick-input feel */
+.ds-v1-light .ds-name-cell { gap: 8px; }
+
+.ds-v1-light .ds-name-cell__name {
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 16px;
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+}
+
+.ds-v1-light .ds-table__row:hover .ds-name-cell__name { background: var(--nav-hover); }
+
+.ds-v1-light .ds-name-cell__sub {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+/* Access role — data-link pill (small grey background, 4px radius) */
+.ds-v1-light .ds-role-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #f3f2f5;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: none;
+}
+
+/* Seat pill — plain text in light mode */
+.ds-v1-light .ds-seat-pill {
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  padding: 0;
+  border-radius: 0;
+}
+
+.ds-v1-light .ds-login-pending {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Add menu (+ button dropdown) */
+.ds-v1-light .ds-add-menu {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(11, 12, 16, 0.08);
+}
+
+.ds-v1-light .ds-add-menu__item:hover { background: var(--nav-hover); }
+.ds-v1-light .ds-add-menu__label   { color: var(--text-primary); }
+.ds-v1-light .ds-add-menu__icon    { color: var(--text-secondary); }
+.ds-v1-light .ds-add-menu__shortcut {
+  color: var(--text-secondary);
+  background: var(--nav-hover);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+/* Bulk bar — light variant */
+.ds-v1-light .ds-bulk-bar {
+  background: #f5f8ff;
+  border: 1px solid #d6e0fa;
+  color: var(--text-primary);
+}
+
+.ds-v1-light .ds-bulk-bar__count { color: var(--text-primary); font-weight: 600; }
+
+/* Guest tab description bar */
+.ds-v1-light .ds-guest-tab-bar  { background: transparent; }
+.ds-v1-light .ds-guest-tab-desc { color: var(--text-secondary); font-size: 12px; }
+
+.ds-v1-light .ds-invite-guest-btn {
+  background: #ffffff;
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 450;
+}
+
+.ds-v1-light .ds-invite-guest-btn:hover { background: #f5f8ff; }
+
+/* Avatar — smaller and consistent with Figma 20px circle */
+.ds-v1-light .ds-avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Checkboxes — light style */
+.ds-v1-light .ds-table__th input[type="checkbox"],
+.ds-v1-light .ds-table__td input[type="checkbox"] {
+  accent-color: var(--accent-blue);
+}
