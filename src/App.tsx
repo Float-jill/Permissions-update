@@ -1153,7 +1153,7 @@ function ManageAccessModal({ count, onClose }: { count: number; onClose: () => v
           >
             <option value="">No change</option>
             {ACCESS_ROLE_IDS.map(id => (
-              <option key={id} value={id}>{accessRoleLabel(id)}</option>
+              <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
             ))}
           </select>
         </div>
