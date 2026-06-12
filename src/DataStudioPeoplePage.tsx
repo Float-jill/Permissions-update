@@ -1296,7 +1296,9 @@ export function DataStudioPeoplePage({ rbacEnforced = false, officeMode = 'singl
       {/* ── Top header bar ─────────────────────────────────────────────── */}
       <div className="dh-people__topbar">
         <div className="dh-people__topbar-left">
-          <h1 className="dh-people__title">People</h1>
+          <h1 className="dh-people__title">
+            {officeMode === 'single-dsv1' ? `${visiblePeople.length} People` : 'People'}
+          </h1>
           <button type="button" className="dh-people__hdr-icon-btn dh-people__views-btn" aria-label="Views">
             <IconViews size={16} />
           </button>

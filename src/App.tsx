@@ -26,10 +26,16 @@ import {
   DollarSign,
   Eye,
   Folder,
+  Gauge,
+  GanttChart,
+  Briefcase,
+  Rows3,
+  TimerReset,
   Globe,
   GraduationCap,
   LayoutDashboard,
   Lock,
+  MoreVertical,
   Network,
   PanelLeft,
   PanelLeftClose,
@@ -44,10 +50,7 @@ import {
   Timer,
   Trash2,
   Umbrella,
-  CalendarPlus,
   FileDown,
-  FolderPlus,
-  LayoutGrid,
   Paperclip,
   UserCog,
   UserPlus,
@@ -174,17 +177,17 @@ function OfficeModeControl({
     <div className="office-mode-ctrl" role="group" aria-label="Office mode">
       <button
         type="button"
-        className={`office-mode-ctrl__btn${value === 'single' ? ' office-mode-ctrl__btn--active' : ''}`}
-        onClick={() => onChange('single')}
-      >
-        Single office current
-      </button>
-      <button
-        type="button"
         className={`office-mode-ctrl__btn${value === 'single-dsv1' ? ' office-mode-ctrl__btn--active' : ''}`}
         onClick={() => onChange('single-dsv1')}
       >
         Single office DS V1
+      </button>
+      <button
+        type="button"
+        className={`office-mode-ctrl__btn${value === 'single' ? ' office-mode-ctrl__btn--active' : ''}`}
+        onClick={() => onChange('single')}
+      >
+        Single office current
       </button>
       <button
         type="button"
@@ -1246,9 +1249,16 @@ const GEN_DEPTS_LIST = [
   'Design','Engineering','Product','Marketing','Operations','Finance','HR','Sales','Research',
 ]
 
+const ADD_PERSON_TABS: { id: 'info'|'availability'|'timeoff'|'projects'; label: string; badge?: number }[] = [
+  { id: 'info',         label: 'Info' },
+  { id: 'availability', label: 'Availability' },
+  { id: 'timeoff',      label: 'Time off', badge: 7 },
+  { id: 'projects',     label: 'Projects' },
+]
+
 export function AddPersonModal({ onClose }: { onClose: () => void }) {
-  const [step, setStep] = useState<1 | 2>(1)
-  const [name, setName] = useState('')
+  const [tab, setTab] = useState<'info'|'availability'|'timeoff'|'projects'>('info')
+  const name = ''
   const [role, setRole] = useState('')
   const [costRate, setCostRate] = useState('')
   const [billRate, setBillRate] = useState('')
@@ -1257,12 +1267,71 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
   const [personType, setPersonType] = useState('Employee')
   const [email, setEmail] = useState('')
   const [accessRoleId, setAccessRoleId] = useState('')
+  const [created, setCreated] = useState(false)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  if (created) {
+    return (
+      <div className="add-person-backdrop" onClick={onClose}>
+        <div
+          className="add-person-modal"
+          role="dialog"
+          aria-modal
+          aria-labelledby="add-person-invite-title"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="add-person-modal__header">
+            <h2 className="add-person-modal__title" id="add-person-invite-title">
+              {name || 'Person'} added
+            </h2>
+            <p className="add-person-modal__subtitle">
+              Send them an invite to access Float. You can always do this later from their profile.
+            </p>
+          </div>
+
+          <div className="add-person-modal__body">
+            <div className="add-person-modal__field">
+              <label className="add-person-modal__field-label" htmlFor="ap-email">Email</label>
+              <input
+                id="ap-email"
+                type="email"
+                className="add-person-modal__text-input"
+                placeholder="email@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="add-person-modal__field">
+              <label className="add-person-modal__field-label" htmlFor="ap-access">Access role</label>
+              <div className="add-person-modal__select-wrap">
+                <select id="ap-access" className="add-person-modal__select" value={accessRoleId} onChange={e => setAccessRoleId(e.target.value)}>
+                  <option value="">No access rights</option>
+                  {ACCESS_ROLE_IDS.map(id => (
+                    <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
+                  ))}
+                </select>
+                <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
+              </div>
+            </div>
+          </div>
+
+          <div className="add-person-modal__footer">
+            <button type="button" className="btn btn--primary" disabled={!email || !accessRoleId} onClick={onClose}>
+              Send invite
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={onClose}>Skip for now</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="add-person-backdrop" onClick={onClose}>
@@ -1273,29 +1342,30 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
         aria-labelledby="add-person-title"
         onClick={e => e.stopPropagation()}
       >
-        {step === 1 ? (
-          <>
-            {/* Step 1: Create person */}
-            <div className="add-person-modal__header">
-              <h2 className="add-person-modal__title" id="add-person-title">Add person</h2>
-            </div>
+        <div className="add-person-modal__identity">
+          <span className="add-person-modal__name-placeholder" id="add-person-title">{name || 'Name'}</span>
+          <span className="add-person-modal__avatar-placeholder" aria-hidden />
+        </div>
 
-            <div className="add-person-modal__body">
-              {/* Name */}
-              <div className="add-person-modal__field">
-                <label className="add-person-modal__field-label" htmlFor="ap-name">Name</label>
-                <input
-                  id="ap-name"
-                  type="text"
-                  className="add-person-modal__text-input"
-                  placeholder="Full name"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  autoFocus
-                />
-              </div>
+        <div className="add-person-modal__tabs" role="tablist">
+          {ADD_PERSON_TABS.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`add-person-modal__tab${tab === t.id ? ' add-person-modal__tab--active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+              {t.badge !== undefined && <span className="add-person-modal__tab-badge">{t.badge}</span>}
+            </button>
+          ))}
+        </div>
 
-              {/* Role / rates card */}
+        <div className="add-person-modal__body">
+          {tab === 'info' && (
+            <>
               <div className="add-person-modal__card">
                 <div className="add-person-modal__field">
                   <label className="add-person-modal__field-label" htmlFor="ap-role">Role</label>
@@ -1327,7 +1397,6 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              {/* Department */}
               <div className="add-person-modal__field">
                 <label className="add-person-modal__field-label" htmlFor="ap-dept">Department</label>
                 <div className="add-person-modal__select-wrap">
@@ -1339,13 +1408,11 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              {/* Tags */}
               <div className="add-person-modal__field">
                 <label className="add-person-modal__field-label" htmlFor="ap-tags">Tags</label>
                 <input id="ap-tags" type="text" className="add-person-modal__text-input" placeholder="No tags" value={tags} onChange={e => setTags(e.target.value)} />
               </div>
 
-              {/* Type */}
               <div className="add-person-modal__field">
                 <label className="add-person-modal__field-label" htmlFor="ap-type">Type</label>
                 <div className="add-person-modal__select-wrap">
@@ -1357,63 +1424,32 @@ export function AddPersonModal({ onClose }: { onClose: () => void }) {
                   <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
                 </div>
               </div>
-            </div>
+            </>
+          )}
 
-            <div className="add-person-modal__footer">
-              <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
-              <button type="button" className="btn btn--primary" onClick={() => setStep(2)}>
-                Add person
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Step 2: Invite (optional) */}
-            <div className="add-person-modal__header">
-              <h2 className="add-person-modal__title" id="add-person-title">
-                {name || 'Person'} added
-              </h2>
-              <p className="add-person-modal__subtitle">
-                Send them an invite to access Float. You can always do this later from their profile.
-              </p>
-            </div>
+          {tab === 'availability' && (
+            <p className="add-person-modal__placeholder-text">
+              Set this person's working hours and weekly availability. Defaults to your org's work schedule.
+            </p>
+          )}
 
-            <div className="add-person-modal__body">
-              <div className="add-person-modal__field">
-                <label className="add-person-modal__field-label" htmlFor="ap-email">Email</label>
-                <input
-                  id="ap-email"
-                  type="email"
-                  className="add-person-modal__text-input"
-                  placeholder="email@example.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoFocus
-                />
-              </div>
+          {tab === 'timeoff' && (
+            <p className="add-person-modal__placeholder-text">
+              Assign time-off policies and balances. Holiday calendars apply automatically.
+            </p>
+          )}
 
-              <div className="add-person-modal__field">
-                <label className="add-person-modal__field-label" htmlFor="ap-access">Access role</label>
-                <div className="add-person-modal__select-wrap">
-                  <select id="ap-access" className="add-person-modal__select" value={accessRoleId} onChange={e => setAccessRoleId(e.target.value)}>
-                    <option value="">Select a role</option>
-                    {ACCESS_ROLE_IDS.map(id => (
-                      <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={15} className="add-person-modal__select-chev" aria-hidden />
-                </div>
-              </div>
-            </div>
+          {tab === 'projects' && (
+            <p className="add-person-modal__placeholder-text">
+              Add this person to projects. You can also assign them later from the project page.
+            </p>
+          )}
+        </div>
 
-            <div className="add-person-modal__footer">
-              <button type="button" className="btn btn--ghost" onClick={onClose}>Skip for now</button>
-              <button type="button" className="btn btn--primary" disabled={!email || !accessRoleId} onClick={onClose}>
-                Send invite
-              </button>
-            </div>
-          </>
-        )}
+        <div className="add-person-modal__footer">
+          <button type="button" className="btn btn--primary" onClick={() => setCreated(true)}>Add person</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+        </div>
       </div>
     </div>
   )
@@ -1440,6 +1476,9 @@ function InviteGuestModal({ onClose }: { onClose: () => void }) {
         onClick={e => e.stopPropagation()}
       >
         <h2 className="invite-guest-modal__title" id="invite-guest-title">Invite guest</h2>
+        <p className="invite-guest-modal__subtitle">
+          Guests have account access but do not appear in the schedule. Guest access is free.
+        </p>
 
         {/* Identity row */}
         <div className="invite-guest-modal__identity">
@@ -1514,6 +1553,14 @@ function InviteGuestModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+type SeatType = 'schedule' | 'guest' | 'placeholder' | 'draft'
+const SEAT_LABELS: Record<SeatType, string> = {
+  schedule:    'Schedule',
+  guest:       'Guest',
+  placeholder: 'Placeholder',
+  draft:       'Draft profile',
+}
+
 function DSV1UsersPage() {
   const schedulePeople = SAMPLE_PEOPLE.slice(0, 15)
 
@@ -1522,49 +1569,124 @@ function DSV1UsersPage() {
     name: string
     email: string
     accessRoleId: string
-    seat: 'schedule' | 'guest'
+    seat: SeatType
     lastActivity: string
+    archived: boolean
+    created: string
+    createdBy: string
   }
 
+  const CREATORS = ['Sophia Williams', 'Liam Park', 'Naomi Reyes', 'Daniel Chen']
+  const CREATED_DATES = [
+    'Jan 12, 2026', 'Feb 4, 2026', 'Mar 1, 2026', 'Mar 22, 2026',
+    'Apr 8, 2026', 'Apr 30, 2026', 'May 15, 2026', 'Jun 2, 2026',
+  ]
+
+  const PLACEHOLDER_PEOPLE = [
+    { id: 'ph-1', name: 'Designer (placeholder)',     email: '—', accessRoleId: 'member' },
+    { id: 'ph-2', name: 'Developer (placeholder)',    email: '—', accessRoleId: 'member' },
+    { id: 'ph-3', name: 'PM (placeholder)',           email: '—', accessRoleId: 'member' },
+    { id: 'ph-4', name: 'QA engineer (placeholder)',  email: '—', accessRoleId: 'member' },
+    { id: 'ph-5', name: 'Researcher (placeholder)',   email: '—', accessRoleId: 'member' },
+  ]
+
+  const DRAFT_PEOPLE = [
+    { id: 'dr-1',  name: 'Aaliyah Carter',    email: '—', accessRoleId: 'member' },
+    { id: 'dr-2',  name: 'Felix Rowe',        email: '—', accessRoleId: 'member' },
+    { id: 'dr-3',  name: 'Nadia Volkov',      email: '—', accessRoleId: 'member' },
+    { id: 'dr-4',  name: 'Theo Sandoval',     email: '—', accessRoleId: 'member' },
+    { id: 'dr-5',  name: 'Mei Lin',           email: '—', accessRoleId: 'member' },
+    { id: 'dr-6',  name: 'Kwame Boateng',     email: '—', accessRoleId: 'member' },
+    { id: 'dr-7',  name: 'Sasha Ivanova',     email: '—', accessRoleId: 'member' },
+    { id: 'dr-8',  name: 'Oren Halevi',       email: '—', accessRoleId: 'member' },
+    { id: 'dr-9',  name: 'Camila Duarte',     email: '—', accessRoleId: 'member' },
+    { id: 'dr-10', name: 'Idris Mensah',      email: '—', accessRoleId: 'member' },
+    { id: 'dr-11', name: 'Eliza Whitfield',   email: '—', accessRoleId: 'member' },
+    { id: 'dr-12', name: 'Rohan Mehta',       email: '—', accessRoleId: 'member' },
+    { id: 'dr-13', name: 'Brynn Halloran',    email: '—', accessRoleId: 'member' },
+    { id: 'dr-14', name: 'Jorge Esquivel',    email: '—', accessRoleId: 'member' },
+    { id: 'dr-15', name: 'Tomoko Saito',      email: '—', accessRoleId: 'member' },
+    { id: 'dr-16', name: 'Levi Beaumont',     email: '—', accessRoleId: 'member' },
+    { id: 'dr-17', name: 'Ines Marchetti',    email: '—', accessRoleId: 'member' },
+    { id: 'dr-18', name: 'Caspian Reilly',    email: '—', accessRoleId: 'member' },
+    { id: 'dr-19', name: 'Yusra Al-Amin',     email: '—', accessRoleId: 'member' },
+    { id: 'dr-20', name: 'Sebastián Vargas',  email: '—', accessRoleId: 'member' },
+    { id: 'dr-21', name: 'Frida Lindgren',    email: '—', accessRoleId: 'member' },
+    { id: 'dr-22', name: 'Kofi Asante',       email: '—', accessRoleId: 'member' },
+  ]
+
   const rows: V1UserRow[] = [
-    ...schedulePeople.map((p, i) => ({
+    ...schedulePeople.map((p, i, arr) => ({
       id: p.id,
       name: p.name,
       email: p.email,
       accessRoleId: p.accessRoleId,
       seat: 'schedule' as const,
       lastActivity: DSV1_LAST_LOGIN[i % DSV1_LAST_LOGIN.length],
+      archived: i >= arr.length - 3,
+      created: CREATED_DATES[i % CREATED_DATES.length],
+      createdBy: CREATORS[i % CREATORS.length],
     })),
-    ...GUESTS.map((g) => ({
+    ...GUESTS.map((g, i, arr) => ({
       id: `guest-${g.id}`,
       name: g.name,
       email: g.email,
       accessRoleId: 'admin',
       seat: 'guest' as const,
       lastActivity: 'Invite pending',
+      archived: i >= arr.length - 2,
+      created: CREATED_DATES[(i + 2) % CREATED_DATES.length],
+      createdBy: CREATORS[(i + 1) % CREATORS.length],
+    })),
+    ...PLACEHOLDER_PEOPLE.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      accessRoleId: p.accessRoleId,
+      seat: 'placeholder' as const,
+      lastActivity: '—',
+      archived: false,
+      created: CREATED_DATES[(i + 3) % CREATED_DATES.length],
+      createdBy: CREATORS[(i + 2) % CREATORS.length],
+    })),
+    ...DRAFT_PEOPLE.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      accessRoleId: p.accessRoleId,
+      seat: 'draft' as const,
+      lastActivity: 'Draft',
+      archived: false,
+      created: CREATED_DATES[(i + 4) % CREATED_DATES.length],
+      createdBy: CREATORS[(i + 3) % CREATORS.length],
     })),
   ]
 
-  const [seatTab, setSeatTab] = useState<'schedule' | 'guest'>('schedule')
+  type StatusTab = 'active' | 'archived' | 'all'
+  const [seatTab, setSeatTab] = useState<StatusTab>('active')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [selectedUser, setSelectedUser] = useState<V1UserRow | null>(null)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showAddPersonModal, setShowAddPersonModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showManageAccessModal, setShowManageAccessModal] = useState(false)
-  const [showAddMenu, setShowAddMenu] = useState(false)
-  const addMenuRef = useRef<HTMLDivElement>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-  useEffect(() => {
-    if (!showAddMenu) return
-    function onDoc(e: MouseEvent) {
-      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) setShowAddMenu(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [showAddMenu])
+  const paidSeatIndex = new Map<string, number>()
+  rows.filter(r => r.seat === 'schedule').forEach((r, i) => paidSeatIndex.set(r.id, i + 1))
+  const paidSeatTotal = 12
 
-  const displayRows = rows.filter(r => r.seat === seatTab)
+  const placeholderIndex = new Map<string, number>()
+  const placeholderRows = rows.filter(r => r.seat === 'placeholder')
+  placeholderRows.forEach((r, i) => placeholderIndex.set(r.id, i + 1))
+  const placeholderTotal = placeholderRows.length
+
+  const activeRows = rows.filter(r => !r.archived)
+  const archivedRows = rows.filter(r => r.archived)
+  const displayRows =
+    seatTab === 'active'   ? activeRows :
+    seatTab === 'archived' ? archivedRows :
+                             rows
   const allChecked = displayRows.length > 0 && displayRows.every(r => selected.has(r.id))
   const someChecked = displayRows.some(r => selected.has(r.id))
 
@@ -1576,9 +1698,10 @@ function DSV1UsersPage() {
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   }
 
-  const TABS = [
-    { id: 'schedule' as const, label: 'Schedule seats', count: schedulePeople.length },
-    { id: 'guest' as const,    label: 'Guests',         count: GUESTS.length },
+  const TABS: { id: StatusTab; label: string; count: number }[] = [
+    { id: 'active',   label: 'Active',   count: activeRows.length },
+    { id: 'archived', label: 'Archived', count: archivedRows.length },
+    { id: 'all',      label: 'All',      count: rows.length },
   ]
 
   return (
@@ -1586,56 +1709,30 @@ function DSV1UsersPage() {
       {/* Header */}
       <div className="ds-people-header">
         <div className="ds-people-header__left">
-          <h1 className="ds-people-header__title">Users</h1>
+          <h1 className="ds-people-header__title">Accounts</h1>
           <button type="button" className="ds-people-header__filter-btn">
-            <ListFilter size={14} strokeWidth={1.75} />
+            <ListFilter size={16} strokeWidth={1.5} />
             Filter
-            <ChevronDown size={13} strokeWidth={1.75} />
+            <ChevronDown size={16} strokeWidth={1.5} />
           </button>
         </div>
         <div className="ds-people-header__right">
+          <button type="button" className="ds-people-header__action-btn" onClick={() => setShowInviteModal(true)}>
+            <UserPlus size={16} strokeWidth={1.5} />
+            Invite guest
+          </button>
           <button type="button" className="ds-people-header__action-btn" onClick={() => setShowImportModal(true)}>
-            <Download size={14} strokeWidth={1.75} />
+            <Download size={16} strokeWidth={1.5} />
             Import
           </button>
-          <button type="button" className="ds-people-header__icon-btn" aria-label="Export">
-            <ExternalLink size={14} strokeWidth={1.75} />
+          <button
+            type="button"
+            className="btn btn--primary ds-people-header__add-btn"
+            onClick={() => setShowAddPersonModal(true)}
+          >
+            <Plus size={16} strokeWidth={1.5} />
+            Add person
           </button>
-          <div className="ds-add-menu-wrap" ref={addMenuRef}>
-            <button
-              type="button"
-              className="btn btn--primary ds-people-header__add-btn"
-              aria-label="Add"
-              aria-haspopup="true"
-              aria-expanded={showAddMenu}
-              onClick={() => setShowAddMenu(o => !o)}
-            >
-              <Plus size={16} strokeWidth={2} />
-            </button>
-            {showAddMenu && (
-              <div className="ds-add-menu" role="menu">
-                {([
-                  { label: 'Allocate time', shortcut: 'T', Icon: LayoutGrid },
-                  { label: 'Log time',      shortcut: 'G', Icon: Clock },
-                  { label: 'Add time off',  shortcut: 'I', Icon: CalendarPlus },
-                  { label: 'Add project',   shortcut: 'P', Icon: FolderPlus },
-                  { label: 'Add person',    shortcut: 'E', Icon: UserPlus },
-                ] as const).map(({ label, shortcut, Icon }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    role="menuitem"
-                    className="ds-add-menu__item"
-                    onClick={() => { setShowAddMenu(false); if (label === 'Add person') setShowAddPersonModal(true) }}
-                  >
-                    <Icon size={18} strokeWidth={1.5} className="ds-add-menu__icon" aria-hidden />
-                    <span className="ds-add-menu__label">{label}</span>
-                    <span className="ds-add-menu__shortcut">{shortcut}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -1655,33 +1752,32 @@ function DSV1UsersPage() {
         ))}
       </div>
 
-      {seatTab === 'guest' && (
-        <div className="ds-guest-tab-bar">
-          <p className="ds-guest-tab-desc">
-            Guests have account access but do not appear in the schedule. Guest access is free.
-          </p>
-          <button type="button" className="ds-invite-guest-btn" onClick={() => setShowInviteModal(true)}>
-            <UserPlus size={14} strokeWidth={1.75} aria-hidden />
-            Invite guest
-          </button>
-        </div>
-      )}
-
       {/* Bulk bar */}
-      {selected.size > 0 && (
-        <div className="ds-bulk-bar">
-          <span className="ds-bulk-bar__count">{selected.size} selected</span>
-          <button type="button" className="btn btn--primary ds-bulk-bar__action-btn" onClick={() => setShowManageAccessModal(true)}>
-            Manage access
-          </button>
-          <span style={{ color: 'var(--text-secondary)' }}>·</span>
-          <button type="button" className="ds-bulk-bar__action" style={{ color: '#c0392b' }}>Remove</button>
-          <div style={{ flex: 1 }} />
-          <button type="button" className="ds-bulk-bar__clear" onClick={() => setSelected(new Set())} aria-label="Clear">
-            <X size={14} strokeWidth={2} />
-          </button>
-        </div>
-      )}
+      {selected.size > 0 && (() => {
+        const selectedRows = rows.filter(r => selected.has(r.id))
+        const upgradeableRows = selectedRows.filter(r => r.seat === 'draft' || r.seat === 'placeholder')
+        const canUpgrade = upgradeableRows.length > 0 && upgradeableRows.length === selectedRows.length
+        return (
+          <div className="ds-bulk-bar">
+            <span className="ds-bulk-bar__count">{selected.size} selected</span>
+            {canUpgrade ? (
+              <button type="button" className="btn btn--primary ds-bulk-bar__action-btn" onClick={() => setShowUpgradeModal(true)}>
+                Upgrade to paid seat
+              </button>
+            ) : (
+              <button type="button" className="btn btn--primary ds-bulk-bar__action-btn" onClick={() => setShowManageAccessModal(true)}>
+                Manage access
+              </button>
+            )}
+            <span style={{ color: 'var(--text-secondary)' }}>·</span>
+            <button type="button" className="ds-bulk-bar__action" style={{ color: '#c0392b' }}>Remove</button>
+            <div style={{ flex: 1 }} />
+            <button type="button" className="ds-bulk-bar__clear" onClick={() => setSelected(new Set())} aria-label="Clear">
+              <X size={16} strokeWidth={1.5} />
+            </button>
+          </div>
+        )
+      })()}
 
       {/* Table */}
       <div className="ds-table-wrap">
@@ -1701,8 +1797,9 @@ function DSV1UsersPage() {
               <th className="ds-table__th">Name</th>
               <th className="ds-table__th">Email</th>
               <th className="ds-table__th">Access</th>
-              <th className="ds-table__th">Seat</th>
+              <th className="ds-table__th">Billing profiles</th>
               <th className="ds-table__th">Last login</th>
+              <th className="ds-table__th">Created</th>
             </tr>
           </thead>
           <tbody>
@@ -1728,22 +1825,39 @@ function DSV1UsersPage() {
                     <span className="ds-name-cell__name">{row.name}</span>
                   </td>
                   <td className="ds-table__td">
-                    <span className="ds-name-cell__sub">{row.email}</span>
+                    <span className="ds-name-cell__sub">{row.seat === 'draft' ? '—' : row.email}</span>
                   </td>
                   <td className="ds-table__td">
-                    <span className="ds-role-badge">{roleLabel}</span>
+                    {row.seat === 'draft' || row.seat === 'placeholder'
+                      ? <span className="ds-name-cell__sub">—</span>
+                      : <span className="ds-role-badge">{roleLabel}</span>}
                   </td>
                   <td className="ds-table__td">
-                    {row.seat === 'schedule'
-                      ? <span className="ds-seat-pill ds-seat-pill--schedule">Schedule</span>
-                      : <span className="ds-seat-pill ds-seat-pill--guest">Guest</span>
-                    }
+                    <span className="ds-seat-indicator">
+                      <span className={`ds-seat-dot ds-seat-dot--${row.seat}`} aria-hidden />
+                      {row.seat === 'schedule'
+                        ? `Seat ${paidSeatIndex.get(row.id)}/${paidSeatTotal}`
+                        : row.seat === 'placeholder'
+                          ? `Placeholder ${placeholderIndex.get(row.id)}/${placeholderTotal}`
+                          : SEAT_LABELS[row.seat]}
+                    </span>
                   </td>
                   <td className="ds-table__td">
-                    {row.lastActivity === 'Invite pending'
-                      ? <span className="ds-login-pending">{row.lastActivity}</span>
-                      : <span className="ds-table__td--muted" style={{ fontSize: 13 }}>{row.lastActivity}</span>
-                    }
+                    {row.seat === 'draft'
+                      ? <span className="ds-name-cell__sub">—</span>
+                      : row.lastActivity === 'Invite pending'
+                        ? <span className="ds-login-pending">{row.lastActivity}</span>
+                        : <span className="ds-table__td--muted" style={{ fontSize: 13 }}>{row.lastActivity}</span>}
+                  </td>
+                  <td className="ds-table__td">
+                    <span className="ds-created-cell">
+                      <span className="ds-created-cell__date">{row.created}</span>
+                      <span className="ds-created-cell__by">by</span>
+                      <span className="ds-created-cell__avatar" style={{ background: avatarColor(row.createdBy) }}>
+                        {row.createdBy.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="ds-created-cell__name">{row.createdBy}</span>
+                    </span>
                   </td>
                 </tr>
               )
@@ -1772,20 +1886,151 @@ function DSV1UsersPage() {
       {showManageAccessModal && (
         <ManageAccessModal count={selected.size} onClose={() => setShowManageAccessModal(false)} />
       )}
+
+      {showUpgradeModal && (
+        <UpgradeSeatsModal
+          count={selected.size}
+          onClose={() => setShowUpgradeModal(false)}
+        />
+      )}
     </div>
   )
 }
 
-function DSV1UserPanel({ user, onClose }: { user: { id: string; name: string; email: string; accessRoleId: string; seat: 'schedule' | 'guest'; lastActivity: string }; onClose: () => void }) {
+function UpgradeSeatsModal({ count, onClose }: { count: number; onClose: () => void }) {
+  const [billing, setBilling] = useState<'annual' | 'monthly'>('annual')
+  const [plan, setPlan] = useState<'starter' | 'pro'>('pro')
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const tiers = [
+    {
+      id: 'starter' as const,
+      name: 'Starter',
+      tagline: 'Plan and schedule your team',
+      monthly: 7.50,
+      annual: 6.00,
+      features: ['Resource planning', 'Time off', 'Reports', 'Unlimited projects'],
+    },
+    {
+      id: 'pro' as const,
+      name: 'Pro',
+      tagline: 'Plan, schedule, and bill projects',
+      monthly: 12.50,
+      annual: 10.00,
+      features: ['Everything in Starter', 'Time tracking', 'Budgets', 'Custom roles', 'Single sign-on'],
+      recommended: true,
+    },
+  ]
+  const current = tiers.find(t => t.id === plan)!
+  const perSeat = billing === 'annual' ? current.annual : current.monthly
+  const total = (perSeat * count).toFixed(2)
+
+  return (
+    <div className="upgrade-modal-backdrop" onClick={onClose}>
+      <div
+        className="upgrade-modal"
+        role="dialog"
+        aria-modal
+        aria-labelledby="upgrade-modal-title"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="upgrade-modal__header">
+          <h2 className="upgrade-modal__title" id="upgrade-modal-title">
+            Upgrade {count} {count === 1 ? 'profile' : 'profiles'} to paid {count === 1 ? 'seat' : 'seats'}
+          </h2>
+          <p className="upgrade-modal__subtitle">
+            Move {count} draft and placeholder {count === 1 ? 'profile' : 'profiles'} onto paid seats so they can log in, appear on the schedule, and be assigned to projects.
+          </p>
+          <button type="button" className="upgrade-modal__close" aria-label="Close" onClick={onClose}>
+            <X size={18} strokeWidth={1.5} />
+          </button>
+        </div>
+
+        <div className="upgrade-modal__billing-toggle" role="group" aria-label="Billing cycle">
+          <button
+            type="button"
+            className={`upgrade-modal__billing-btn${billing === 'annual' ? ' upgrade-modal__billing-btn--active' : ''}`}
+            onClick={() => setBilling('annual')}
+          >
+            Annual <span className="upgrade-modal__billing-save">Save 20%</span>
+          </button>
+          <button
+            type="button"
+            className={`upgrade-modal__billing-btn${billing === 'monthly' ? ' upgrade-modal__billing-btn--active' : ''}`}
+            onClick={() => setBilling('monthly')}
+          >
+            Monthly
+          </button>
+        </div>
+
+        <div className="upgrade-modal__plans">
+          {tiers.map(t => {
+            const price = billing === 'annual' ? t.annual : t.monthly
+            const isSelected = plan === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                className={`upgrade-plan${isSelected ? ' upgrade-plan--selected' : ''}`}
+                onClick={() => setPlan(t.id)}
+              >
+                <div className="upgrade-plan__head">
+                  <span className="upgrade-plan__name">{t.name}</span>
+                  {t.recommended && <span className="upgrade-plan__badge">Recommended</span>}
+                </div>
+                <p className="upgrade-plan__tagline">{t.tagline}</p>
+                <div className="upgrade-plan__price">
+                  <span className="upgrade-plan__price-amount">${price.toFixed(2)}</span>
+                  <span className="upgrade-plan__price-unit">/ user / month</span>
+                </div>
+                <ul className="upgrade-plan__features">
+                  {t.features.map(f => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="upgrade-modal__summary">
+          <div className="upgrade-modal__summary-row">
+            <span>{count} new {count === 1 ? 'seat' : 'seats'} × ${perSeat.toFixed(2)}</span>
+            <span>${total}/mo</span>
+          </div>
+          <div className="upgrade-modal__summary-row upgrade-modal__summary-row--total">
+            <span>New monthly total</span>
+            <span>${total}/mo</span>
+          </div>
+          {billing === 'annual' && (
+            <p className="upgrade-modal__summary-note">
+              Billed annually as ${(parseFloat(total) * 12).toFixed(2)}.
+            </p>
+          )}
+        </div>
+
+        <div className="upgrade-modal__footer">
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn btn--primary" onClick={onClose}>
+            Upgrade {count} {count === 1 ? 'seat' : 'seats'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DSV1UserPanel({ user, onClose }: { user: { id: string; name: string; email: string; accessRoleId: string; seat: SeatType; lastActivity: string }; onClose: () => void }) {
   const [accessRoleId, setAccessRoleId] = useState(user.accessRoleId)
   const [seat, setSeat] = useState(user.seat)
   const [additionalPermissions, setAdditionalPermissions] = useState<string[]>([])
-  const [accessOpen, setAccessOpen] = useState(true)
-  const [seatOpen, setSeatOpen] = useState(true)
   const [actionsOpen, setActionsOpen] = useState(false)
   const actionsRef = useRef<HTMLDivElement>(null)
-  const initial = user.name.charAt(0).toUpperCase()
-  const color = avatarColor(user.name)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
@@ -1803,152 +2048,13 @@ function DSV1UserPanel({ user, onClose }: { user: { id: string; name: string; em
   }, [actionsOpen])
 
   return (
-    <div className="ds-user-drawer-backdrop" onClick={onClose}>
-      <aside className="ds-user-drawer" role="dialog" aria-modal aria-label="Edit user" onClick={e => e.stopPropagation()}>
-        <div className="ds-user-drawer__header">
-          <div className="ds-user-drawer__header-identity">
-            <span className="ds-user-drawer__avatar" style={{ background: color }}>{initial}</span>
-            <div>
-              <span className="ds-user-drawer__name">{user.name}</span>
-              <span className="ds-user-drawer__email">{user.email}</span>
-            </div>
-          </div>
-          <button type="button" className="ds-user-drawer__close" aria-label="Close" onClick={onClose}>
-            <X size={18} strokeWidth={2} aria-hidden />
-          </button>
-        </div>
-        <div className="ds-user-drawer__body">
-
-          {/* ── Access section ── */}
-          <div className="ds-drawer-section">
-            <button
-              type="button"
-              className="ds-drawer-section__toggle"
-              onClick={() => setAccessOpen(o => !o)}
-              aria-expanded={accessOpen}
-            >
-              <span>Access</span>
-              {accessOpen
-                ? <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
-                : <ChevronDown size={14} strokeWidth={1.75} aria-hidden />}
-            </button>
-            {accessOpen && (
-              <div className="ds-drawer-section__body">
-                <div className="ds-person-field">
-                  <label className="ds-person-field__label">Access role</label>
-                  <div className="ds-person-field__select-wrap">
-                    <select className="ds-person-field__select" value={accessRoleId} onChange={e => setAccessRoleId(e.target.value)}>
-                      {ACCESS_ROLE_IDS.map(id => (
-                        <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
-                  </div>
-                </div>
-
-                <div className="person-panel__divider" />
-                <RolePermissionsCard accessRoleId={accessRoleId as AccessRoleId} />
-                <div className="person-panel__divider" />
-
-                <div className="ds-person-field ds-person-field--section">
-                  <div className="person-panel__section-header-row" style={{ marginBottom: 8 }}>
-                    <p className="ds-person-field__label" style={{ marginBottom: 0 }}>Additional permissions</p>
-                    <span className="person-panel__additive-pill">Additive only</span>
-                  </div>
-                  {(() => {
-                    const roleEnabledIds = new Set(
-                      (ROLES.find((r) => r.id === accessRoleId)?.configPerms ?? [])
-                        .filter((p) => p.enabled)
-                        .map((p) => p.id),
-                    )
-                    const availablePerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter(
-                      (p) => !roleEnabledIds.has(p.id),
-                    )
-                    if (availablePerms.length === 0) {
-                      return (
-                        <p className="person-panel__muted" style={{ fontSize: 13 }}>
-                          This role already includes all additional permissions.
-                        </p>
-                      )
-                    }
-                    return ADDITIONAL_PERM_CATEGORIES.map((cat) => {
-                      const catPerms = availablePerms.filter((p) => p.category === cat)
-                      if (catPerms.length === 0) return null
-                      return (
-                        <div key={cat} className="person-panel__perm-category">
-                          <p className="person-panel__perm-category-label">{cat}</p>
-                          <ul className="person-panel__perm-list">
-                            {catPerms.map((perm) => {
-                              const checked = additionalPermissions.includes(perm.id)
-                              return (
-                                <li key={perm.id} className="person-panel__perm-item">
-                                  <label className={`person-panel__perm-label${checked ? ' person-panel__perm-label--checked' : ''}`}>
-                                    <input
-                                      type="checkbox"
-                                      className="person-panel__perm-checkbox"
-                                      checked={checked}
-                                      onChange={() =>
-                                        setAdditionalPermissions((prev) =>
-                                          prev.includes(perm.id)
-                                            ? prev.filter((x) => x !== perm.id)
-                                            : [...prev, perm.id],
-                                        )
-                                      }
-                                    />
-                                    {perm.label}
-                                  </label>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                        </div>
-                      )
-                    })
-                  })()}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Seat section ── */}
-          <div className="ds-drawer-section">
-            <button
-              type="button"
-              className="ds-drawer-section__toggle"
-              onClick={() => setSeatOpen(o => !o)}
-              aria-expanded={seatOpen}
-            >
-              <span>Seat</span>
-              {seatOpen
-                ? <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
-                : <ChevronDown size={14} strokeWidth={1.75} aria-hidden />}
-            </button>
-            {seatOpen && (
-              <div className="ds-drawer-section__body">
-                <div className="ds-person-field">
-                  <label className="ds-person-field__label">Seat</label>
-                  <div className="ds-person-field__select-wrap">
-                    <select className="ds-person-field__select" value={seat} onChange={e => setSeat(e.target.value as 'schedule' | 'guest')}>
-                      <option value="schedule">Schedule</option>
-                      <option value="guest">Guest</option>
-                    </select>
-                    <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
-                  </div>
-                </div>
-                <div className="ds-person-field">
-                  <label className="ds-person-field__label">Last activity</label>
-                  <div className="ds-person-field__readonly ds-person-field__readonly--muted">{user.lastActivity}</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="ds-user-drawer__footer">
-          <button type="button" className="btn btn--primary" onClick={onClose}>Update user</button>
-          <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+    <aside className="ds-user-drawer" role="dialog" aria-label="Edit user">
+      <div className="ds-user-drawer__header">
+        <span className="ds-user-drawer__name-placeholder">{user.name}</span>
+        <div className="ds-user-drawer__header-actions">
           <div className="ds-person-panel__actions-wrap" ref={actionsRef}>
-            <button type="button" className="ds-person-panel__actions-btn" onClick={() => setActionsOpen(o => !o)}>
-              Actions <ChevronDown size={14} />
+            <button type="button" className="ds-user-drawer__icon-btn" aria-label="More actions" onClick={() => setActionsOpen(o => !o)}>
+              <MoreVertical size={18} strokeWidth={1.5} aria-hidden />
             </button>
             {actionsOpen && (
               <div className="ds-person-panel__actions-menu">
@@ -1957,9 +2063,117 @@ function DSV1UserPanel({ user, onClose }: { user: { id: string; name: string; em
               </div>
             )}
           </div>
+          <button type="button" className="ds-user-drawer__icon-btn" aria-label="Close" onClick={onClose}>
+            <X size={18} strokeWidth={1.5} aria-hidden />
+          </button>
         </div>
-      </aside>
-    </div>
+      </div>
+
+      <div className="ds-user-drawer__body">
+        <div className="ds-person-field ds-person-field--row">
+          <label className="ds-person-field__label">Email</label>
+          <div className="ds-person-field__readonly ds-person-field__readonly--muted">{user.email}</div>
+        </div>
+
+        <div className="ds-person-field ds-person-field--row">
+          <label className="ds-person-field__label">Seat</label>
+          <div className="ds-person-field__select-wrap">
+            <select className="ds-person-field__select" value={seat} onChange={e => setSeat(e.target.value as SeatType)}>
+              <option value="schedule">Schedule</option>
+              <option value="guest">Guest</option>
+              <option value="placeholder">Placeholder</option>
+              <option value="draft">Draft profile</option>
+            </select>
+            <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+          </div>
+        </div>
+
+        <div className="ds-person-field ds-person-field--row">
+          <label className="ds-person-field__label">Last login</label>
+          <div className="ds-person-field__readonly ds-person-field__readonly--muted">{user.lastActivity}</div>
+        </div>
+
+        <div className="ds-user-drawer__divider" />
+
+        <div className="ds-person-field ds-person-field--row">
+          <label className="ds-person-field__label">Access role</label>
+          <div className="ds-person-field__select-wrap">
+            <select className="ds-person-field__select" value={accessRoleId} onChange={e => setAccessRoleId(e.target.value)}>
+              {ACCESS_ROLE_IDS.map(id => (
+                <option key={id} value={id}>{ACCESS_ROLE_LABELS[id]}</option>
+              ))}
+            </select>
+            <ChevronDown size={15} className="ds-person-field__chev" aria-hidden />
+          </div>
+        </div>
+
+        <RolePermissionsCard accessRoleId={accessRoleId as AccessRoleId} />
+
+        <div className="ds-user-drawer__divider" />
+
+        <div className="ds-person-field ds-person-field--section">
+          <div className="person-panel__section-header-row" style={{ marginBottom: 8 }}>
+            <p className="ds-person-field__label" style={{ marginBottom: 0 }}>Additional permissions</p>
+            <span className="person-panel__additive-pill">Additive only</span>
+          </div>
+          {(() => {
+            const roleEnabledIds = new Set(
+              (ROLES.find((r) => r.id === accessRoleId)?.configPerms ?? [])
+                .filter((p) => p.enabled)
+                .map((p) => p.id),
+            )
+            const availablePerms = AVAILABLE_ADDITIONAL_PERMISSIONS.filter(
+              (p) => !roleEnabledIds.has(p.id),
+            )
+            if (availablePerms.length === 0) {
+              return (
+                <p className="person-panel__muted" style={{ fontSize: 13 }}>
+                  This role already includes all additional permissions.
+                </p>
+              )
+            }
+            return ADDITIONAL_PERM_CATEGORIES.map((cat) => {
+              const catPerms = availablePerms.filter((p) => p.category === cat)
+              if (catPerms.length === 0) return null
+              return (
+                <div key={cat} className="person-panel__perm-category">
+                  <p className="person-panel__perm-category-label">{cat}</p>
+                  <ul className="person-panel__perm-list">
+                    {catPerms.map((perm) => {
+                      const checked = additionalPermissions.includes(perm.id)
+                      return (
+                        <li key={perm.id} className="person-panel__perm-item">
+                          <label className={`person-panel__perm-label${checked ? ' person-panel__perm-label--checked' : ''}`}>
+                            <input
+                              type="checkbox"
+                              className="person-panel__perm-checkbox"
+                              checked={checked}
+                              onChange={() =>
+                                setAdditionalPermissions((prev) =>
+                                  prev.includes(perm.id)
+                                    ? prev.filter((x) => x !== perm.id)
+                                    : [...prev, perm.id],
+                                )
+                              }
+                            />
+                            {perm.label}
+                          </label>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )
+            })
+          })()}
+        </div>
+      </div>
+
+      <div className="ds-user-drawer__footer">
+        <button type="button" className="btn btn--ghost" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn btn--primary" onClick={onClose}>Update user</button>
+      </div>
+    </aside>
   )
 }
 
@@ -3405,10 +3619,28 @@ const SINGLE_OFFICE_NAV = [
   { id: 'log-my-time',  label: 'Log my time',  Icon: Timer },
 ] as const
 
+const SINGLE_OFFICE_DSV1_NAV = [
+  { id: 'dashboard',    label: 'Dashboard',    Icon: Gauge },
+  { id: 'report',       label: 'Report',       Icon: BarChart3 },
+  { id: 'schedule',     label: 'Schedule',     Icon: Rows3 },
+  { id: 'project-plan', label: 'Project plan', Icon: GanttChart },
+  { id: 'people',       label: 'People',       Icon: Users },
+  { id: 'projects',     label: 'Projects',     Icon: Folder },
+  { id: 'log-team',     label: 'Log team',     Icon: TimerReset },
+  { id: 'log-my-time',  label: 'Log my time',  Icon: Clock },
+] as const
+
 const SINGLE_OFFICE_DATA_STUDIO = [
   { id: 'roles',       label: 'Roles',       Icon: GraduationCap },
   { id: 'clients',     label: 'Clients',     Icon: Building2 },
   { id: 'rate-cards',  label: 'Rate cards',  Icon: DollarSign },
+  { id: 'activity',    label: 'Activity',    Icon: Activity },
+] as const
+
+const SINGLE_OFFICE_DSV1_DATA_STUDIO = [
+  { id: 'roles',       label: 'Roles',       Icon: GraduationCap },
+  { id: 'clients',     label: 'Clients',     Icon: Briefcase },
+  { id: 'rate-cards',  label: 'Rate cards',  Icon: CreditCard },
   { id: 'activity',    label: 'Activity',    Icon: Activity },
 ] as const
 
@@ -3566,7 +3798,7 @@ function AppRail({
               <>
                 {/* ── Single office nav ───────────────────────────────── */}
                 <div className="app-rail__block">
-                  {SINGLE_OFFICE_NAV.map(({ id, label, Icon }) => (
+                  {(officeMode === 'single-dsv1' ? SINGLE_OFFICE_DSV1_NAV : SINGLE_OFFICE_NAV).map(({ id, label, Icon }) => (
                     <button
                       key={id}
                       type="button"
@@ -3645,10 +3877,10 @@ function AppRail({
                         aria-current={dataStudioActive === 'users' ? 'page' : undefined}
                       >
                         <UserCog size={iconSize} strokeWidth={iconStroke} className="app-rail__ico" aria-hidden />
-                        <span className="app-rail__row-label">Users</span>
+                        <span className="app-rail__row-label">{officeMode === 'single-dsv1' ? 'Accounts' : 'Users'}</span>
                       </button>
                     )}
-                    {SINGLE_OFFICE_DATA_STUDIO.map(({ id, label, Icon }) => (
+                    {(officeMode === 'single-dsv1' ? SINGLE_OFFICE_DSV1_DATA_STUDIO : SINGLE_OFFICE_DATA_STUDIO).map(({ id, label, Icon }) => (
                       <button
                         key={id}
                         type="button"
@@ -3788,7 +4020,7 @@ export default function App() {
   const [dataStudioNavId, setDataStudioNavId] = useState<DataStudioNavId>('people')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [pricingPlan, setPricingPlan] = useState<PricingPlanId>('pro')
-  const [officeMode, setOfficeMode] = useState<OfficeModeId>('single')
+  const [officeMode, setOfficeMode] = useState<OfficeModeId>('single-dsv1')
   const [rbacEnforced, setRbacEnforced] = useState(false)
   const [activeOrgId, setActiveOrgId] = useState<string | null>('access')
   const [expandedOfficeId, setExpandedOfficeId] = useState<string | null>('beaverton')
@@ -3905,10 +4137,10 @@ export default function App() {
     setExpandedOfficeId(officeId)
   }
 
-  const isDsv1UsersView = dataStudioNavId === 'users' && officeMode === 'single-dsv1'
+  const isDsv1Mode = officeMode === 'single-dsv1'
 
   return (
-    <div className={`app-shell${isDsv1UsersView ? ' ds-v1-light' : ''}`}>
+    <div className={`app-shell${isDsv1Mode ? ' ds-v1-light' : ''}`}>
       <AppRail
         onOpenSettings={() => setSettingsOpen(true)}
         officeMode={officeMode}

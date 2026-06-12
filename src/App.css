@@ -6493,7 +6493,14 @@
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.invite-guest-modal__subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
   margin: 0 0 20px;
+  line-height: 1.5;
 }
 
 .invite-guest-modal__identity {
@@ -7532,7 +7539,315 @@
 
   background: #ffffff;
   color: var(--text-primary);
+  color-scheme: light;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.ds-v1-light input[type="checkbox"] {
+  accent-color: var(--accent-blue);
+  color-scheme: light;
+}
+
+/* Normalize all icons to Figma's 1.5 stroke weight across DS V1 */
+.ds-v1-light svg { stroke-width: 1.5; }
+
+/* People page (DataStudioPeoplePage when officeMode === 'single-dsv1') */
+.ds-v1-light .dh-people { background: #ffffff; }
+
+.ds-v1-light .dh-people__title { color: var(--text-primary); font-weight: 600; font-size: 16px; }
+
+.ds-v1-light .dh-people__office-btn {
+  background: #ffffff;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+.ds-v1-light .dh-people__office-btn:hover { background: var(--nav-hover); border-color: var(--border); }
+
+.ds-v1-light .dh-people__cattab { color: var(--text-secondary); }
+.ds-v1-light .dh-people__cattab:hover { background: var(--nav-hover); color: var(--text-primary); }
+.ds-v1-light .dh-people__cattab--active { color: var(--text-primary); background: var(--nav-hover); }
+
+.ds-v1-light .dh-people__hdr-icon-btn,
+.ds-v1-light .dh-people__views-btn,
+.ds-v1-light .dh-people__filter-trigger,
+.ds-v1-light .dh-people__import-btn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.ds-v1-light .dh-people__hdr-icon-btn:hover,
+.ds-v1-light .dh-people__views-btn:hover,
+.ds-v1-light .dh-people__filter-trigger:hover,
+.ds-v1-light .dh-people__import-btn:hover { background: var(--nav-hover); }
+
+.ds-v1-light .dh-people__statusbar {
+  align-items: center;
+  gap: 14px;
+}
+
+.ds-v1-light .dh-people__status-tabs {
+  background: var(--nav-hover);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 0;
+}
+
+.ds-v1-light .dh-people__status-tab {
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 450;
+}
+.ds-v1-light .dh-people__status-tab:hover { background: rgba(11,12,16,0.04); color: var(--text-primary); }
+.ds-v1-light .dh-people__status-tab--active {
+  background: #ffffff;
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(11,12,16,0.06);
+  border-color: var(--border);
+}
+
+/* Vertical divider between status tabs and the access-check */
+.ds-v1-light .dh-people__access-check {
+  position: relative;
+  padding-left: 14px;
+  color: var(--text-primary);
+}
+.ds-v1-light .dh-people__access-check::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+}
+
+.ds-v1-light .dh-people__tabs-wrap { border-bottom: none; }
+.ds-v1-light .dh-people__tab { color: var(--text-secondary); }
+.ds-v1-light .dh-people__tab--active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+
+.ds-v1-light .dh-people__table-wrap {
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+.ds-v1-light .dh-people__th {
+  background: #ffffff;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 1px 0 var(--border);
+}
+.ds-v1-light .dh-people__th,
+.ds-v1-light .dh-people__td { border-bottom: none; }
+.ds-v1-light .dh-people__td { color: var(--text-primary); background: #ffffff; }
+.ds-v1-light .dh-people__row:nth-child(even) .dh-people__td { background: #f7f8fb; }
+.ds-v1-light .dh-people__row:hover .dh-people__td { background: #eef2f8; }
+.ds-v1-light .dh-people__row--selected .dh-people__td { background: #e9f0fe; }
+.ds-v1-light .dh-people__access-cell { color: var(--text-primary); font-weight: 400; }
+.ds-v1-light .dh-people__pill {
+  background: #f3f2f5;
+  border: none;
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.ds-v1-light .dh-people__checkbox { accent-color: var(--accent-blue); }
+
+/* Title is rendered as "<count> People" in DSV1 — bold dark */
+.ds-v1-light .dh-people__title { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
+
+/* Side panel (person-panel) */
+.ds-v1-light .person-panel { background: #ffffff; border-left: 1px solid var(--border); color: var(--text-primary); }
+.ds-v1-light .person-panel__backdrop { background: rgba(11, 12, 16, 0.32); }
+.ds-v1-light .person-panel__header { border-bottom: 1px solid var(--border); }
+.ds-v1-light .person-panel__name { color: var(--text-primary); }
+.ds-v1-light .person-panel__email { color: var(--text-secondary); }
+.ds-v1-light .person-panel__close { color: var(--text-secondary); }
+.ds-v1-light .person-panel__close:hover { background: var(--nav-hover); color: var(--text-primary); }
+.ds-v1-light .person-panel__tab { color: var(--text-secondary); }
+.ds-v1-light .person-panel__tab--active { color: var(--text-primary); }
+.ds-v1-light .person-panel__tab--active::after { background: var(--text-primary); }
+.ds-v1-light .person-panel__tab-badge { background: var(--nav-hover); color: var(--text-secondary); }
+.ds-v1-light .person-panel__section { color: var(--text-primary); }
+
+/* DS V1 user side drawer — matches Figma 124:2704 rate-card pattern */
+.ds-v1-light .ds-user-drawer {
+  background: #ffffff;
+  color: var(--text-primary);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 16px rgba(11,12,16,0.04);
+  width: 465px;
+}
+.ds-v1-light .ds-user-drawer__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.ds-v1-light .ds-user-drawer__name-placeholder {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 24px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-v1-light .ds-user-drawer__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.ds-v1-light .ds-user-drawer__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+.ds-v1-light .ds-user-drawer__icon-btn:hover {
+  background: var(--nav-hover);
+  color: var(--text-primary);
+}
+.ds-v1-light .ds-user-drawer__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #ffffff;
+  flex: 1;
+  overflow-y: auto;
+}
+.ds-v1-light .ds-user-drawer__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+.ds-v1-light .ds-user-drawer__footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: #ffffff;
+}
+
+/* Horizontal field layout — label left (80px), control right (flex) */
+.ds-v1-light .ds-person-field--row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 0;
+}
+.ds-v1-light .ds-person-field--row > .ds-person-field__label {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.ds-v1-light .ds-person-field--row > .ds-person-field__select-wrap,
+.ds-v1-light .ds-person-field--row > .ds-person-field__readonly {
+  flex: 1;
+  min-width: 0;
+}
+.ds-v1-light .ds-person-field__select {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 6px 32px 6px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.ds-v1-light .ds-person-field__readonly {
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.ds-v1-light .ds-person-field__readonly--muted { color: var(--text-secondary); font-style: normal; }
+
+/* Modals — use light surfaces */
+.ds-v1-light .bulk-modal,
+.ds-v1-light .invite-guest-modal,
+.ds-v1-light .add-person-modal,
+.ds-v1-light .import-modal,
+.ds-v1-light .manage-access-modal {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.ds-v1-light .bulk-modal__header,
+.ds-v1-light .invite-guest-modal__header,
+.ds-v1-light .add-person-modal__header,
+.ds-v1-light .manage-access-modal__header,
+.ds-v1-light .import-modal__title { border-bottom-color: var(--border); }
+
+.ds-v1-light .bulk-modal__select,
+.ds-v1-light .manage-access-modal__select,
+.ds-v1-light .add-person-modal__select,
+.ds-v1-light .add-person-modal__text-input,
+.ds-v1-light .invite-guest-modal__select,
+.ds-v1-light .invite-guest-modal__textarea,
+.ds-v1-light .invite-guest-modal__email-input,
+.ds-v1-light .add-person-modal__email-input,
+.ds-v1-light .add-person-modal__rate-input {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.ds-v1-light .add-person-modal__card,
+.ds-v1-light .invite-guest-modal__card { background: #fafbfc; border-color: var(--border); }
+
+.ds-v1-light .add-person-modal__footer,
+.ds-v1-light .invite-guest-modal__footer,
+.ds-v1-light .import-modal__footer,
+.ds-v1-light .manage-access-modal__footer { border-top-color: var(--border); }
+
+/* Generic buttons inside DS V1 light */
+.ds-v1-light .btn--primary {
+  background: var(--accent-blue);
+  color: #ffffff;
+  border: 1px solid var(--accent-blue);
+}
+.ds-v1-light .btn--primary:hover { background: #2552d6; border-color: #2552d6; }
+
+.ds-v1-light .btn--ghost {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+.ds-v1-light .btn--ghost:hover { background: var(--nav-hover); }
+
+/* Add-person primary CTA — fit text instead of forcing a 30×30 square */
+.ds-v1-light .ds-people-header__add-btn {
+  width: auto;
+  height: auto;
+  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
 }
 
 /* Main content area + sidebar in light mode */
@@ -7637,7 +7952,11 @@
 .ds-v1-light .ds-people-header__icon-btn:hover { background: var(--nav-hover); }
 
 /* Pill tabs */
-.ds-v1-light .ds-people-types { gap: 8px; }
+.ds-v1-light .ds-people-types {
+  gap: 8px;
+  border-bottom: none;
+  margin-bottom: 12px;
+}
 
 .ds-v1-light .ds-people-type {
   background: transparent;
@@ -7750,7 +8069,297 @@
   font-size: 13px;
   font-weight: 400;
   padding: 0;
+  border: none;
   border-radius: 0;
+}
+
+/* Seat type — colored dot + label */
+.ds-seat-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ds-seat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ds-seat-dot--schedule    { background: #2e5fe8; }
+.ds-seat-dot--guest       { background: #f5b800; }
+.ds-seat-dot--placeholder { background: #8b5cf6; }
+.ds-seat-dot--draft       { background: #94a3b8; }
+
+/* Created column — date + "by" + small avatar + creator name */
+.ds-created-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.ds-created-cell__date { color: var(--text-primary); }
+
+.ds-created-cell__by { color: var(--text-secondary); margin-left: 4px; }
+
+.ds-created-cell__avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.ds-created-cell__name {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+/* ── Upgrade Seats Modal ─────────────────────────────────────────────────── */
+
+.upgrade-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 12, 16, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.upgrade-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 640px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  color: #0b0c10;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  box-shadow: 0 20px 48px rgba(11,12,16,0.18);
+}
+
+.upgrade-modal__header {
+  position: relative;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid #e6e8ee;
+}
+
+.upgrade-modal__title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #0b0c10;
+  padding-right: 36px;
+}
+
+.upgrade-modal__subtitle {
+  font-size: 13px;
+  color: #344765;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.upgrade-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #344765;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.upgrade-modal__close:hover { background: #f3f2f5; color: #0b0c10; }
+
+.upgrade-modal__billing-toggle {
+  display: inline-flex;
+  align-self: center;
+  margin: 16px auto 0;
+  padding: 3px;
+  background: #f3f2f5;
+  border-radius: 8px;
+  gap: 0;
+}
+
+.upgrade-modal__billing-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #344765;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.upgrade-modal__billing-btn--active {
+  background: #ffffff;
+  color: #0b0c10;
+  box-shadow: 0 1px 2px rgba(11,12,16,0.06);
+}
+
+.upgrade-modal__billing-save {
+  font-size: 11px;
+  font-weight: 500;
+  color: #2e5fe8;
+  background: rgba(46, 95, 232, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.upgrade-modal__plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 20px 28px;
+}
+
+.upgrade-plan {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e6e8ee;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.upgrade-plan:hover { border-color: #c8d1e0; }
+.upgrade-plan--selected {
+  border-color: #2e5fe8;
+  box-shadow: 0 0 0 2px rgba(46, 95, 232, 0.18);
+}
+
+.upgrade-plan__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.upgrade-plan__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0b0c10;
+}
+
+.upgrade-plan__badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #2e5fe8;
+  background: rgba(46, 95, 232, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.upgrade-plan__tagline {
+  font-size: 12px;
+  color: #344765;
+  margin: 0 0 12px;
+}
+
+.upgrade-plan__price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.upgrade-plan__price-amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0b0c10;
+}
+
+.upgrade-plan__price-unit {
+  font-size: 12px;
+  color: #344765;
+}
+
+.upgrade-plan__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.upgrade-plan__features li {
+  font-size: 12px;
+  color: #344765;
+  position: relative;
+  padding-left: 18px;
+}
+.upgrade-plan__features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #2e5fe8;
+  font-weight: 600;
+}
+
+.upgrade-modal__summary {
+  background: #f7f8fb;
+  border-top: 1px solid #e6e8ee;
+  border-bottom: 1px solid #e6e8ee;
+  padding: 16px 28px;
+}
+
+.upgrade-modal__summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #344765;
+  padding: 4px 0;
+}
+
+.upgrade-modal__summary-row--total {
+  font-weight: 600;
+  color: #0b0c10;
+  font-size: 14px;
+  padding-top: 8px;
+  border-top: 1px solid #e6e8ee;
+  margin-top: 6px;
+}
+
+.upgrade-modal__summary-note {
+  font-size: 12px;
+  color: #344765;
+  margin: 8px 0 0;
+}
+
+.upgrade-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 28px;
 }
 
 .ds-v1-light .ds-login-pending {
